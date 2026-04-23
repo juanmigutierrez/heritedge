@@ -1,0 +1,33 @@
+{
+  "version": "0.0.1",
+  "updatedAt": "2026-04-23",
+  "facts": [
+    {
+      "id": "duomo-1386-foundation",
+      "landmark": "duomo",
+      "period": "medieval",
+      "title": "Foundation of the Duomo",
+      "body": "Construction of the Duomo di Milano began in 1386 under Archbishop Antonio da Saluzzo and continued for nearly six centuries, a span that marked Milan's transition from medieval commune to modern metropolis.",
+      "tags": ["history", "foundation", "gothic"],
+      "source": { "label": "Veneranda Fabbrica del Duomo (official)", "url": "https://www.duomomilano.it" }
+    },
+    {
+      "id": "galleria-mengoni-1865",
+      "landmark": "galleria",
+      "period": "present",
+      "title": "Galleria Vittorio Emanuele II",
+      "body": "Designed by Giuseppe Mengoni and completed between 1865 and 1877, the Galleria is one of the world's oldest shopping arcades and forms the northern edge of Piazza del Duomo.",
+      "tags": ["architecture", "iron", "glass"],
+      "source": { "label": "Comune di Milano", "url": "https://www.comune.milano.it" }
+    },
+    {
+      "id": "piazza-wwii-bombing",
+      "landmark": "duomo",
+      "period": "postwar",
+      "title": "Piazza Duomo during WWII",
+      "body": "In August 1943 Allied bombing severely damaged buildings around Piazza Duomo. The cathedral itself was struck but its main structure survived, and the square became a symbolic stage for Milan's 1945 liberation.",
+      "tags": ["war", "1940s", "reconstruction"],
+      "source": { "label": "Archivio Storico Civico di Milano" }
+    }
+  ]
+}
