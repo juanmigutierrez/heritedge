@@ -1,6 +1,6 @@
 {
-  "version": "0.0.1",
-  "updatedAt": "2026-04-23",
+  "version": "0.2.0",
+  "updatedAt": "2026-04-25",
   "facts": [
     {
       "id": "duomo-1386-foundation",
@@ -12,13 +12,22 @@
       "source": { "label": "Veneranda Fabbrica del Duomo (official)", "url": "https://www.duomomilano.it" }
     },
     {
-      "id": "galleria-mengoni-1865",
-      "landmark": "galleria",
+      "id": "duomo-pink-marble-medieval",
+      "landmark": "duomo",
+      "period": "medieval",
+      "title": "The Pink Marble of Candoglia",
+      "body": "The Duomo is built almost entirely from Candoglia marble, a pink-grey stone quarried 100 km north of Milan. Gian Galeazzo Visconti granted the Cathedral's building authority (Fabbrica) perpetual rights to the quarry in 1387 — a grant still in force today.",
+      "tags": ["materials", "marble", "Visconti", "gothic"],
+      "source": { "label": "Veneranda Fabbrica del Duomo (official)", "url": "https://www.duomomilano.it/en/articles/candoglia-marble" }
+    },
+    {
+      "id": "duomo-madonnina-1774",
+      "landmark": "duomo",
       "period": "present",
-      "title": "Galleria Vittorio Emanuele II",
-      "body": "Designed by Giuseppe Mengoni and completed between 1865 and 1877, the Galleria is one of the world's oldest shopping arcades and forms the northern edge of Piazza del Duomo.",
-      "tags": ["architecture", "iron", "glass"],
-      "source": { "label": "Comune di Milano", "url": "https://www.comune.milano.it" }
+      "title": "La Madonnina",
+      "body": "The 4.16-metre gilded copper statue of the Virgin Mary, known as La Madonnina, was placed atop the tallest spire in 1774 at a height of 108.5 metres. A Milanese custom held that no building should rise above her until 1958, when the first skyscrapers of the Porta Nuova area broke that informal rule.",
+      "tags": ["statue", "symbol", "Madonnina", "spire"],
+      "source": { "label": "Comune di Milano — Duomo heritage page", "url": "https://www.comune.milano.it" }
     },
     {
       "id": "piazza-wwii-bombing",
@@ -28,6 +37,60 @@
       "body": "In August 1943 Allied bombing severely damaged buildings around Piazza Duomo. The cathedral itself was struck but its main structure survived, and the square became a symbolic stage for Milan's 1945 liberation.",
       "tags": ["war", "1940s", "reconstruction"],
       "source": { "label": "Archivio Storico Civico di Milano" }
+    },
+    {
+      "id": "galleria-mengoni-1865",
+      "landmark": "galleria",
+      "period": "present",
+      "title": "Galleria Vittorio Emanuele II",
+      "body": "Designed by Giuseppe Mengoni and completed between 1865 and 1877, the Galleria is one of the world's oldest shopping arcades and forms the northern edge of Piazza del Duomo.",
+      "tags": ["architecture", "iron", "glass", "Mengoni"],
+      "source": { "label": "Comune di Milano", "url": "https://www.comune.milano.it" }
+    },
+    {
+      "id": "galleria-mosaic-floor",
+      "landmark": "galleria",
+      "period": "present",
+      "title": "The Mosaic Floor and the Bull of Turin",
+      "body": "The Galleria's floor is decorated with the coats of arms of Milan, Turin, Florence, and Rome in mosaic. The bull emblem of Turin, located at the centre of the octagonal crossing, is worn down from the tradition of spinning on one's heel for good luck — a custom that continues to this day.",
+      "tags": ["mosaic", "floor", "tradition", "Turin"],
+      "source": { "label": "Galleria Vittorio Emanuele II — Comune di Milano", "url": "https://www.comune.milano.it/aree-tematiche/cultura-e-tempo-libero/galleria-vittorio-emanuele-ii" }
+    },
+    {
+      "id": "galleria-wwii-damage",
+      "landmark": "galleria",
+      "period": "postwar",
+      "title": "The Galleria After the 1943 Bombing",
+      "body": "The 1943 Allied air raids destroyed the Galleria's glass vaulting and badly damaged its interior. Reconstruction of the iron-and-glass roof took until 1948, and the arcade reopened as a symbol of Milanese resilience and the city's economic recovery.",
+      "tags": ["war", "reconstruction", "1940s", "glass roof"],
+      "source": { "label": "Archivio Storico Civico di Milano" }
+    },
+    {
+      "id": "palazzo-reale-history",
+      "landmark": "palazzo",
+      "period": "medieval",
+      "title": "Palazzo Reale — From Commune to Court",
+      "body": "Originally the seat of Milan's medieval communal government in the 12th century, Palazzo Reale was transformed into the ducal court of the Visconti and later the Sforza. It hosted Leonardo da Vinci during his time in Milan (1482–1499), when he was employed by Ludovico Sforza.",
+      "tags": ["history", "Visconti", "Sforza", "Leonardo", "court"],
+      "source": { "label": "Palazzo Reale Milano (official)", "url": "https://www.palazzorealemilano.it" }
+    },
+    {
+      "id": "palazzo-reale-postwar-restoration",
+      "landmark": "palazzo",
+      "period": "postwar",
+      "title": "Palazzo Reale After WWII",
+      "body": "Like much of central Milan, Palazzo Reale was heavily damaged in the 1943 bombing raids. Its restoration took decades; the Neoclassical interiors were painstakingly rebuilt and the building reopened progressively from the 1950s onward as a cultural and exhibition venue rather than a seat of power.",
+      "tags": ["war", "restoration", "1940s", "neoclassical"],
+      "source": { "label": "Palazzo Reale Milano — Storia", "url": "https://www.palazzorealemilano.it/storia" }
+    },
+    {
+      "id": "palazzo-reale-museum-today",
+      "landmark": "palazzo",
+      "period": "present",
+      "title": "Palazzo Reale Today — Italy's Exhibition Hub",
+      "body": "Today Palazzo Reale is one of Italy's most visited temporary exhibition venues, attracting over 600,000 visitors a year. It hosts major international art shows and houses a permanent collection of Milanese decorative arts. Entry to the piazza-facing courtyard is free.",
+      "tags": ["museum", "exhibitions", "present", "culture"],
+      "source": { "label": "Palazzo Reale Milano (official)", "url": "https://www.palazzorealemilano.it" }
     }
   ]
 }

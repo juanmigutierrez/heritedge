@@ -1,0 +1,77 @@
+{
+  "version": "0.1.0",
+  "updatedAt": "2026-04-25",
+  "challenges": [
+    {
+      "id": 1,
+      "landmark": "duomo",
+      "title": "The Golden Lady on Top",
+      "description": "The Duomo's tallest spire is crowned by an iconic golden statue — but do you know her name?",
+      "type": "question",
+      "question": "What is the name of the golden statue that crowns the Duomo's tallest spire, added in 1774 and considered the symbol of Milan?",
+      "options": [
+        "La Vergine Maria",
+        "La Madonnina",
+        "Sant'Ambrogio",
+        "La Signora d'Oro"
+      ],
+      "correctAnswer": 1,
+      "feedback": {
+        "correct": "Exactly! La Madonnina stands 108.5 m above Piazza Duomo. A Milanese tradition says no building in Milan may exceed her height — a rule respected until 1958 when the first skyscrapers rose.",
+        "incorrect": "The statue is called La Madonnina (the little Madonna). Placed in 1774, she is gilded copper and stands 4.16 m tall. Milanese legend holds that she watches over the entire city."
+      },
+      "arHint": "Point your camera at the top of the Duomo's central facade and look for the glowing spire marker.",
+      "markerImage": "/markers/duomo-facade.jpg",
+      "huntImage": "/hunt/madonnina-spire.jpg",
+      "location": "Duomo di Milano — central facade",
+      "period": "present",
+      "relatedFactIds": ["duomo-madonnina-1774", "duomo-1386-foundation"],
+      "points": 100
+    },
+    {
+      "id": 2,
+      "landmark": "galleria",
+      "title": "The Floor That Brings Luck",
+      "description": "Hidden in the Galleria's mosaic floor is a tradition that tourists travel from all over the world to perform.",
+      "type": "photo",
+      "photoPrompt": "Find the mosaic bull emblem on the Galleria floor and take a photo of it. Tip: look near the centre of the octagonal crossing.",
+      "feedback": {
+        "correct": "Well spotted! The bull is the emblem of Turin. Spinning on its heel three times is said to bring good luck — the mosaic is worn down from centuries of heel-spins.",
+        "incorrect": "The mosaic bull represents Turin, one of the four Italian cities whose crests decorate the floor. The other three are Milan, Florence, and Rome."
+      },
+      "arHint": "Enter AR view and look for a highlighted circle at the centre of the octagonal crossing — the bull mosaic will be outlined.",
+      "markerImage": "/markers/galleria-crossing.jpg",
+      "huntImage": "/hunt/galleria-bull-mosaic.jpg",
+      "location": "Galleria Vittorio Emanuele II — central octagon",
+      "period": "present",
+      "relatedFactIds": ["galleria-mosaic-floor", "galleria-mengoni-1865"],
+      "points": 120
+    },
+    {
+      "id": 3,
+      "landmark": "palazzo",
+      "title": "From Royal Palace to Museum",
+      "description": "Palazzo Reale once hosted kings and emperors. Today it holds a very different kind of treasure.",
+      "type": "question",
+      "question": "Palazzo Reale served as the seat of rulers for centuries. What major role does it play in Milan today?",
+      "options": [
+        "City Hall (Comune di Milano)",
+        "Central Post Office",
+        "Temporary exhibition museum and cultural venue",
+        "Regional Parliament headquarters"
+      ],
+      "correctAnswer": 2,
+      "feedback": {
+        "correct": "Right! Since 1921 Palazzo Reale has hosted major art exhibitions. It is now one of Italy's most visited temporary exhibition spaces, with over 600,000 visitors a year.",
+        "incorrect": "Palazzo Reale is now a cultural venue and temporary exhibition museum, hosting world-class art shows since its post-WWII restoration. It is not a government building."
+      },
+      "arHint": "Stand facing the Palazzo and activate AR — the facade will reveal layers showing its transformation across Medieval, Neoclassical, and present-day phases.",
+      "markerImage": "/markers/palazzo-reale-facade.jpg",
+      "huntImage": "/hunt/palazzo-reale-entrance.jpg",
+      "location": "Palazzo Reale — main facade on Piazza del Duomo",
+      "period": "present",
+      "relatedFactIds": ["palazzo-reale-history", "palazzo-reale-postwar-restoration"],
+      "points": 100
+    }
+  ]
+}
