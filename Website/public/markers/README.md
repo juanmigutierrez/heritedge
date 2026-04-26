@@ -2,7 +2,7 @@
 
 These images are used as **image-tracking markers** by the WebXR scene (ARScene.tsx, owned by P3).
 
-Place the following files here before Thursday:
+Required files — needed by P3b before 2026-04-28:
 
 | File | Subject | Notes |
 |---|---|---|

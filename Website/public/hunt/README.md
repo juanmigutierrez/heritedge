@@ -6,7 +6,7 @@ These images are displayed inside the TreasureHunt UI (challenge cards and hotsp
 |---|---|---|
 | `madonnina-spire.jpg` | Challenge 1 (Duomo) | Close-up of the Madonnina statue or the tallest spire |
 | `galleria-bull-mosaic.jpg` | Challenge 2 (Galleria) | The bull mosaic at the centre of the octagonal crossing |
-| `palazzo-reale-entrance.jpg` | Challenge 3 (Palazzo) | Palazzo Reale entrance or main facade |
+| `palazzo-sala-cariatidi.jpg` | Challenge 3 (Palazzo) | Sala delle Cariatidi — the bombed royal ballroom, now a war memorial inside the museum |
 
 ## Requirements
 - Resolution: at least 800 × 600 px

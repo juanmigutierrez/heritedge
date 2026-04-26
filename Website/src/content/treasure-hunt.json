@@ -1,6 +1,7 @@
 {
   "version": "0.1.0",
-  "updatedAt": "2026-04-25",
+  "updatedAt": "2026-04-26",
+  "_consumer": "src/app/components/TreasureHunt.tsx (P4) — replace the hardcoded `challenges` array with an import of this file. Schema mirrors the Challenge interface defined in that component.",
   "challenges": [
     {
       "id": 1,
