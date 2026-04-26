@@ -51,7 +51,7 @@
       "id": 3,
       "landmark": "palazzo",
       "title": "From Royal Palace to Museum",
-      "description": "Palazzo Reale once hosted kings and emperors. Today it holds a very different kind of treasure.",
+      "description": "The room in this image was once a royal ballroom. It was destroyed in 1943 and never fully rebuilt — today it stands as a war memorial inside a museum.",
       "type": "question",
       "question": "Palazzo Reale served as the seat of rulers for centuries. What major role does it play in Milan today?",
       "options": [
@@ -62,12 +62,12 @@
       ],
       "correctAnswer": 2,
       "feedback": {
-        "correct": "Right! Since 1921 Palazzo Reale has hosted major art exhibitions. It is now one of Italy's most visited temporary exhibition spaces, with over 600,000 visitors a year.",
+        "correct": "Exactly! The room you see is the Sala delle Cariatidi — the royal ballroom bombed in 1943 and deliberately left unrestored as a war memorial. Today the entire palace is one of Italy's most visited temporary exhibition venues, with over 600,000 visitors a year.",
         "incorrect": "Palazzo Reale is now a cultural venue and temporary exhibition museum, hosting world-class art shows since its post-WWII restoration. It is not a government building."
       },
       "arHint": "Stand facing the Palazzo and activate AR — the facade will reveal layers showing its transformation across Medieval, Neoclassical, and present-day phases.",
       "markerImage": "/markers/palazzo-reale-facade.jpg",
-      "huntImage": "/hunt/palazzo-reale-entrance.jpg",
+      "huntImage": "/hunt/palazzo-sala-cariatidi.jpg",
       "location": "Palazzo Reale — main facade on Piazza del Duomo",
       "period": "present",
       "relatedFactIds": ["palazzo-reale-history", "palazzo-reale-postwar-restoration"],

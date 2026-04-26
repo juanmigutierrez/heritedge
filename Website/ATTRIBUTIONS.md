@@ -32,5 +32,5 @@ All images sourced from Wikimedia Commons under Creative Commons licenses.
 | `public/markers/palazzo-reale-facade.jpg` | Palazzo Reale Milano — facade | Geobia | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:8889MilanoPalazzoReale.JPG) |
 | `public/hunt/madonnina-spire.jpg` | La Madonnina — Duomo di Milano spire | F.Higer | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Madonnina-Duomo_Milano.JPG) |
 | `public/hunt/galleria-bull-mosaic.jpg` | Bull mosaic — Galleria Vittorio Emanuele II floor | Robre62 | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:GalleriaToro.jpg) |
-| `public/hunt/palazzo-reale-entrance.jpg` | Sala delle Cariatidi — Palazzo Reale Milano | Manuel Pagani (Mm4mm) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Palazzo_Reale_-Sala_delle_Cariatidi.jpg) |
+| `public/hunt/palazzo-sala-cariatidi.jpg` | Sala delle Cariatidi — Palazzo Reale Milano | Manuel Pagani (Mm4mm) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Palazzo_Reale_-Sala_delle_Cariatidi.jpg) |
 
