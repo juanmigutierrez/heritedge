@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowLeft, MessageCircle, Volume2, Send, Sparkles, Mic, Building2, Calendar, Users, Church } from "lucide-react";
+import { useSpeechRecognition } from "@/features/voice/useSpeechRecognition";
+import { sendMessage, speak, stopSpeaking } from "@/services/chatService";
 
 type TimePeriod = "foundations" | "visconti" | "sforza" | "habsburg";
 type SuggestedTopic = "architecture" | "history" | "events" | "statues";
@@ -132,54 +134,79 @@ export function QuickGuide() {
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "ai"; text: string }>>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
+  const [isLoadingResponse, setIsLoadingResponse] = useState(false);
 
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
+  // FIX: use a ref to capture transcript reliably across renders
+  const pendingTranscriptRef = useRef<string>("");
 
-    const userMessage = inputMessage;
-    setChatMessages((prev) => [...prev, { role: "user", text: userMessage }]);
-    setInputMessage("");
+  const {
+    transcript,
+    listeningState,
+    startListening,
+    stopListening,
+    resetTranscript,
+  } = useSpeechRecognition();
 
-    // Simulate AI response
-    setTimeout(() => {
-      let aiResponse = "";
-      
-      if (userMessage.toLowerCase().includes("architecture") || userMessage.toLowerCase().includes("gothic")) {
-        aiResponse = "The Duomo showcases Italian Gothic architecture at its finest. With 135 spires, over 3,400 statues, and intricate flying buttresses, it represents centuries of architectural evolution. The use of Candoglia marble gives it a distinctive pink-white hue!";
-      } else if (userMessage.toLowerCase().includes("visconti") || userMessage.toLowerCase().includes("duke")) {
-        aiResponse = "Duke Gian Galeazzo Visconti initiated the Duomo's construction in 1386. The Visconti family saw it as a symbol of their power and Milan's importance. They funded much of the early work and attracted the best architects from across Europe.";
-      } else if (userMessage.toLowerCase().includes("statue") || userMessage.toLowerCase().includes("3400")) {
-        aiResponse = "The Duomo features over 3,400 statues! Each one tells a story - from biblical figures to saints and historical personalities. The statues were created over centuries by different artists, showcasing evolving artistic styles.";
-      } else if (userMessage.toLowerCase().includes("spire") || userMessage.toLowerCase().includes("135")) {
-        aiResponse = "The Duomo has 135 spires, each topped with a statue. The tallest spire reaches 108.5 meters and is crowned with the golden Madonnina statue (4.16m tall), Milan's beloved symbol since 1774!";
-      } else if (userMessage.toLowerCase().includes("event") || userMessage.toLowerCase().includes("ceremony")) {
-        aiResponse = "The Duomo has hosted countless historic events - from the coronation of Napoleon as King of Italy in 1805 to the funerals of Cardinal Carlo Maria Martini. Today it hosts concerts, religious ceremonies, and even fashion shows in the square!";
-      } else {
-        aiResponse = "That's an interesting question! The Duomo di Milano is a magnificent Gothic cathedral with over 600 years of history. It features 135 spires, over 3,400 statues, and represents Milan's cultural heart. What specific aspect would you like to know more about?";
+  // FIX: watch listeningState instead of the `listening` boolean alias.
+  // When state goes DONE → transcript is finalised and ready to send.
+  useEffect(() => {
+    if (listeningState === "DONE" && transcript) {
+      pendingTranscriptRef.current = transcript;
+      setIsListening(false);
+      setInputMessage(transcript);
+      resetTranscript();
+      handleSendMessageText(transcript); // pass value directly — no stale closure
+    }
+
+    if (listeningState === "ERROR" || listeningState === "IDLE") {
+      // If mic closed without a result, just stop the indicator
+      if (isListening && listeningState === "IDLE") {
+        setIsListening(false);
       }
+    }
+  }, [listeningState, transcript]);
 
-      setChatMessages((prev) => [...prev, { role: "ai", text: aiResponse }]);
-    }, 800);
+  // FIX: accept the message as a parameter so it never reads stale state
+  const handleSendMessageText = async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    setChatMessages((prev) => [...prev, { role: "user", text: trimmed }]);
+    setInputMessage("");
+    setIsLoadingResponse(true);
+
+    try {
+      const res = await sendMessage(trimmed);
+      const reply =
+        res.answer || res.reply || "I can answer about Duomo, Galleria, and Palazzo Reale.";
+      setChatMessages((prev) => [...prev, { role: "ai", text: reply }]);
+      speak(reply); // AI speaks the answer aloud
+    } catch {
+      const fallback =
+        "Sorry, I couldn't reach the knowledge base right now. Please try again.";
+      setChatMessages((prev) => [...prev, { role: "ai", text: fallback }]);
+    } finally {
+      setIsLoadingResponse(false);
+    }
   };
 
-  const handleVoiceInput = () => {
-    setIsListening(true);
-    setTimeout(() => {
-      const voiceQuestions = [
-        "Tell me about the Visconti era",
-        "How many spires does the Duomo have?",
-        "What about the architecture?",
-        "Tell me about the statues"
-      ];
-      const randomQuestion = voiceQuestions[Math.floor(Math.random() * voiceQuestions.length)];
-      setInputMessage(randomQuestion);
+  // Called by the Send button / Enter key (reads from input state — fine here
+  // because the user typed it, not a stale closure)
+  const handleSendMessage = () => {
+    handleSendMessageText(inputMessage);
+  };
+
+  // FIX: toggle mic on tap — don't use hold-to-talk (stops before user finishes speaking)
+  const handleVoiceToggle = () => {
+    if (isListening) {
+      stopListening();
       setIsListening(false);
-      setTimeout(() => {
-        if (randomQuestion) {
-          handleSendMessage();
-        }
-      }, 100);
-    }, 2000);
+    } else {
+      stopSpeaking();
+      resetTranscript();
+      startListening();
+      setIsListening(true);
+    }
   };
 
   const handleTopicClick = (topicId: SuggestedTopic) => {
@@ -189,14 +216,14 @@ export function QuickGuide() {
       events: "What events happened at the Duomo?",
       statues: "Tell me about the 3,400 statues",
     };
-    
     setShowChat(true);
-    setInputMessage(topicQuestions[topicId]);
-    setTimeout(() => handleSendMessage(), 300);
+    handleSendMessageText(topicQuestions[topicId]);
   };
 
   const handleVoiceGuide = () => {
-    alert("Voice guide: 'The Duomo di Milano is a magnificent Gothic cathedral with over 600 years of history...'");
+    const guideText =
+      "The Duomo di Milano is a magnificent Gothic cathedral with over 600 years of history. It features 135 spires, over 3,400 statues, and represents Milan's cultural heart.";
+    speak(guideText);
   };
 
   return (
@@ -204,7 +231,7 @@ export function QuickGuide() {
       {/* Header */}
       <div className="sticky top-0 z-20 bg-white border-b border-stone-200 px-4 py-4">
         <div className="flex items-center gap-3">
-          <button 
+          <button
             onClick={() => navigate(-1)}
             className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-stone-100 active:scale-95 transition-transform"
           >
@@ -229,7 +256,6 @@ export function QuickGuide() {
       <div className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
           {showChat ? (
-            /* AI Chat Section */
             <motion.div
               key="chat"
               initial={{ opacity: 0, x: 20 }}
@@ -249,7 +275,8 @@ export function QuickGuide() {
 
               {/* Chat Messages */}
               <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-                {/* Voice Listening Indicator */}
+
+                {/* Listening indicator */}
                 {isListening && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -261,44 +288,50 @@ export function QuickGuide() {
                       animate={{ scale: [1, 1.2, 1] }}
                       transition={{ repeat: Infinity, duration: 1 }}
                     />
-                    <span className="text-sm text-red-900">Listening for your question...</span>
+                    <span className="text-sm text-red-900">Listening… tap the mic again to stop</span>
                   </motion.div>
                 )}
 
-                {chatMessages.length === 0 ? (
+                {/* Thinking indicator */}
+                {isLoadingResponse && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex justify-start"
+                  >
+                    <div className="bg-white border border-stone-200 rounded-2xl px-4 py-3 flex gap-1 items-center">
+                      {[0, 1, 2].map((i) => (
+                        <motion.div
+                          key={i}
+                          className="w-2 h-2 bg-stone-400 rounded-full"
+                          animate={{ y: [0, -4, 0] }}
+                          transition={{ repeat: Infinity, duration: 0.6, delay: i * 0.15 }}
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+
+                {chatMessages.length === 0 && !isListening && !isLoadingResponse ? (
                   <div className="flex flex-col items-center justify-center h-full text-center px-4">
                     <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center mb-4">
                       <MessageCircle className="w-8 h-8 text-stone-400" />
                     </div>
                     <p className="text-stone-600 mb-4">Start a conversation with the AI assistant</p>
                     <div className="space-y-2 w-full">
-                      <button
-                        onClick={() => {
-                          setInputMessage("Tell me about the Visconti era");
-                          setTimeout(() => handleSendMessage(), 100);
-                        }}
-                        className="w-full py-2 px-4 bg-white border border-stone-200 rounded-xl text-sm text-left hover:border-stone-300 transition-colors"
-                      >
-                        Tell me about the Visconti era
-                      </button>
-                      <button
-                        onClick={() => {
-                          setInputMessage("How many spires does the Duomo have?");
-                          setTimeout(() => handleSendMessage(), 100);
-                        }}
-                        className="w-full py-2 px-4 bg-white border border-stone-200 rounded-xl text-sm text-left hover:border-stone-300 transition-colors"
-                      >
-                        How many spires does the Duomo have?
-                      </button>
-                      <button
-                        onClick={() => {
-                          setInputMessage("Tell me about the architecture");
-                          setTimeout(() => handleSendMessage(), 100);
-                        }}
-                        className="w-full py-2 px-4 bg-white border border-stone-200 rounded-xl text-sm text-left hover:border-stone-300 transition-colors"
-                      >
-                        Tell me about the architecture
-                      </button>
+                      {[
+                        "Tell me about the Visconti era",
+                        "How many spires does the Duomo have?",
+                        "Tell me about the architecture",
+                      ].map((q) => (
+                        <button
+                          key={q}
+                          onClick={() => handleSendMessageText(q)}
+                          className="w-full py-2 px-4 bg-white border border-stone-200 rounded-xl text-sm text-left hover:border-stone-300 transition-colors"
+                        >
+                          {q}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 ) : (
@@ -327,11 +360,14 @@ export function QuickGuide() {
               {/* Chat Input */}
               <div className="sticky bottom-0 bg-white border-t border-stone-200 px-6 py-4">
                 <div className="flex gap-2">
+                  {/* FIX: tap-to-toggle mic, not hold-to-talk */}
                   <button
-                    onClick={handleVoiceInput}
-                    disabled={isListening}
+                    onClick={handleVoiceToggle}
+                    disabled={isLoadingResponse}
                     className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors flex-shrink-0 ${
-                      isListening ? "bg-red-500 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                      isListening
+                        ? "bg-red-500 text-white animate-pulse"
+                        : "bg-stone-100 text-stone-600 hover:bg-stone-200"
                     }`}
                   >
                     <Mic className="w-5 h-5" />
@@ -340,13 +376,13 @@ export function QuickGuide() {
                     type="text"
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                    onKeyDown={(e) => e.key === "Enter" && !isLoadingResponse && handleSendMessage()}
                     placeholder="Ask a question..."
                     className="flex-1 px-4 py-3 border border-stone-200 rounded-2xl text-sm focus:outline-none focus:border-stone-400"
                   />
                   <button
                     onClick={handleSendMessage}
-                    disabled={!inputMessage.trim()}
+                    disabled={!inputMessage.trim() || isLoadingResponse}
                     className="w-12 h-12 bg-stone-800 text-white rounded-2xl flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-transform flex-shrink-0"
                   >
                     <Send className="w-5 h-5" />
@@ -355,7 +391,7 @@ export function QuickGuide() {
               </div>
             </motion.div>
           ) : (
-            /* Time Exploration Section */
+            /* Time Exploration Section — unchanged */
             <motion.div
               key="timeline"
               initial={{ opacity: 0, x: -20 }}
@@ -364,7 +400,6 @@ export function QuickGuide() {
               transition={{ duration: 0.3 }}
               className="px-6 py-6 space-y-4"
             >
-              {/* Time Exploration Header */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -382,7 +417,6 @@ export function QuickGuide() {
                 </p>
               </motion.div>
 
-              {/* Timeline Selector */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -393,7 +427,6 @@ export function QuickGuide() {
                   {(["foundations", "visconti", "sforza", "habsburg"] as TimePeriod[]).map((era) => {
                     const data = timelineData[era];
                     const isSelected = selectedEra === era;
-                    
                     return (
                       <button
                         key={era}
@@ -414,7 +447,6 @@ export function QuickGuide() {
                 </div>
               </motion.div>
 
-              {/* Selected Era Content */}
               <AnimatePresence mode="wait">
                 <motion.div
                   key={selectedEra}
@@ -425,21 +457,13 @@ export function QuickGuide() {
                   className={`rounded-2xl border-2 ${timelineData[selectedEra].borderColor} ${timelineData[selectedEra].bgColor} p-6`}
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-2xl">
-                      🏛️
-                    </div>
+                    <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-2xl">🏛️</div>
                     <div>
-                      <h3 className={`text-lg ${timelineData[selectedEra].color}`}>
-                        {timelineData[selectedEra].title}
-                      </h3>
+                      <h3 className={`text-lg ${timelineData[selectedEra].color}`}>{timelineData[selectedEra].title}</h3>
                       <p className="text-xs text-stone-500">{timelineData[selectedEra].years}</p>
                     </div>
                   </div>
-
-                  <p className="text-sm text-stone-700 leading-relaxed mb-4">
-                    {timelineData[selectedEra].content}
-                  </p>
-
+                  <p className="text-sm text-stone-700 leading-relaxed mb-4">{timelineData[selectedEra].content}</p>
                   <div>
                     <p className="text-xs text-stone-500 mb-2">Key Highlights:</p>
                     <div className="space-y-2">
@@ -454,7 +478,6 @@ export function QuickGuide() {
                 </motion.div>
               </AnimatePresence>
 
-              {/* Smart Suggestions */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -466,18 +489,11 @@ export function QuickGuide() {
                     <Sparkles className="w-5 h-5 text-emerald-600" />
                     <h3 className="text-base">Smart Suggestions</h3>
                   </div>
-                  <button
-                    onClick={() => setShowSuggestions(!showSuggestions)}
-                    className="text-xs text-stone-500 hover:text-stone-700"
-                  >
+                  <button onClick={() => setShowSuggestions(!showSuggestions)} className="text-xs text-stone-500 hover:text-stone-700">
                     {showSuggestions ? "Hide" : "Show all"}
                   </button>
                 </div>
-
-                <p className="text-sm text-stone-600 mb-4">
-                  Based on your reading, you might want to explore these topics:
-                </p>
-
+                <p className="text-sm text-stone-600 mb-4">Based on your reading, you might want to explore these topics:</p>
                 <div className="grid grid-cols-2 gap-3">
                   {topicSuggestions.map((topic, index) => {
                     const Icon = topic.icon;
@@ -490,14 +506,12 @@ export function QuickGuide() {
                         onClick={() => handleTopicClick(topic.id)}
                         className={`${topic.bgColor} rounded-xl p-4 text-left hover:shadow-md transition-all active:scale-95`}
                       >
-                        <div className={`w-10 h-10 rounded-full bg-white flex items-center justify-center mb-3`}>
+                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center mb-3">
                           <Icon className={`w-5 h-5 ${topic.color}`} />
                         </div>
                         <p className={`text-sm mb-1 ${topic.color}`}>{topic.title}</p>
                         {showSuggestions && (
-                          <p className="text-xs text-stone-600 leading-relaxed">
-                            {topic.description}
-                          </p>
+                          <p className="text-xs text-stone-600 leading-relaxed">{topic.description}</p>
                         )}
                       </motion.button>
                     );
@@ -505,14 +519,13 @@ export function QuickGuide() {
                 </div>
               </motion.div>
 
-              {/* Voice Guide Button */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, duration: 0.4 }}
                 className="pt-2"
               >
-                <button 
+                <button
                   onClick={handleVoiceGuide}
                   className="w-full py-4 bg-white border border-stone-200 text-stone-800 rounded-2xl flex items-center justify-center gap-3 active:scale-[0.98] transition-transform"
                 >
@@ -521,7 +534,6 @@ export function QuickGuide() {
                 </button>
               </motion.div>
 
-              {/* Chat Hint */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
