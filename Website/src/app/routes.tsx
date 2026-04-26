@@ -6,6 +6,7 @@ import { ARArtifactDetail } from "./components/ARArtifactDetail";
 import { TreasureHunt } from "./components/TreasureHunt";
 import { QuizFeedback } from "./components/QuizFeedback";
 import { Summary } from "./components/Summary";
+import { PanoramaScene } from "../features/ar/xr/PanoramaScene";
 
 export const router = createBrowserRouter([
   {
@@ -19,6 +20,10 @@ export const router = createBrowserRouter([
   {
     path: "/ar-overview",
     Component: AROverview,
+  },
+  {
+    path: "/ar-xr",
+    Component: PanoramaScene,
   },
   {
     path: "/ar-artifact/:landmarkId",
