@@ -1,15 +1,5 @@
 // AROverview — the AR map of Piazza Duomo. Owner: P3.
-//
-// Visual contract with ARArtifactDetail (DESIGN_SYSTEM):
-//   - Same era-tinted background + grain texture
-//   - Same top bar shape: [left circular icon] · [era badge] · [right circular icon]
-//   - Same era scrubber above the bottom action bar
-//   - Same bottom action bar shape: [round button] · [voice pill] · [round button]
-//   - Same typography tokens (SANS / SERIF / MONO / FG / SUBTLE)
-// All shared atoms come from ./ar/shared so a tweak there hits both screens
-// at once. Don't fork the look here.
-
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { HelpCircle, X } from "lucide-react";
 
@@ -30,6 +20,8 @@ import {
   VoicePill,
   haptic,
 } from "./ar/shared";
+import { pickVoiceHint } from "./ar/voiceHints";
+import { landmarkVT, startViewTransition } from "./ar/viewTransition";
 
 // Layout coordinates for the AR map. Tied to landmark id.
 const LANDMARK_POS: Record<LandmarkId, { x: number; y: number }> = {
@@ -47,25 +39,33 @@ const LANDMARK_GLYPH: Record<LandmarkId, string> = {
 export function AROverview() {
   const navigate = useNavigate();
   const [eraId, setEraId] = useState<EraId>("present");
-  const [selectedLandmark, setSelectedLandmark] = useState<LandmarkId | null>(null);
+  // The currently "focused" landmark — the implicit zoom-in target for
+  // pinch-out. Default to the centerpiece; later this will be driven by AR
+  // proximity. User taps update it.
+  const [focusedLandmark, setFocusedLandmark] = useState<LandmarkId>("duomo");
   const [showHelp, setShowHelp] = useState(false);
   const [shakeFact, setShakeFact] = useState<string | null>(null);
+  const [pinchHint, setPinchHint] = useState<string | null>(null);
+  const voiceHint = useMemo(() => pickVoiceHint(), []);
 
   const era = getEra(eraId)!;
   const landmarks = useMemo(() => listLandmarks(), []);
 
-  // Reset transient selection when era changes — different period, different vibe.
-  useEffect(() => {
-    setSelectedLandmark(null);
-  }, [eraId]);
+  const navigateToLandmark = (id: LandmarkId) => {
+    startViewTransition(() => {
+      navigate(`/ar-artifact/${id}?period=${eraId}`);
+    });
+  };
 
   const handleLandmarkClick = (id: LandmarkId) => {
     haptic(18);
-    setSelectedLandmark(id);
-    window.setTimeout(() => {
-      navigate(`/ar-artifact/${id}?period=${eraId}`);
-    }, 280);
+    setFocusedLandmark(id);
+    // Brief pause so the focus highlight is visible before the transition
+    // takes over. The View Transition itself handles the zoom.
+    window.setTimeout(() => navigateToLandmark(id), 120);
   };
+
+  const mapRef = useRef<HTMLDivElement | null>(null);
 
   const handleVoiceCommand = (transcript: string) => {
     const cmd = transcript.toLowerCase();
@@ -83,7 +83,11 @@ export function AROverview() {
 
     if (nextLandmark) {
       // Use the era we just parsed so navigation is consistent within one utterance.
-      navigate(`/ar-artifact/${nextLandmark}?period=${nextEra ?? eraId}`);
+      const targetEra = nextEra ?? eraId;
+      setFocusedLandmark(nextLandmark);
+      startViewTransition(() => {
+        navigate(`/ar-artifact/${nextLandmark}?period=${targetEra}`);
+      });
     }
   };
 
@@ -140,13 +144,14 @@ export function AROverview() {
         padding: "0 16px",
         display: "flex", flexDirection: "column",
       }}>
-        <div style={{
+        <div ref={mapRef} style={{
           flex: 1, position: "relative",
           borderRadius: 16, overflow: "hidden",
           border: `1px solid ${era.accent}33`,
           boxShadow: `0 12px 32px rgba(0,0,0,0.4), 0 0 0 1px ${era.accent}11 inset`,
           background: era.tintPanel,
           transition: "border-color 0.4s, box-shadow 0.4s",
+          touchAction: "none",
         }}>
           {/* AR grid — themed with era accent */}
           <div style={{ position: "absolute", inset: 0, opacity: 0.12, pointerEvents: "none" }}>
@@ -181,19 +186,20 @@ export function AROverview() {
           {/* Landmarks */}
           {landmarks.map((l) => {
             const pos = LANDMARK_POS[l.id];
-            const active = selectedLandmark === l.id;
+            const focused = focusedLandmark === l.id;
             return (
               <button
                 key={l.id}
                 onClick={() => handleLandmarkClick(l.id)}
+                data-vt-name={landmarkVT(l.id)}
                 style={{
                   position: "absolute",
                   left: `${pos.x}%`, top: `${pos.y}%`,
-                  transform: `translate(-50%, -50%) scale(${active ? 1.08 : 1})`,
+                  transform: `translate(-50%, -50%) scale(${focused ? 1.08 : 1})`,
                   width: 84, height: 84, borderRadius: "50%",
-                  background: active ? `${era.accent}33` : "rgba(255,255,255,0.06)",
-                  border: `1.5px solid ${active ? era.accent : era.accent + "88"}`,
-                  boxShadow: active
+                  background: focused ? `${era.accent}33` : "rgba(255,255,255,0.06)",
+                  border: `1.5px solid ${focused ? era.accent : era.accent + "88"}`,
+                  boxShadow: focused
                     ? `0 8px 28px ${era.accent}66, 0 0 0 6px ${era.accent}22`
                     : `0 4px 16px rgba(0,0,0,0.3), 0 0 0 4px ${era.accent}11`,
                   color: FG, cursor: "pointer",
@@ -204,7 +210,7 @@ export function AROverview() {
                 <span style={{ fontSize: 26, lineHeight: 1, marginBottom: 2 }}>{LANDMARK_GLYPH[l.id]}</span>
                 <span style={{
                   fontSize: 10, fontFamily: MONO, letterSpacing: "0.08em",
-                  color: active ? era.accent : FG,
+                  color: focused ? era.accent : FG,
                   textTransform: "uppercase", fontWeight: 600,
                 }}>
                   {l.id}
@@ -250,7 +256,8 @@ export function AROverview() {
             <button onClick={() => setShowHelp(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: SUBTLE, lineHeight: 1 }}>×</button>
           </div>
           {[
-            { icon: "👆", t: "Tap a landmark", d: "Opens the detailed view for that place in the current era." },
+            { icon: "👆", t: "Tap a landmark", d: "Highlights it and opens the detailed view." },
+            { icon: "🤏", t: "Pinch out", d: "On the highlighted landmark, pinch outward to zoom into the detailed view." },
             { icon: "📅", t: "Drag the timeline", d: "Each era recolors the whole scene. Try jumping straight to medieval." },
             { icon: "🎤", t: "Voice", d: 'Say "Show me the Duomo in medieval times" — the system jumps you there.' },
             { icon: "🔀", t: "Shake", d: "Surface a random fact about one of the landmarks." },
@@ -263,6 +270,22 @@ export function AROverview() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pinch-hint toast — shown when user pinches without a focused landmark */}
+      {pinchHint && (
+        <div style={{
+          position: "absolute", left: 16, right: 16, top: 64, zIndex: 26,
+          background: "rgba(0,0,0,0.7)", color: FG,
+          padding: "10px 14px", borderRadius: 12,
+          display: "flex", alignItems: "center", gap: 10,
+          border: `1px solid ${era.accent}55`,
+          backdropFilter: "blur(8px)",
+          animation: "toastIn 0.3s cubic-bezier(0.4,0.1,0.2,1)",
+        }}>
+          <span style={{ fontSize: 16 }}>🤏</span>
+          <div style={{ fontSize: 12, fontFamily: SANS }}>{pinchHint}</div>
         </div>
       )}
 
@@ -286,7 +309,7 @@ export function AROverview() {
       )}
 
       {/* Bottom action bar — same shape as detail view: [round] · [voice pill] · [round] */}
-      <div style={{ padding: "12px 14px 14px", flexShrink: 0, display: "flex", gap: 8, alignItems: "center", position: "relative", zIndex: 2 }}>
+      <div style={{ padding: "12px 16px 14px", flexShrink: 0, display: "flex", gap: 8, alignItems: "center", position: "relative", zIndex: 2, width: "100%", boxSizing: "border-box" }}>
         <button
           onClick={() => setShowHelp((h) => !h)}
           title="Help"
@@ -310,7 +333,7 @@ export function AROverview() {
             <>
               Try{" "}
               <span style={{ color: era.accent, fontWeight: 600 }}>
-                "show me the Duomo medieval"
+                "{voiceHint}"
               </span>
             </>
           }

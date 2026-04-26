@@ -1,10 +1,3 @@
-// Shared AR primitives used by both AROverview and ARArtifactDetail.
-// Owner: P3.
-//
-// The intent is "organic equality": both views render the same atoms with
-// the same props, so a tweak to (say) the era scrubber instantly applies
-// to both screens. Don't fork these — extend the props instead.
-
 import { useEffect, useRef, useState } from "react";
 import { Mic, Play } from "lucide-react";
 import {
@@ -242,7 +235,7 @@ export function VoicePill({ era, onCommand, hint }: VoicePillProps) {
 
   return (
     <div style={{
-      flex: 1, height: 46,
+      flex: 1, minWidth: 0, height: 46,
       background: listening ? `${era.accent}18` : "rgba(255,255,255,0.05)",
       border: `1px solid ${listening ? era.accent : "rgba(255,255,255,0.1)"}`,
       borderRadius: 23, padding: "0 14px 0 5px",
@@ -257,16 +250,17 @@ export function VoicePill({ era, onCommand, hint }: VoicePillProps) {
       />
       <div style={{ flex: 1, minWidth: 0 }}>
         {listening ? (
-          <div style={{ fontSize: 13, fontFamily: SERIF, fontStyle: "italic", color: era.accent }}>
+          <div key="listening" style={{ fontSize: 13, fontFamily: SERIF, fontStyle: "italic", color: era.accent, animation: "vpFade 0.35s ease-out" }}>
             listening…
           </div>
         ) : (
-          <div style={{ fontSize: 11, color: SUBTLE, fontFamily: MONO, letterSpacing: "0.04em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <div key="hint" style={{ fontSize: 11, color: SUBTLE, fontFamily: MONO, letterSpacing: "0.04em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", animation: "vpFade 0.35s ease-out" }}>
             {isSupported ? hint : "voice not supported"}
           </div>
         )}
       </div>
       <VoiceWave active={listening} color={era.accent} />
+      <style>{`@keyframes vpFade { from { opacity: 0; } to { opacity: 1; } }`}</style>
     </div>
   );
 }
