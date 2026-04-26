@@ -1,262 +1,337 @@
-import { useState } from "react";
+// AROverview — the AR map of Piazza Duomo. Owner: P3.
+//
+// Visual contract with ARArtifactDetail (DESIGN_SYSTEM):
+//   - Same era-tinted background + grain texture
+//   - Same top bar shape: [left circular icon] · [era badge] · [right circular icon]
+//   - Same era scrubber above the bottom action bar
+//   - Same bottom action bar shape: [round button] · [voice pill] · [round button]
+//   - Same typography tokens (SANS / SERIF / MONO / FG / SUBTLE)
+// All shared atoms come from ./ar/shared so a tweak there hits both screens
+// at once. Don't fork the look here.
+
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { motion, AnimatePresence } from "motion/react";
-import { X, Mic, HelpCircle, Clock } from "lucide-react";
-import { VoiceCommand } from "./VoiceCommand";
-import { TimePeriodSelector } from "./TimePeriodSelector";
+import { HelpCircle, X } from "lucide-react";
 
-type TimePeriod = "medieval" | "postwar" | "present";
-type Landmark = "duomo" | "galleria" | "palazzo";
+import {
+  getEra,
+  listLandmarks,
+  type EraId,
+  type LandmarkId,
+} from "@/content/landmarks";
+import {
+  EraBadge,
+  EraScrub,
+  FG,
+  MONO,
+  SANS,
+  SERIF,
+  SUBTLE,
+  VoicePill,
+  haptic,
+} from "./ar/shared";
 
-interface LandmarkPosition {
-  id: Landmark;
-  name: string;
-  x: number;
-  y: number;
-}
+// Layout coordinates for the AR map. Tied to landmark id.
+const LANDMARK_POS: Record<LandmarkId, { x: number; y: number }> = {
+  duomo:    { x: 50, y: 45 },
+  galleria: { x: 30, y: 55 },
+  palazzo:  { x: 70, y: 50 },
+};
 
-const landmarks: LandmarkPosition[] = [
-  { id: "duomo", name: "Duomo", x: 50, y: 45 },
-  { id: "galleria", name: "Galleria", x: 30, y: 55 },
-  { id: "palazzo", name: "Palazzo", x: 70, y: 50 },
-];
+const LANDMARK_GLYPH: Record<LandmarkId, string> = {
+  duomo: "⛪",
+  galleria: "🏛️",
+  palazzo: "🏰",
+};
 
 export function AROverview() {
   const navigate = useNavigate();
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>("present");
-  const [selectedLandmark, setSelectedLandmark] = useState<Landmark | null>(null);
-  const [showVoiceCommand, setShowVoiceCommand] = useState(false);
-  const [showTimePeriodSelector, setShowTimePeriodSelector] = useState(false);
+  const [eraId, setEraId] = useState<EraId>("present");
+  const [selectedLandmark, setSelectedLandmark] = useState<LandmarkId | null>(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [shakeFact, setShakeFact] = useState<string | null>(null);
 
-  const handleLandmarkClick = (landmarkId: Landmark) => {
-    setSelectedLandmark(landmarkId);
-    // Navigate after a brief moment
-    setTimeout(() => {
-      navigate(`/ar-artifact/${landmarkId}?period=${timePeriod}`);
-    }, 300);
+  const era = getEra(eraId)!;
+  const landmarks = useMemo(() => listLandmarks(), []);
+
+  // Reset transient selection when era changes — different period, different vibe.
+  useEffect(() => {
+    setSelectedLandmark(null);
+  }, [eraId]);
+
+  const handleLandmarkClick = (id: LandmarkId) => {
+    haptic(18);
+    setSelectedLandmark(id);
+    window.setTimeout(() => {
+      navigate(`/ar-artifact/${id}?period=${eraId}`);
+    }, 280);
   };
 
-  const handleTimePeriodChange = (period: TimePeriod) => {
-    setTimePeriod(period);
-    setShowTimePeriodSelector(false);
-  };
+  const handleVoiceCommand = (transcript: string) => {
+    const cmd = transcript.toLowerCase();
 
-  const handleVoiceCommand = (command: string) => {
-    // Parse voice commands like "Take me to Duomo in medieval times"
-    const landmarkMatch = command.toLowerCase().match(/duomo|galleria|palazzo/);
-    const periodMatch = command.toLowerCase().match(/medieval|war|present/);
-    
-    if (landmarkMatch) {
-      const landmark = landmarkMatch[0] as Landmark;
-      if (periodMatch) {
-        const period = periodMatch[0].includes("war") ? "postwar" : periodMatch[0] as TimePeriod;
-        setTimePeriod(period);
-      }
-      handleLandmarkClick(landmark);
+    let nextEra: EraId | null = null;
+    if (/medieval/.test(cmd)) nextEra = "medieval";
+    else if (/post[-\s]?war|war/.test(cmd)) nextEra = "postwar";
+    else if (/present|now|today/.test(cmd)) nextEra = "present";
+    if (nextEra) setEraId(nextEra);
+
+    let nextLandmark: LandmarkId | null = null;
+    if (/galleria/.test(cmd)) nextLandmark = "galleria";
+    else if (/palazzo/.test(cmd)) nextLandmark = "palazzo";
+    else if (/duomo/.test(cmd)) nextLandmark = "duomo";
+
+    if (nextLandmark) {
+      // Use the era we just parsed so navigation is consistent within one utterance.
+      navigate(`/ar-artifact/${nextLandmark}?period=${nextEra ?? eraId}`);
     }
-    
-    setShowVoiceCommand(false);
+  };
+
+  const triggerShake = () => {
+    // Random landmark, random fact — the overview's "shake" is broader in scope.
+    const target = landmarks[Math.floor(Math.random() * landmarks.length)];
+    if (!target || target.didYouKnow.length === 0) return;
+    const f = target.didYouKnow[Math.floor(Math.random() * target.didYouKnow.length)];
+    haptic([10, 40, 10]);
+    setShakeFact(`${target.name}: ${f.a}`);
+    window.setTimeout(() => setShakeFact(null), 4500);
   };
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
-      {/* Simulated AR Camera View */}
-      <div className="absolute inset-0 bg-gradient-to-b from-stone-800 to-stone-900">
-        {/* Grid overlay for AR effect */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="grid grid-cols-8 grid-rows-12 h-full w-full">
-            {Array.from({ length: 96 }).map((_, i) => (
-              <div key={i} className="border border-blue-400" />
-            ))}
-          </div>
+    <div style={{
+      width: "100%", height: "100dvh", color: FG,
+      fontFamily: SANS, position: "relative", overflow: "hidden",
+      background: era.tintBg, transition: "background 0.5s cubic-bezier(0.4,0.1,0.2,1)",
+      display: "flex", flexDirection: "column",
+    }}>
+      {/* faint grain — same as detail view */}
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none", backgroundImage: "repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 3px)" }} />
+
+      {/* Top bar: AR Active dot · era badge · close */}
+      <div style={{ padding: "16px 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, position: "relative", zIndex: 2 }}>
+        <div style={{
+          display: "inline-flex", alignItems: "center", gap: 8,
+          padding: "5px 11px 5px 9px", borderRadius: 999,
+          background: "rgba(255,255,255,0.06)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          color: FG, fontSize: 10, fontFamily: MONO, letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 600,
+        }}>
+          <span style={{
+            width: 7, height: 7, borderRadius: "50%",
+            background: "#E4574B",
+            animation: "arDot 1.6s ease-in-out infinite",
+          }} />
+          AR active
+          <style>{`@keyframes arDot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }`}</style>
         </div>
+        <EraBadge era={era} />
+        <button
+          onClick={() => navigate("/")}
+          aria-label="Exit AR — return home"
+          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: FG, width: 34, height: 34, borderRadius: "50%", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+        >
+          <X size={16} />
+        </button>
+      </div>
 
-        {/* AR Surface with Landmarks */}
-        <div className="absolute inset-0 flex items-center justify-center px-6">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.6 }}
-            className="relative w-full max-w-sm aspect-square"
-          >
-            {/* AR Platform */}
-            <div className="absolute inset-0 rounded-3xl border-2 border-blue-400/30 bg-blue-400/5 backdrop-blur-sm">
-              {/* Period Indicator */}
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-4 py-1 bg-blue-500 text-white text-xs rounded-full">
-                {timePeriod === "medieval" && "Medieval Period"}
-                {timePeriod === "postwar" && "After War (1950s)"}
-                {timePeriod === "present" && "Present Day"}
-              </div>
-
-              {/* Landmarks */}
-              {landmarks.map((landmark) => (
-                <motion.button
-                  key={landmark.id}
-                  onClick={() => handleLandmarkClick(landmark.id)}
-                  className={`absolute w-20 h-20 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 flex flex-col items-center justify-center transition-all ${
-                    selectedLandmark === landmark.id
-                      ? "bg-blue-500 border-blue-300 scale-110"
-                      : "bg-white/10 border-blue-400 hover:bg-white/20"
-                  }`}
-                  style={{
-                    left: `${landmark.x}%`,
-                    top: `${landmark.y}%`,
-                  }}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <span className="text-2xl mb-1">
-                    {landmark.id === "duomo" && "⛪"}
-                    {landmark.id === "galleria" && "🏛️"}
-                    {landmark.id === "palazzo" && "🏰"}
-                  </span>
-                  <span className="text-white text-xs">{landmark.name}</span>
-                </motion.button>
+      {/* Map area — fills available space between header and scrubber */}
+      <div style={{
+        flex: 1, minHeight: 0, position: "relative", zIndex: 1,
+        padding: "0 16px",
+        display: "flex", flexDirection: "column",
+      }}>
+        <div style={{
+          flex: 1, position: "relative",
+          borderRadius: 16, overflow: "hidden",
+          border: `1px solid ${era.accent}33`,
+          boxShadow: `0 12px 32px rgba(0,0,0,0.4), 0 0 0 1px ${era.accent}11 inset`,
+          background: era.tintPanel,
+          transition: "border-color 0.4s, box-shadow 0.4s",
+        }}>
+          {/* AR grid — themed with era accent */}
+          <div style={{ position: "absolute", inset: 0, opacity: 0.12, pointerEvents: "none" }}>
+            <div style={{
+              width: "100%", height: "100%",
+              display: "grid",
+              gridTemplateColumns: "repeat(8, 1fr)",
+              gridTemplateRows: "repeat(12, 1fr)",
+            }}>
+              {Array.from({ length: 96 }).map((_, i) => (
+                <div key={i} style={{ border: `1px solid ${era.accent}` }} />
               ))}
-
-              {/* Connecting lines */}
-              <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                <line
-                  x1="30%"
-                  y1="55%"
-                  x2="50%"
-                  y2="45%"
-                  stroke="#60a5fa"
-                  strokeWidth="1"
-                  strokeDasharray="4 4"
-                  opacity="0.3"
-                />
-                <line
-                  x1="50%"
-                  y1="45%"
-                  x2="70%"
-                  y2="50%"
-                  stroke="#60a5fa"
-                  strokeWidth="1"
-                  strokeDasharray="4 4"
-                  opacity="0.3"
-                />
-              </svg>
             </div>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Top Status Bar */}
-      <div className="absolute top-0 left-0 right-0 px-6 py-6 bg-gradient-to-b from-black/80 to-transparent">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm px-4 py-2 rounded-full">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            <span className="text-white text-sm">AR Active</span>
           </div>
-          <button
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white active:scale-95 transition-transform"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        {/* Active Landmark & Time Period */}
-        <div className="mt-3 bg-black/50 backdrop-blur-sm px-4 py-2 rounded-2xl inline-block">
-          <p className="text-white text-xs opacity-75">Viewing</p>
-          <p className="text-white text-sm">
-            {selectedLandmark ? `${selectedLandmark} - ${timePeriod}` : "Piazza Duomo"}
-          </p>
-        </div>
-      </div>
+          {/* AR-style corner brackets */}
+          {(["tl", "tr", "bl", "br"] as const).map((pos) => (
+            <span key={pos} style={{
+              position: "absolute", width: 14, height: 14, zIndex: 3,
+              borderColor: era.accent, borderStyle: "solid", borderWidth: 0,
+              ...(pos.includes("t") ? { top: 10, borderTopWidth: 1.5 } : { bottom: 10, borderBottomWidth: 1.5 }),
+              ...(pos.includes("l") ? { left: 10, borderLeftWidth: 1.5 } : { right: 10, borderRightWidth: 1.5 }),
+            }} />
+          ))}
 
-      {/* Bottom Controls */}
-      <div className="absolute bottom-0 left-0 right-0 px-6 py-6 bg-gradient-to-t from-black/80 to-transparent">
-        <div className="flex items-center justify-around">
-          <button
-            onClick={() => setShowTimePeriodSelector(true)}
-            className="flex flex-col items-center gap-1 text-white active:scale-95 transition-transform"
-          >
-            <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-              <Clock className="w-6 h-6" />
-            </div>
-            <span className="text-xs">Period</span>
-          </button>
+          {/* Connecting lines */}
+          <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
+            <line x1="30%" y1="55%" x2="50%" y2="45%" stroke={era.accent} strokeWidth="1" strokeDasharray="4 4" opacity="0.35" />
+            <line x1="50%" y1="45%" x2="70%" y2="50%" stroke={era.accent} strokeWidth="1" strokeDasharray="4 4" opacity="0.35" />
+          </svg>
 
-          <button
-            onClick={() => setShowVoiceCommand(true)}
-            className="flex flex-col items-center gap-1 text-white active:scale-95 transition-transform"
-          >
-            <div className="w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/50">
-              <Mic className="w-6 h-6" />
-            </div>
-            <span className="text-xs">Voice</span>
-          </button>
-
-          <button
-            onClick={() => setShowHelp(true)}
-            className="flex flex-col items-center gap-1 text-white active:scale-95 transition-transform"
-          >
-            <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-              <HelpCircle className="w-6 h-6" />
-            </div>
-            <span className="text-xs">Help</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Voice Command Modal */}
-      <AnimatePresence>
-        {showVoiceCommand && (
-          <VoiceCommand
-            onClose={() => setShowVoiceCommand(false)}
-            onCommand={handleVoiceCommand}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Time Period Selector Modal */}
-      <AnimatePresence>
-        {showTimePeriodSelector && (
-          <TimePeriodSelector
-            currentPeriod={timePeriod}
-            onSelect={handleTimePeriodChange}
-            onClose={() => setShowTimePeriodSelector(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Help Modal */}
-      <AnimatePresence>
-        {showHelp && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center px-6 z-50"
-            onClick={() => setShowHelp(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-3xl p-6 max-w-sm w-full"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2 className="text-xl mb-4">AR Experience Help</h2>
-              <div className="space-y-3 text-sm text-stone-700">
-                <p>• Tap on any landmark to explore it in detail</p>
-                <p>• Use the Period button to change time periods</p>
-                <p>• Try voice commands like "Show me Duomo in medieval times"</p>
-                <p>• Move your device slowly for best AR tracking</p>
-              </div>
+          {/* Landmarks */}
+          {landmarks.map((l) => {
+            const pos = LANDMARK_POS[l.id];
+            const active = selectedLandmark === l.id;
+            return (
               <button
-                onClick={() => setShowHelp(false)}
-                className="w-full mt-6 py-3 bg-stone-800 text-white rounded-2xl active:scale-95 transition-transform"
+                key={l.id}
+                onClick={() => handleLandmarkClick(l.id)}
+                style={{
+                  position: "absolute",
+                  left: `${pos.x}%`, top: `${pos.y}%`,
+                  transform: `translate(-50%, -50%) scale(${active ? 1.08 : 1})`,
+                  width: 84, height: 84, borderRadius: "50%",
+                  background: active ? `${era.accent}33` : "rgba(255,255,255,0.06)",
+                  border: `1.5px solid ${active ? era.accent : era.accent + "88"}`,
+                  boxShadow: active
+                    ? `0 8px 28px ${era.accent}66, 0 0 0 6px ${era.accent}22`
+                    : `0 4px 16px rgba(0,0,0,0.3), 0 0 0 4px ${era.accent}11`,
+                  color: FG, cursor: "pointer",
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  transition: "transform 0.25s, box-shadow 0.25s, background 0.25s, border-color 0.25s",
+                }}
               >
-                Got it
+                <span style={{ fontSize: 26, lineHeight: 1, marginBottom: 2 }}>{LANDMARK_GLYPH[l.id]}</span>
+                <span style={{
+                  fontSize: 10, fontFamily: MONO, letterSpacing: "0.08em",
+                  color: active ? era.accent : FG,
+                  textTransform: "uppercase", fontWeight: 600,
+                }}>
+                  {l.id}
+                </span>
               </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            );
+          })}
+
+          {/* "You are here" caption */}
+          <div style={{
+            position: "absolute", left: 14, bottom: 14, zIndex: 3,
+            fontFamily: MONO, fontSize: 9, letterSpacing: "0.12em",
+            color: SUBTLE, textTransform: "uppercase",
+          }}>
+            Piazza del Duomo · {era.label}
+          </div>
+        </div>
+
+        {/* Era scrubber — same component as detail view */}
+        <div style={{
+          marginTop: 12, padding: "12px 14px",
+          background: era.tintPanel, borderRadius: 12,
+          border: "1px solid rgba(255,255,255,0.06)",
+          flexShrink: 0,
+        }}>
+          <EraScrub value={eraId} onChange={setEraId} accent={era.accent} />
+        </div>
+      </div>
+
+      {/* Help panel — same pattern as detail view's hints */}
+      {showHelp && (
+        <div style={{
+          position: "absolute", top: 60, left: 16, right: 16, zIndex: 30,
+          background: era.tintPanel, color: FG,
+          borderRadius: 14, padding: 14,
+          boxShadow: "0 12px 32px rgba(0,0,0,0.4)",
+          border: `1px solid ${era.accent}44`,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <div style={{ fontSize: 10, fontFamily: MONO, letterSpacing: "0.14em", color: era.accent, textTransform: "uppercase", fontWeight: 600 }}>
+              Ways to explore
+            </div>
+            <button onClick={() => setShowHelp(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: SUBTLE, lineHeight: 1 }}>×</button>
+          </div>
+          {[
+            { icon: "👆", t: "Tap a landmark", d: "Opens the detailed view for that place in the current era." },
+            { icon: "📅", t: "Drag the timeline", d: "Each era recolors the whole scene. Try jumping straight to medieval." },
+            { icon: "🎤", t: "Voice", d: 'Say "Show me the Duomo in medieval times" — the system jumps you there.' },
+            { icon: "🔀", t: "Shake", d: "Surface a random fact about one of the landmarks." },
+          ].map((r) => (
+            <div key={r.t} style={{ display: "flex", gap: 10, padding: "8px 0", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ fontSize: 16, lineHeight: 1, flexShrink: 0, width: 22, textAlign: "center" }}>{r.icon}</div>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 2 }}>{r.t}</div>
+                <div style={{ fontSize: 11, color: SUBTLE, lineHeight: 1.4 }}>{r.d}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Shake toast */}
+      {shakeFact && (
+        <div style={{
+          position: "absolute", left: 16, right: 16, top: 64, zIndex: 25,
+          background: era.accent, color: "#0a0a0a",
+          padding: "10px 14px", borderRadius: 12,
+          display: "flex", alignItems: "center", gap: 10,
+          boxShadow: `0 10px 28px ${era.accent}66`,
+          animation: "toastIn 0.35s cubic-bezier(0.4,0.1,0.2,1)",
+        }}>
+          <span style={{ fontSize: 18 }}>📳</span>
+          <div>
+            <div style={{ fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.7 }}>Shake · did you know</div>
+            <div style={{ fontSize: 12, fontWeight: 600, marginTop: 2, fontFamily: SERIF, fontStyle: "italic" }}>{shakeFact}</div>
+          </div>
+          <style>{`@keyframes toastIn { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }`}</style>
+        </div>
+      )}
+
+      {/* Bottom action bar — same shape as detail view: [round] · [voice pill] · [round] */}
+      <div style={{ padding: "12px 14px 14px", flexShrink: 0, display: "flex", gap: 8, alignItems: "center", position: "relative", zIndex: 2 }}>
+        <button
+          onClick={() => setShowHelp((h) => !h)}
+          title="Help"
+          aria-label="How to explore"
+          style={{
+            width: 46, height: 46, borderRadius: 23,
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            color: FG, cursor: "pointer",
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <HelpCircle size={18} />
+        </button>
+
+        <VoicePill
+          era={era}
+          onCommand={handleVoiceCommand}
+          hint={
+            <>
+              Try{" "}
+              <span style={{ color: era.accent, fontWeight: 600 }}>
+                "show me the Duomo medieval"
+              </span>
+            </>
+          }
+        />
+
+        <button
+          onClick={triggerShake}
+          title="Shake for fact"
+          aria-label="Shake for a random fact"
+          style={{
+            width: 46, height: 46, borderRadius: 23,
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            color: era.accent, cursor: "pointer",
+            display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0,
+          }}
+        >
+          📳
+        </button>
+      </div>
+
     </div>
   );
 }
