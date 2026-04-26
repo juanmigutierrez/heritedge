@@ -1,29 +1,6 @@
 // ARArtifactDetail — Direction 3 v3 layout (dark, era-tinted focus card).
 // Owner: P3 (detailed view).
-//
-// DATA_FLOW
-// ─────────
-// All content this view renders flows through @/content/landmarks:
-//   - listLandmarks()                → bottom-sheet landmark switcher
-//   - getLandmark(id)                → name, kicker, image per era,
-//                                       didYouKnow, quiz
-//   - getEra(eraId)                  → presentational era metadata
-//   - getEraContent(id, era)         → headline + blurb (KB fallback)
-//   - getHotspots(id, era)           → numbered markers on the image
-//
-// Visited state is owned by useVisitedHotspots (localStorage-backed). To
-// migrate to a backend, swap that hook's internals; the view's API doesn't
-// change.
-//
-// MULTIMODAL
-// ──────────
-//   - Touch:   drag the era scrubber, tap markers, tap landmarks sheet
-//   - Voice:   STT → matches landmark / era / hotspot label, opens sheet,
-//              speaks body via TTS
-//   - Hearing: "Listen" on every hotspot reads the body via TTS
-//   - Haptic:  short vibration on hotspot tap
-
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { ChevronLeft, HelpCircle } from "lucide-react";
 
@@ -55,6 +32,8 @@ import {
   haptic,
   matchHotspot,
 } from "./ar/shared";
+import { pickVoiceHint } from "./ar/voiceHints";
+import { landmarkVT, startViewTransition } from "./ar/viewTransition";
 
 type TabId = "story" | "history" | "meaning";
 const TABS: TabId[] = ["story", "history", "meaning"];
@@ -175,6 +154,12 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
   const [shakeFact, setShakeFact] = useState<{ a: string } | null>(null);
   const [showCompare, setShowCompare] = useState(false);
   const [openHotspotId, setOpenHotspotId] = useState<string | null>(null);
+  const voiceHint = useMemo(() => pickVoiceHint(), []);
+  const imageCardRef = useRef<HTMLDivElement | null>(null);
+
+  const goBackToOverview = () => {
+    startViewTransition(() => navigate("/ar-overview"));
+  };
 
   const openHotspot: Hotspot | null = useMemo(
     () => hotspots.find((h) => h.id === openHotspotId) ?? null,
@@ -213,7 +198,10 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
     else if (/present|now|today/.test(cmd)) nextEra = "present";
 
     if (nextLandmark && nextLandmark !== landmarkId) {
-      navigate(`/ar-artifact/${nextLandmark}?period=${nextEra ?? eraId}`);
+      const targetEra = nextEra ?? eraId;
+      startViewTransition(() => {
+        navigate(`/ar-artifact/${nextLandmark}?period=${targetEra}`);
+      });
     } else if (nextEra && nextEra !== eraId) {
       setEra(nextEra);
     } else {
@@ -272,7 +260,7 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
       {/* Top bar */}
       <div style={{ padding: "16px 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, position: "relative", zIndex: 2 }}>
         <button
-          onClick={() => navigate("/ar-overview")}
+          onClick={goBackToOverview}
           aria-label="Back to overview"
           style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: FG, width: 34, height: 34, borderRadius: "50%", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
         >
@@ -305,6 +293,7 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
           </div>
           {[
             { icon: "📍", t: "Tap markers", d: "Each numbered marker reveals a fact about a feature in the image. Tapped ones turn into checkmarks." },
+            { icon: "🤏", t: "Pinch in", d: "Pinch the image inward to zoom back out to the overview." },
             { icon: "🎤", t: "Voice", d: 'Say a feature ("the spires", "Madonnina") or a place ("Galleria postwar") to jump there.' },
             { icon: "🔀", t: "Shake", d: 'Shake the device for a random "did you know" fact.' },
           ].map((r) => (
@@ -324,12 +313,13 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
 
       {/* Image card */}
       <div style={{ padding: "0 16px", flexShrink: 0, position: "relative", zIndex: 1 }}>
-        <div style={{
+        <div ref={imageCardRef} data-vt-name={landmarkVT(landmark.id)} style={{
           position: "relative", borderRadius: 16, overflow: "hidden",
           border: `1px solid ${era.accent}33`,
           boxShadow: `0 12px 32px rgba(0,0,0,0.4), 0 0 0 1px ${era.accent}11 inset`,
           transition: "border-color 0.4s, box-shadow 0.4s",
           height: 220,
+          touchAction: "none",
         }}>
           <ImageWithFallback
             src={landmark.images[eraId]}
@@ -579,8 +569,10 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
                   <button
                     key={l.id}
                     onClick={() => {
-                      navigate(`/ar-artifact/${l.id}?period=${eraId}`);
                       setLandmarksOpen(false);
+                      startViewTransition(() => {
+                        navigate(`/ar-artifact/${l.id}?period=${eraId}`);
+                      });
                     }}
                     style={{
                       padding: 8, border: "none", cursor: "pointer", textAlign: "left",
@@ -618,7 +610,7 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
       )}
 
       {/* Bottom row: landmarks · voice · shake */}
-      <div style={{ padding: "12px 14px 14px", flexShrink: 0, display: "flex", gap: 8, alignItems: "center", position: "relative", zIndex: 2 }}>
+      <div style={{ padding: "12px 16px 14px", flexShrink: 0, display: "flex", gap: 8, alignItems: "center", position: "relative", zIndex: 2, width: "100%", boxSizing: "border-box" }}>
         <button
           onClick={() => setLandmarksOpen(true)}
           title="Landmarks"
@@ -653,7 +645,7 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
             <>
               Try{" "}
               <span style={{ color: era.accent, fontWeight: 600 }}>
-                "tell me about the {hotspots[0]?.label?.toLowerCase() ?? "spires"}"
+                "{voiceHint}"
               </span>
             </>
           }
