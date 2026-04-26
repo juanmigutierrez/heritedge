@@ -21,8 +21,16 @@ The facts in `src/content/knowledge-base.json` are sourced from the following:
 | `palazzo-reale-postwar-restoration` | Palazzo Reale Milano — https://www.palazzorealemilano.it/storia |
 | `palazzo-reale-museum-today` | Palazzo Reale Milano — https://www.palazzorealemilano.it |
 
-## Hunt and marker images (P5 — to be completed)
+## Hunt and marker images (P5)
 
-Images in `public/markers/` and `public/hunt/` are to be sourced by P5.
-If sourced from Unsplash or Wikimedia Commons, individual attributions will be added here per file.
+All images sourced from Wikimedia Commons under Creative Commons licenses.
+
+| File | Subject | Author | License | Source |
+|---|---|---|---|---|
+| `public/markers/duomo-facade.jpg` | Milan Cathedral facade (evening) | Marco Nürnberger | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Milan_Cathedral_(Duomo_di_Milano)_evening.jpg) |
+| `public/markers/galleria-crossing.jpg` | Galleria Vittorio Emanuele II — central interior | Alessandro Franceschi | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Galleria_V.Emanuele_II,_interno_centrale.jpg) |
+| `public/markers/palazzo-reale-facade.jpg` | Palazzo Reale Milano — facade | Geobia | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:8889MilanoPalazzoReale.JPG) |
+| `public/hunt/madonnina-spire.jpg` | La Madonnina — Duomo di Milano spire | F.Higer | [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Madonnina-Duomo_Milano.JPG) |
+| `public/hunt/galleria-bull-mosaic.jpg` | Bull mosaic — Galleria Vittorio Emanuele II floor | Robre62 | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:GalleriaToro.jpg) |
+| `public/hunt/palazzo-reale-entrance.jpg` | Sala delle Cariatidi — Palazzo Reale Milano | Manuel Pagani (Mm4mm) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Palazzo_Reale_-Sala_delle_Cariatidi.jpg) |
 
