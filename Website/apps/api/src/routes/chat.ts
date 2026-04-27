@@ -1,36 +1,54 @@
-// /chat route. Owner: P1.
-// Week 1: return a plausible-shaped stub. Week 2: wire real RAG (Chroma + LLM).
+import { Router, Request, Response } from 'express';
+import OpenAI from 'openai';
 
-import { Router } from "express";
-import { z } from "zod";
+const router = Router();
 
-const ChatRequestSchema = z.object({
-  message: z.string().min(1),
-  period: z.enum(["medieval", "postwar", "present"]).optional(),
-  landmark: z.enum(["duomo", "galleria", "palazzo"]).optional(),
-  history: z
-    .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string() }))
-    .optional(),
+// Initialize the client pointing to the GitHub Models endpoint
+// It will automatically use the GITHUB_TOKEN from your .env file
+const ai = new OpenAI({
+  baseURL: 'https://models.inference.ai.azure.com',
+  apiKey: process.env.GITHUB_TOKEN 
 });
 
-export const chatRouter = Router();
+router.post('/', async (req: Request, res: Response) => {
+  try {
+    const { message } = req.body;
 
-chatRouter.post("/", async (req, res) => {
-  const parsed = ChatRequestSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
 
-  const { message } = parsed.data;
+    // Calling Llama 3.3 70B via GitHub Models
+    const response = await ai.chat.completions.create({
+      model: 'Llama-3.3-70B-Instruct',
+      messages: [
+        { 
+          role: 'system', 
+          content: 'You are a helpful historical assistant for the HeritEdge AR application, guiding users through Piazza Duomo in Milan.' 
+        },
+        { 
+          role: 'user', 
+          content: message 
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 1024,
+    });
 
-  // TODO (P1, Week 2):
-  //   1. embed(message)
-  //   2. chroma.query(collection="duomo", topK=5)
-  //   3. build prompt with retrieved chunks + period + landmark context
-  //   4. call Anthropic/OpenAI
-  //   5. return { answer, sources, confidence }
+    const reply = response.choices[0].message.content;
 
-  res.json({
-    answer: `Stub response to: "${message}". P1 replaces this with real RAG in Week 2.`,
-    sources: [],
-    confidence: 0.5,
-  });
+    return res.status(200).json({ 
+      success: true, 
+      reply 
+    });
+
+  } catch (error) {
+    console.error('Error generating chat response:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Failed to communicate with Llama 3 API' 
+    });
+  }
 });
+
+export { router as chatRouter };
