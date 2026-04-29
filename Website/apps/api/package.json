@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "ingest-kb": "tsx src/scripts/ingest-kb.ts",
     "build": "tsc",
     "start": "node dist/index.js"
   },
