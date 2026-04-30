@@ -1,7 +1,7 @@
 // ARArtifactDetail — Direction 3 v3 layout (dark, era-tinted focus card).
 // Owner: P3 (detailed view).
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { ChevronLeft, HelpCircle } from "lucide-react";
 
 import { ImageWithFallback } from "./figma/ImageWithFallback";
