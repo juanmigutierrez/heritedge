@@ -4,12 +4,41 @@
   "facts": [
     {
       "id": "duomo-1386-foundation",
-      "landmark": "duomo",
+      "entityId": "duomo",
       "period": "medieval",
       "title": "Foundation of the Duomo",
       "body": "Construction of the Duomo di Milano began in 1386 under Archbishop Antonio da Saluzzo and continued for nearly six centuries, a span that marked Milan's transition from medieval commune to modern metropolis.",
-      "tags": ["history", "foundation", "gothic"],
-      "source": { "label": "Veneranda Fabbrica del Duomo (official)", "url": "https://www.duomomilano.it" }
+      "tags": ["history", "foundation", "gothic", "architecture"],
+      "relatedEntityIds": ["piazza-del-duomo"],
+      "relationType": "central_landmark",
+      "source": {
+        "label": "Veneranda Fabbrica del Duomo (official)",
+        "url": "https://www.duomomilano.it"
+      }
+    },
+    {
+      "id": "duomo-candoglia-marble",
+      "entityId": "duomo",
+      "period": "medieval",
+      "title": "Candoglia Marble",
+      "body": "Quarried at Lake Maggiore and floated in by canal, the distinctive pink-veined Candoglia marble gives the cathedral its characteristic blush tone. This choice reflects Milan's connection to northern Alpine trade routes.",
+      "tags": ["marble", "material", "quarry", "medieval"],
+      "source": {
+        "label": "Veneranda Fabbrica del Duomo (official)",
+        "url": "https://www.duomomilano.it"
+      }
+    },
+    {
+      "id": "duomo-spires-medieval",
+      "entityId": "duomo",
+      "period": "medieval",
+      "title": "Gothic Spires",
+      "body": "The first gothic spires rise during the medieval period. The full set of 135 spires won't be completed until the 19th century, each topped with a statue or finial.",
+      "tags": ["architecture", "gothic", "spires", "medieval"],
+      "source": {
+        "label": "Veneranda Fabbrica del Duomo (official)",
+        "url": "https://www.duomomilano.it"
+      }
     },
     {
       "id": "duomo-pink-marble-medieval",
@@ -31,7 +60,7 @@
     },
     {
       "id": "piazza-wwii-bombing",
-      "landmark": "duomo",
+      "entityId": "piazza-del-duomo",
       "period": "postwar",
       "title": "Piazza Duomo during WWII",
       "body": "In August 1943 Allied bombing severely damaged buildings around Piazza Duomo. The cathedral itself was struck but its main structure survived, and the square became a symbolic stage for Milan's 1945 liberation.",
