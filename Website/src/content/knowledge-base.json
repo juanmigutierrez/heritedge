@@ -1,74 +1,6 @@
 {
-  "version": "0.1.0",
-  "updatedAt": "2026-04-29",
-  "domain": {
-    "id": "piazza-del-duomo",
-    "name": "Piazza del Duomo, Milan",
-    "description": "The heart of Milan, anchored by the Duomo cathedral, surrounded by the Galleria Vittorio Emanuele II shopping arcade to the north and the Palazzo Reale to the south. A UNESCO site and one of Italy's most iconic public squares.",
-    "source": {
-      "label": "Comune di Milano",
-      "url": "https://www.comune.milano.it"
-    }
-  },
-  "entities": [
-    {
-      "id": "duomo",
-      "name": "Duomo di Milano",
-      "type": "cathedral",
-      "shortDescription": "The Duomo di Milano (Cathedral of Santa Maria Nascente) is one of the world's largest Gothic cathedrals and the spiritual heart of Milan. Construction began in 1386 and continued for nearly six centuries.",
-      "location": "Piazza del Duomo, Milan",
-      "aliases": [
-        "Milan Cathedral",
-        "Cattedrale di Santa Maria Nascente",
-        "Cathedral of Milan"
-      ],
-      "source": {
-        "label": "Veneranda Fabbrica del Duomo (official)",
-        "url": "https://www.duomomilano.it"
-      }
-    },
-    {
-      "id": "galleria",
-      "name": "Galleria Vittorio Emanuele II",
-      "type": "arcade",
-      "shortDescription": "One of the world's oldest shopping arcades, designed by Giuseppe Mengoni. Completed in 1877, it forms the northern edge of Piazza del Duomo and is a masterpiece of 19th-century iron and glass architecture.",
-      "location": "North of Piazza del Duomo, Milan",
-      "aliases": [
-        "Galleria",
-        "Galleria di Milano"
-      ],
-      "source": {
-        "label": "Comune di Milano",
-        "url": "https://www.comune.milano.it"
-      }
-    },
-    {
-      "id": "palazzo-reale",
-      "name": "Palazzo Reale",
-      "type": "palace",
-      "shortDescription": "The Royal Palace of Milan, built in the 18th century as the seat of the Habsburg rulers. Today it serves as a cultural venue and museum, located on the south side of Piazza del Duomo.",
-      "location": "South side of Piazza del Duomo, Milan",
-      "aliases": [
-        "Royal Palace",
-        "Palazzo dei Duchi di Milano"
-      ],
-      "source": {
-        "label": "Comune di Milano",
-        "url": "https://www.comune.milano.it"
-      }
-    },
-    {
-      "id": "piazza-del-duomo",
-      "name": "Piazza del Duomo",
-      "type": "square",
-      "shortDescription": "The principal plaza of Milan, formed by the Duomo at its center, the Galleria to the north, and the Palazzo Reale to the south. One of the most recognizable squares in Europe.",
-      "location": "Central Milan",
-      "source": {
-        "label": "Comune di Milano",
-        "url": "https://www.comune.milano.it"
-      }
-    }
-  ],
+  "version": "0.2.0",
+  "updatedAt": "2026-04-25",
   "facts": [
     {
       "id": "duomo-1386-foundation",
@@ -109,44 +41,22 @@
       }
     },
     {
-      "id": "galleria-mengoni-1865",
-      "entityId": "galleria",
-      "period": "present",
-      "title": "Galleria Vittorio Emanuele II Completion",
-      "body": "Designed by Giuseppe Mengoni and completed between 1865 and 1877, the Galleria is one of the world's oldest shopping arcades. It forms the northern edge of Piazza del Duomo and showcases cutting-edge iron and glass construction techniques.",
-      "tags": ["architecture", "iron", "glass", "shopping", "arcade"],
-      "relatedEntityIds": ["duomo", "piazza-del-duomo"],
-      "relationType": "adjacent_to",
-      "source": {
-        "label": "Comune di Milano",
-        "url": "https://www.comune.milano.it"
-      }
+      "id": "duomo-pink-marble-medieval",
+      "landmark": "duomo",
+      "period": "medieval",
+      "title": "The Pink Marble of Candoglia",
+      "body": "The Duomo is built almost entirely from Candoglia marble, a pink-grey stone quarried 100 km north of Milan. Gian Galeazzo Visconti granted the Cathedral's building authority (Fabbrica) perpetual rights to the quarry in 1387 — a grant still in force today.",
+      "tags": ["materials", "marble", "Visconti", "gothic"],
+      "source": { "label": "Veneranda Fabbrica del Duomo (official)", "url": "https://www.duomomilano.it/en/articles/candoglia-marble" }
     },
     {
-      "id": "galleria-glass-dome",
-      "entityId": "galleria",
+      "id": "duomo-madonnina-1774",
+      "landmark": "duomo",
       "period": "present",
-      "title": "Glass and Iron Dome",
-      "body": "The iconic glass and iron dome of the Galleria is an engineering marvel of the late 19th century. The octagonal space where four barrel vaults meet creates a breathtaking central gathering point and shopping experience.",
-      "tags": ["architecture", "engineering", "glass", "iron", "dome"],
-      "source": {
-        "label": "Comune di Milano",
-        "url": "https://www.comune.milano.it"
-      }
-    },
-    {
-      "id": "palazzo-reale-1770",
-      "entityId": "palazzo-reale",
-      "period": "present",
-      "title": "Palazzo Reale Construction",
-      "body": "Built in the 18th century as the seat of the Habsburg rulers of Milan, Palazzo Reale represents neoclassical architecture. It served as the official royal residence during the Austrian administration of Lombardy.",
-      "tags": ["architecture", "neoclassical", "Habsburg", "palace"],
-      "relatedEntityIds": ["piazza-del-duomo"],
-      "relationType": "part_of_complex",
-      "source": {
-        "label": "Comune di Milano",
-        "url": "https://www.comune.milano.it"
-      }
+      "title": "La Madonnina",
+      "body": "The 4.16-metre gilded copper statue of the Virgin Mary, known as La Madonnina, was placed atop the tallest spire in 1774 at a height of 108.5 metres. A Milanese custom held that no building should rise above her until 1958, when the first skyscrapers of the Porta Nuova area broke that informal rule.",
+      "tags": ["statue", "symbol", "Madonnina", "spire"],
+      "source": { "label": "Comune di Milano — Duomo heritage page", "url": "https://www.comune.milano.it" }
     },
     {
       "id": "piazza-wwii-bombing",
@@ -154,78 +64,62 @@
       "period": "postwar",
       "title": "Piazza Duomo during WWII",
       "body": "In August 1943 Allied bombing severely damaged buildings around Piazza Duomo. The cathedral itself was struck but its main structure survived, and the square became a symbolic stage for Milan's 1945 liberation.",
-      "tags": ["war", "1940s", "reconstruction", "history"],
-      "relatedEntityIds": ["duomo", "galleria", "palazzo-reale"],
-      "relationType": "affected_all_landmarks",
-      "source": {
-        "label": "Archivio Storico Civico di Milano"
-      }
+      "tags": ["war", "1940s", "reconstruction"],
+      "source": { "label": "Archivio Storico Civico di Milano" }
     },
     {
-      "id": "duomo-statues-count",
-      "entityId": "duomo",
-      "period": "all",
-      "title": "Over 3,400 Statues",
-      "body": "The Duomo is adorned with more than 3,400 statues, more than any other building in the world. They populate the spires, parapets, and niches, each telling a story from religious or civic history.",
-      "tags": ["statues", "architecture", "decoration", "records"],
-      "source": {
-        "label": "Veneranda Fabbrica del Duomo (official)",
-        "url": "https://www.duomomilano.it"
-      }
-    },
-    {
-      "id": "duomo-madonnina",
-      "entityId": "duomo",
+      "id": "galleria-mengoni-1865",
+      "landmark": "galleria",
       "period": "present",
-      "title": "The Madonnina Statue",
-      "body": "Placed at the cathedral spire's tip in 1774, the gilded Madonnina (little Madonna) is Milan's spiritual high point. A long-standing tradition holds that no building in Milan should rise above the Madonnina.",
-      "tags": ["statue", "symbol", "Milan", "spiritual"],
-      "source": {
-        "label": "Veneranda Fabbrica del Duomo (official)",
-        "url": "https://www.duomomilano.it"
-      }
+      "title": "Galleria Vittorio Emanuele II",
+      "body": "Designed by Giuseppe Mengoni and completed between 1865 and 1877, the Galleria is one of the world's oldest shopping arcades and forms the northern edge of Piazza del Duomo.",
+      "tags": ["architecture", "iron", "glass", "Mengoni"],
+      "source": { "label": "Comune di Milano", "url": "https://www.comune.milano.it" }
     },
     {
-      "id": "visconti-era-overview",
-      "entityId": "duomo",
-      "period": "visconti",
-      "title": "Visconti Era",
-      "body": "Under Duke Gian Galeazzo Visconti, the Duomo became a symbol of Milanese power and prestige. The Visconti family funded construction generously, aiming to create the largest and most magnificent Gothic cathedral in Italy. Over 3,400 statues were commissioned during this period, and international architects were invited to work on the project, making it a center of European Gothic innovation.",
-      "tags": ["history", "Visconti", "dynasty", "Milan", "power", "medieval"],
-      "relatedEntityIds": ["piazza-del-duomo"],
-      "relationType": "historical_context",
-      "source": {
-        "label": "Archivio Storico Civico di Milano",
-        "url": "https://www.comune.milano.it"
-      }
+      "id": "galleria-mosaic-floor",
+      "landmark": "galleria",
+      "period": "present",
+      "title": "The Mosaic Floor and the Bull of Turin",
+      "body": "The Galleria's floor is decorated with the coats of arms of Milan, Turin, Florence, and Rome in mosaic. The bull emblem of Turin, located at the centre of the octagonal crossing, is worn down from the tradition of spinning on one's heel for good luck — a custom that continues to this day.",
+      "tags": ["mosaic", "floor", "tradition", "Turin"],
+      "source": { "label": "Galleria Vittorio Emanuele II — Comune di Milano", "url": "https://www.comune.milano.it/aree-tematiche/cultura-e-tempo-libero/galleria-vittorio-emanuele-ii" }
     },
     {
-      "id": "sforza-rule-overview",
-      "entityId": "duomo",
-      "period": "sforza",
-      "title": "Sforza Rule",
-      "body": "During the Sforza dynasty (1450-1535), Milan flourished as a major Renaissance power. The Sforza family continued generous patronage of the Duomo's construction, while also establishing Milan as a center of art and culture. The Sforza period saw the continuation of the cathedral's elaborate decorative programs and the commissioning of numerous statues and architectural elements.",
-      "tags": ["history", "Sforza", "dynasty", "Renaissance", "Milan", "patronage"],
-      "relatedEntityIds": ["piazza-del-duomo"],
-      "relationType": "historical_context",
-      "source": {
-        "label": "Archivio Storico Civico di Milano",
-        "url": "https://www.comune.milano.it"
-      }
+      "id": "galleria-wwii-damage",
+      "landmark": "galleria",
+      "period": "postwar",
+      "title": "The Galleria After the 1943 Bombing",
+      "body": "The 1943 Allied air raids destroyed the Galleria's glass vaulting and badly damaged its interior. Reconstruction of the iron-and-glass roof took until 1948, and the arcade reopened as a symbol of Milanese resilience and the city's economic recovery.",
+      "tags": ["war", "reconstruction", "1940s", "glass roof"],
+      "source": { "label": "Archivio Storico Civico di Milano" }
     },
     {
-      "id": "habsburg-period-overview",
-      "entityId": "palazzo-reale",
-      "period": "habsburg",
-      "title": "Habsburg Period",
-      "body": "The Habsburg period (1535-1700s) saw Austrian rule over Milan and Lombardy. During this era, the Palazzo Reale was built in the 18th century as the seat of the Habsburg rulers and served as the official royal residence. This period brought neoclassical architecture and administrative changes to Piazza del Duomo, reshaping the political and cultural landscape of Milan.",
-      "tags": ["history", "Habsburg", "Austria", "Milan", "neoclassical", "politics"],
-      "relatedEntityIds": ["piazza-del-duomo"],
-      "relationType": "historical_context",
-      "source": {
-        "label": "Archivio Storico Civico di Milano",
-        "url": "https://www.comune.milano.it"
-      }
+      "id": "palazzo-reale-history",
+      "landmark": "palazzo",
+      "period": "medieval",
+      "title": "Palazzo Reale — From Commune to Court",
+      "body": "Originally the seat of Milan's medieval communal government in the 12th century, Palazzo Reale was transformed into the ducal court of the Visconti and later the Sforza. It hosted Leonardo da Vinci during his time in Milan (1482–1499), when he was employed by Ludovico Sforza.",
+      "tags": ["history", "Visconti", "Sforza", "Leonardo", "court"],
+      "source": { "label": "Palazzo Reale Milano (official)", "url": "https://www.palazzorealemilano.it" }
+    },
+    {
+      "id": "palazzo-reale-postwar-restoration",
+      "landmark": "palazzo",
+      "period": "postwar",
+      "title": "Palazzo Reale After WWII",
+      "body": "Like much of central Milan, Palazzo Reale was heavily damaged in the 1943 bombing raids. Its restoration took decades; the Neoclassical interiors were painstakingly rebuilt and the building reopened progressively from the 1950s onward as a cultural and exhibition venue rather than a seat of power.",
+      "tags": ["war", "restoration", "1940s", "neoclassical"],
+      "source": { "label": "Palazzo Reale Milano — Storia", "url": "https://www.palazzorealemilano.it/storia" }
+    },
+    {
+      "id": "palazzo-reale-museum-today",
+      "landmark": "palazzo",
+      "period": "present",
+      "title": "Palazzo Reale Today — Italy's Exhibition Hub",
+      "body": "Today Palazzo Reale is one of Italy's most visited temporary exhibition venues, attracting over 600,000 visitors a year. It hosts major international art shows and houses a permanent collection of Milanese decorative arts. Entry to the piazza-facing courtyard is free.",
+      "tags": ["museum", "exhibitions", "present", "culture"],
+      "source": { "label": "Palazzo Reale Milano (official)", "url": "https://www.palazzorealemilano.it" }
     }
   ]
 }
