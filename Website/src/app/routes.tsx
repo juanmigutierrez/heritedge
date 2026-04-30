@@ -1,6 +1,7 @@
 import { createBrowserRouter } from "react-router";
 import { Home } from "./components/Home";
 import { QuickGuide } from "./components/QuickGuide";
+import { AIChat } from "./components/AIChat";
 import { AROverview } from "./components/AROverview";
 import { ARArtifactDetail } from "./components/ARArtifactDetail";
 import { TreasureHunt } from "./components/TreasureHunt";
@@ -15,6 +16,10 @@ export const router = createBrowserRouter([
   {
     path: "/quick-guide",
     Component: QuickGuide,
+  },
+  {
+    path: "/ai-chat",
+    Component: AIChat,
   },
   {
     path: "/ar-overview",

@@ -2,11 +2,18 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { ArrowLeft, Send, Mic, MicOff } from "lucide-react";
+import { sendMessage } from "@/services/chatService";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
+}
+
+interface ChatSource {
+  id: string;
+  title: string;
+  url?: string;
 }
 
 const suggestedPrompts = [
@@ -17,14 +24,6 @@ const suggestedPrompts = [
   "What happened during the war?",
 ];
 
-const aiResponses: Record<string, string> = {
-  "tell me about the duomo history": "The Duomo di Milano's history began in 1386 when construction started under Archbishop Antonio da Saluzzo. It took nearly 600 years to complete! The cathedral showcases stunning Gothic architecture with over 3,400 statues and 135 spires, making it one of the largest churches in Italy.",
-  "what changed over time?": "Over the centuries, the Duomo has witnessed significant changes. The original medieval structure was enhanced during the Renaissance. Post-WWII restoration repaired war damage. Modern conservation efforts maintain its pink-white Candoglia marble facade while preserving historical integrity.",
-  "why is this place important?": "Piazza Duomo represents Milan's heart and soul. It's a symbol of resilience, having survived wars and witnessed coronations, protests, and celebrations. The square embodies Milanese identity, connecting past with present through architecture, culture, and community.",
-  "when was the galleria built?": "The Galleria Vittorio Emanuele II was built between 1865 and 1877. Designed by architect Giuseppe Mengoni, it's one of the world's oldest shopping malls, featuring a stunning glass-vaulted arcade connecting Piazza Duomo to Teatro alla Scala.",
-  "what happened during the war?": "During WWII, Milan suffered heavy bombing. The Duomo was damaged but remarkably survived. The square was a focal point during liberation in 1945. Post-war reconstruction focused on preserving heritage while modernizing the city.",
-};
-
 export function AIChat() {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([
@@ -34,8 +33,10 @@ export function AIChat() {
       content: "Hello! I'm here to answer your questions about Piazza Duomo's heritage. I can share information about the Duomo, Galleria, Palazzo Reale, and their historical significance. What would you like to know?",
     },
   ]);
+  const [sources, setSources] = useState<ChatSource[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isListening, setIsListening] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,38 +46,40 @@ export function AIChat() {
   const handleSend = () => {
     if (!inputValue.trim()) return;
 
+    const userText = inputValue.trim();
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: inputValue,
+      content: userText,
     };
 
     setMessages(prev => [...prev, userMessage]);
-    
-    // Simulate AI response
-    setTimeout(() => {
-      const query = inputValue.toLowerCase();
-      let responseContent = "";
+    setIsLoading(true);
 
-      // Find matching response
-      const matchedKey = Object.keys(aiResponses).find(key => 
-        query.includes(key) || key.includes(query.split(" ").slice(0, 3).join(" "))
-      );
+    sendMessage(userText, "duomo")
+      .then((res) => {
+        const responseContent = res.answer || res.reply || "I could not generate an answer.";
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: responseContent,
+        };
 
-      if (matchedKey) {
-        responseContent = aiResponses[matchedKey];
-      } else {
-        responseContent = "I apologize, but I can only answer questions about the curated heritage sites in Piazza Duomo: the Duomo di Milano, Galleria Vittorio Emanuele II, and Palazzo Reale. Could you ask about one of these landmarks or their historical significance?";
-      }
+        setSources(res.sources ?? []);
+        setMessages(prev => [...prev, aiMessage]);
+      })
+      .catch(() => {
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: "Sorry, I couldn't reach the knowledge base right now. Please try again.",
+        };
 
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: responseContent,
-      };
-
-      setMessages(prev => [...prev, aiMessage]);
-    }, 1000);
+        setMessages(prev => [...prev, aiMessage]);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
 
     setInputValue("");
   };
@@ -137,6 +140,24 @@ export function AIChat() {
             </div>
           </motion.div>
         ))}
+        {sources.length > 0 && (
+          <div className="text-xs text-stone-500 px-1">
+            <p className="mb-1 uppercase tracking-wide">Sources</p>
+            <ul className="space-y-1">
+              {sources.map((source) => (
+                <li key={source.id}>
+                  {source.url ? (
+                    <a className="text-emerald-700 underline" href={source.url} target="_blank" rel="noreferrer">
+                      {source.title}
+                    </a>
+                  ) : (
+                    source.title
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -191,7 +212,7 @@ export function AIChat() {
 
           <button
             onClick={handleSend}
-            disabled={!inputValue.trim()}
+            disabled={!inputValue.trim() || isLoading}
             className="w-12 h-12 rounded-full bg-stone-800 text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-transform"
           >
             <Send className="w-5 h-5" />
