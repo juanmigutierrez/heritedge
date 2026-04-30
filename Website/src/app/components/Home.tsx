@@ -1,107 +1,169 @@
-import { Link } from "react-router";
-import { motion } from "motion/react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { MessageCircle, Compass, Trophy, ChevronRight, Camera } from "lucide-react";
-import heroImage from "figma:asset/e451b2f471ffbfb42d11bb840cae8796323fade8.png";
+import heroImage from "../../assets/heritage-sites.png";
+import duomoImg from "../../assets/duomo.png";
+import galleriaImg from "../../assets/galleria.png";
+import palazzoImg from "../../assets/palazzo.png";
 
 export function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-stone-100 flex flex-col">
-      {/* Hero Section */}
-      <div className="relative h-[45vh] overflow-hidden bg-stone-50">
-        <img
-          src={heroImage}
-          alt="Duomo di Milano"
-          className="w-full h-full object-contain p-8"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-stone-100/90 via-transparent to-transparent" />
-        
-        {/* Title Overlay */}
-        <motion.div 
-          className="absolute bottom-0 left-0 right-0 p-6 text-stone-800"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="text-3xl mb-2">Explore Piazza Duomo</h1>
-          <p className="text-base text-stone-600">
-            Discover Milano's heritage through time
-          </p>
-        </motion.div>
+    <div className="min-h-screen bg-stone-50 flex flex-col">
+
+      <div className="relative h-[60vh] flex items-center justify-center bg-gradient-to-b from-stone-100 to-stone-200 overflow-hidden">
+
+  {/* Background Glow */}
+  <div className="absolute w-[500px] h-[500px] bg-amber-200/30 rounded-full blur-3xl top-10"></div>
+
+  {/* Hero Image */}
+  <img
+    src={heroImage}
+    alt="Piazza Duomo Illustration"
+    className="relative z-10 w-[85%] max-w-md object-contain"
+  />
+
+  {/* Text Overlay */}
+  <div className="absolute bottom-0 w-full p-6 text-center z-20">
+    <h1 className="text-3xl font-semibold text-stone-800 mb-2">
+      Piazza Duomo
+    </h1>
+    <p className="text-sm text-stone-600 mb-4">
+      Explore Milan’s iconic square through history, culture, and immersive experiences
+    </p>
+
+    <Link to="/quick-guide">
+      <button className="bg-stone-900 text-white px-6 py-2 rounded-full text-sm shadow-md active:scale-95 transition">
+        Start Exploring
+      </button>
+    </Link>
+  </div>
+</div>
+
+      {/* INTRO */}
+      <div className="px-6 py-8">
+        <h2 className="text-2xl font-semibold mb-3">
+          Discover the Square
+        </h2>
+        <p className="text-stone-600 text-sm leading-relaxed">
+          Piazza Duomo is home to Milan’s most iconic landmarks — the majestic
+          Duomo Cathedral, the elegant Galleria Vittorio Emanuele II, and the
+          historic Palazzo Reale. Each tells a story across centuries of art,
+          architecture, and culture.
+        </p>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 px-6 py-8 space-y-4">
-        {/* Main CTA Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.5 }}
-        >
-          <Link to="/quick-guide">
-            <div className="bg-white rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform">
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
-                  <Compass className="w-6 h-6 text-amber-700" />
-                </div>
-                <ChevronRight className="w-6 h-6 text-stone-400" />
-              </div>
-              <h2 className="text-xl mb-1">Start Quick Guide</h2>
-              <p className="text-sm text-stone-600">
-                Explore heritage through Medieval, Post-War & Present times with AI assistant
+      <div className="px-6 py-6">
+  <h2 className="text-xl font-semibold mb-4">Iconic Landmarks</h2>
+
+  <div className="grid grid-cols-3 gap-3">
+
+    {/* DUOMO */}
+    <Link to="/duomo">
+      <div className="relative w-full aspect-[3/2] rounded-2xl overflow-hidden shadow-sm active:scale-95 transition">
+
+        <img
+          src={duomoImg}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+        <div className="absolute bottom-0 p-2 text-white">
+          <h3 className="text-[11px] font-semibold leading-tight">
+            Duomo
+          </h3>
+        </div>
+
+      </div>
+    </Link>
+
+    {/* GALLERIA */}
+    <Link to="/galleria">
+      <div className="relative w-full aspect-[3/2] rounded-2xl overflow-hidden shadow-sm active:scale-95 transition">
+
+        <img
+          src={galleriaImg}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+        <div className="absolute bottom-0 p-2 text-white">
+          <h3 className="text-[11px] font-semibold leading-tight">
+            Galleria
+          </h3>
+        </div>
+
+      </div>
+    </Link>
+
+    {/* PALAZZO */}
+    <Link to="/palazzo">
+      <div className="relative w-full aspect-[3/2] rounded-2xl overflow-hidden shadow-sm active:scale-95 transition">
+
+        <img
+          src={palazzoImg}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+        <div className="absolute bottom-0 p-2 text-white">
+          <h3 className="text-[11px] font-semibold leading-tight">
+            Palazzo
+          </h3>
+        </div>
+
+      </div>
+    </Link>
+
+  </div>
+</div>
+
+      {/* EXPERIENCES */}
+      <div className="px-6 py-8 space-y-4">
+
+        <h2 className="text-xl font-semibold">Experiences</h2>
+
+        {/* QUICK GUIDE */}
+        <Link to="/quick-guide">
+          <div className="bg-white rounded-2xl p-5 shadow-sm flex justify-between items-center">
+            <div>
+              <h3 className="font-medium">Quick Guide</h3>
+              <p className="text-sm text-stone-500">
+                AI-powered historical journey
               </p>
             </div>
-          </Link>
-        </motion.div>
+            <ChevronRight />
+          </div>
+        </Link>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
-          <Link to="/ar-overview">
-            <div className="bg-white rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform">
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                  <svg 
-                    className="w-6 h-6 text-blue-700" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                </div>
-                <ChevronRight className="w-6 h-6 text-stone-400" />
-              </div>
-              <h2 className="text-xl mb-1">Enter AR Experience</h2>
-              <p className="text-sm text-stone-600">
-                Explore historical time periods through augmented reality
+        {/* AR */}
+        <Link to="/ar-overview">
+          <div className="bg-white rounded-2xl p-5 shadow-sm flex justify-between items-center">
+            <div>
+              <h3 className="font-medium">AR Experience</h3>
+              <p className="text-sm text-stone-500">
+                See history through your camera
               </p>
             </div>
-          </Link>
-        </motion.div>
+            <ChevronRight />
+          </div>
+        </Link>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.5 }}
-        >
-          <Link to="/treasure-hunt">
-            <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform text-white">
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                  <Camera className="w-6 h-6 text-white" />
-                </div>
-                <ChevronRight className="w-6 h-6 text-white/80" />
-              </div>
-              <h2 className="text-xl mb-1">AR Treasure Hunt</h2>
+        {/* TREASURE */}
+        <Link to="/treasure-hunt">
+          <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-2xl p-5 flex justify-between items-center">
+            <div>
+              <h3 className="font-medium">Treasure Hunt</h3>
               <p className="text-sm text-white/90">
-                Find artifacts, answer questions, and capture photos in an AR scavenger hunt
+                Interactive AR challenges
               </p>
             </div>
-          </Link>
-        </motion.div>
+            <ChevronRight />
+          </div>
+        </Link>
+
       </div>
     </div>
   );
