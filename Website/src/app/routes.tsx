@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter } from "react-router-dom";
 import { Home } from "./components/Home";
 import { QuickGuide } from "./components/QuickGuide";
 import { AROverview } from "./components/AROverview";
@@ -10,30 +10,30 @@ import { Summary } from "./components/Summary";
 export const router = createBrowserRouter([
   {
     path: "/",
-    Component: Home,
+    element: <Home />,
   },
   {
     path: "/quick-guide",
-    Component: QuickGuide,
+    element: <QuickGuide />,
   },
   {
     path: "/ar-overview",
-    Component: AROverview,
+    element: <AROverview />,
   },
   {
     path: "/ar-artifact/:landmarkId",
-    Component: ARArtifactDetail,
+    element: <ARArtifactDetail />,
   },
   {
     path: "/treasure-hunt",
-    Component: TreasureHunt,
+    element: <TreasureHunt />,
   },
   {
     path: "/quiz-feedback",
-    Component: QuizFeedback,
+    element: <QuizFeedback />,
   },
   {
     path: "/summary",
-    Component: Summary,
+    element: <Summary />,
   },
 ]);

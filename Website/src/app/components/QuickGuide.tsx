@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowLeft, MessageCircle, Volume2, Send, Sparkles, Mic, Building2, Calendar, Users, Church } from "lucide-react";
 import { useSpeechRecognition } from "@/features/voice/useSpeechRecognition";

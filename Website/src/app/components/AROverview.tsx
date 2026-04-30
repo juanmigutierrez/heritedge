@@ -1,6 +1,6 @@
 // AROverview — the AR map of Piazza Duomo. Owner: P3.
 import { useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { HelpCircle, X } from "lucide-react";
 
 import {

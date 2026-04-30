@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowLeft, Camera, Check, Info, Sparkles, MapPin, Trophy, X, ZoomIn } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";

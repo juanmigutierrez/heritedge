@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { ArrowLeft, Send, Mic, MicOff } from "lucide-react";
 
