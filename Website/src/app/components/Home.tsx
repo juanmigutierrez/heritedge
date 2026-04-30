@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { motion } from "motion/react";
-import { MessageCircle, Compass, Trophy, ChevronRight, Camera } from "lucide-react";
+import { MessageCircle, Compass, Trophy, ChevronRight, Camera, Bot } from "lucide-react";
 import heroImage from "figma:asset/e451b2f471ffbfb42d11bb840cae8796323fade8.png";
 
 export function Home() {
@@ -31,6 +31,27 @@ export function Home() {
 
       {/* Main Content */}
       <div className="flex-1 px-6 py-8 space-y-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05, duration: 0.5 }}
+        >
+          <Link to="/ai-chat">
+            <div className="bg-white rounded-2xl p-6 shadow-sm active:scale-[0.98] transition-transform">
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center">
+                  <Bot className="w-6 h-6 text-rose-700" />
+                </div>
+                <ChevronRight className="w-6 h-6 text-stone-400" />
+              </div>
+              <h2 className="text-xl mb-1">Open AI Chat</h2>
+              <p className="text-sm text-stone-600">
+                Ask questions about Piazza del Duomo and get guided answers from the knowledge base
+              </p>
+            </div>
+          </Link>
+        </motion.div>
+
         {/* Main CTA Cards */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

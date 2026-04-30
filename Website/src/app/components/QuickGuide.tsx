@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { ArrowLeft, MessageCircle, Volume2, Send, Sparkles, Mic, Building2, Calendar, Users, Church } from "lucide-react";
 import { useSpeechRecognition } from "@/features/voice/useSpeechRecognition";
 import { sendMessage, speak, stopSpeaking } from "@/services/chatService";
+import knowledgeBase from "@/content/knowledge-base.json";
 
 type TimePeriod = "foundations" | "visconti" | "sforza" | "habsburg";
 type SuggestedTopic = "architecture" | "history" | "events" | "statues";
@@ -131,7 +132,7 @@ export function QuickGuide() {
   const [selectedEra, setSelectedEra] = useState<TimePeriod>("visconti");
   const [showChat, setShowChat] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "ai"; text: string }>>([]);
+  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "ai"; text: string; sources?: Array<{ id: string; title: string; url?: string }> }>>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isLoadingResponse, setIsLoadingResponse] = useState(false);
@@ -147,6 +148,25 @@ export function QuickGuide() {
     resetTranscript,
   } = useSpeechRecognition();
 
+  // Resolve a KB fact for the selected era if available
+  const getFactForEra = (era: TimePeriod) => {
+    try {
+      const kb: any = knowledgeBase;
+      const mapping: Record<TimePeriod, string> = {
+        foundations: "duomo-1386-foundation",
+        visconti: "visconti-era-overview",
+        sforza: "sforza-rule-overview",
+        habsburg: "habsburg-period-overview",
+      };
+      const factId = mapping[era];
+      return kb.facts.find((f: any) => f.id === factId) ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Selected era KB fact (if present)
+  const selectedFact = getFactForEra(selectedEra);
   // FIX: watch listeningState instead of the `listening` boolean alias.
   // When state goes DONE → transcript is finalised and ready to send.
   useEffect(() => {
@@ -179,7 +199,7 @@ export function QuickGuide() {
       const res = await sendMessage(trimmed);
       const reply =
         res.answer || res.reply || "I can answer about Duomo, Galleria, and Palazzo Reale.";
-      setChatMessages((prev) => [...prev, { role: "ai", text: reply }]);
+      setChatMessages((prev) => [...prev, { role: "ai", text: reply, sources: res.sources }]);
       speak(reply); // AI speaks the answer aloud
     } catch {
       const fallback =
@@ -341,7 +361,7 @@ export function QuickGuide() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3 }}
-                      className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                      className={`flex flex-col ${message.role === "user" ? "items-end" : "items-start"}`}
                     >
                       <div
                         className={`max-w-[80%] rounded-2xl px-4 py-3 ${
@@ -352,6 +372,24 @@ export function QuickGuide() {
                       >
                         <p className="text-sm leading-relaxed">{message.text}</p>
                       </div>
+                      {message.role === "ai" && message.sources && message.sources.length > 0 && (
+                        <div className="max-w-[80%] mt-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+                          <p className="font-semibold mb-1">📚 Sources:</p>
+                          <ul className="space-y-1">
+                            {message.sources.map((source) => (
+                              <li key={source.id}>
+                                {source.url ? (
+                                  <a className="text-amber-700 underline hover:text-amber-800" href={source.url} target="_blank" rel="noreferrer">
+                                    {source.title}
+                                  </a>
+                                ) : (
+                                  source.title
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </motion.div>
                   ))
                 )}
@@ -463,7 +501,25 @@ export function QuickGuide() {
                       <p className="text-xs text-stone-500">{timelineData[selectedEra].years}</p>
                     </div>
                   </div>
-                  <p className="text-sm text-stone-700 leading-relaxed mb-4">{timelineData[selectedEra].content}</p>
+                  <p className="text-sm text-stone-700 leading-relaxed mb-4">{selectedFact?.body ?? timelineData[selectedEra].content}</p>
+
+                  {selectedFact?.source && (
+                    <div className="mb-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+                      <p className="font-semibold mb-1">📚 Source:</p>
+                      {selectedFact.source.url ? (
+                        <a
+                          href={selectedFact.source.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-amber-700 underline hover:text-amber-800"
+                        >
+                          {selectedFact.source.label}
+                        </a>
+                      ) : (
+                        <span>{selectedFact.source.label}</span>
+                      )}
+                    </div>
+                  )}
                   <div>
                     <p className="text-xs text-stone-500 mb-2">Key Highlights:</p>
                     <div className="space-y-2">

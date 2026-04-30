@@ -1,6 +1,7 @@
 export interface ChatResponse {
   answer: string;
   reply?: string; // alias used by VoiceAssistant and VoiceCommand
+  sources?: Array<{ id: string; title: string; url?: string }>;
 }
 
 export const sendMessage = async (
