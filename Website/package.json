@@ -8,6 +8,10 @@
     "dev": "vite"
   },
   "dependencies": {
+    "@react-three/drei": "^9.122.0",
+    "@react-three/fiber": "^8.17.10",
+    "@react-three/xr": "^6.6.9",
+    "three": "^0.169.0",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
     "@mui/icons-material": "7.3.5",
@@ -66,6 +70,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "4.1.12",
+    "@types/three": "^0.169.0",
     "@types/dom-speech-recognition": "^0.0.9",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "4.7.0",
