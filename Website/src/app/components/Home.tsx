@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { motion } from "framer-motion";
 import { MessageCircle, Compass, Trophy, ChevronRight, Camera } from "lucide-react";
 import heroImage from "../../assets/heritage-sites.png";
