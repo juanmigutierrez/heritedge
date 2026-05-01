@@ -43,30 +43,35 @@ const timelineData: Record<TimePeriod, {
   id: TimePeriod; title: string; years: string;
   color: string; bgColor: string; borderColor: string;
   content: string; highlights: string[];
+  source: { label: string; url?: string };
 }> = {
   foundations: {
     id: "foundations", title: "Foundations", years: "1386–1400",
     color: "text-stone-700", bgColor: "bg-stone-50", borderColor: "border-stone-300",
     content: "The first stone was laid in 1386. Archbishop Antonio da Saluzzo initiated the project, choosing Gothic style to rival Europe's greatest cathedrals.",
     highlights: ["First stone 1386", "Gothic style chosen", "Deep foundation excavations", "Design by Simone da Orsenigo"],
+    source: { label: "Veneranda Fabbrica del Duomo (official)", url: "https://www.duomomilano.it" },
   },
   visconti: {
     id: "visconti", title: "Visconti Era", years: "1386–1450",
     color: "text-purple-700", bgColor: "bg-purple-50", borderColor: "border-purple-300",
     content: "Duke Gian Galeazzo Visconti turned the Duomo into a symbol of Milanese ambition — commissioning 3,400+ statues and inviting Europe's finest architects.",
     highlights: ["Funded by Visconti dynasty", "3,400+ statues commissioned", "International architects invited", "Largest Gothic cathedral in Italy"],
+    source: { label: "Archivio Storico Civico di Milano", url: "https://www.comune.milano.it" },
   },
   sforza: {
     id: "sforza", title: "Sforza Rule", years: "1450–1535",
     color: "text-amber-700", bgColor: "bg-amber-50", borderColor: "border-amber-300",
     content: "Leonardo da Vinci himself contributed designs for the tiburio. Spires rose and Renaissance ideas blended beautifully with Gothic bones.",
     highlights: ["Leonardo da Vinci's involvement", "Tiburio construction begins", "Spires take shape", "Renaissance meets Gothic"],
+    source: { label: "Archivio Storico Civico di Milano", url: "https://www.comune.milano.it" },
   },
   habsburg: {
     id: "habsburg", title: "Habsburg Period", years: "1535–1700s",
     color: "text-blue-700", bgColor: "bg-blue-50", borderColor: "border-blue-300",
     content: "All 135 spires were completed and the Madonnina — Milan's golden guardian — was placed atop the central spire in 1774, watching over the city ever since.",
     highlights: ["135 spires completed", "Imperial coronations held", "Baroque elements added", "Madonnina placed 1774"],
+    source: { label: "Archivio Storico Civico di Milano", url: "https://www.comune.milano.it" },
   },
 };
 
@@ -635,6 +640,22 @@ export function QuickGuide() {
                       <h3 className={`text-base font-semibold ${timelineData[selectedEra].color}`}>{timelineData[selectedEra].title}</h3>
                       <p className="text-xs text-stone-400">{timelineData[selectedEra].years}</p>
                     </div>
+                  </div>
+
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs text-amber-900">
+                    <span className="font-semibold">Source:</span>
+                    {timelineData[selectedEra].source.url ? (
+                      <a
+                        href={timelineData[selectedEra].source.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline decoration-amber-400 underline-offset-2 hover:text-amber-950"
+                      >
+                        {timelineData[selectedEra].source.label}
+                      </a>
+                    ) : (
+                      <span>{timelineData[selectedEra].source.label}</span>
+                    )}
                   </div>
                   
                   {/* 📚 RAG Integration for Timeline Content */}
