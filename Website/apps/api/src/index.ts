@@ -15,6 +15,11 @@ app.use(express.json({ limit: "1mb" }));
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
+app.get("/", (_req, res) => res.json({ 
+  message: "HeritEdge API",
+  endpoints: ["/health", "/chat", "/transcribe"]
+}));
+
 app.use("/chat", chatRouter);         // P1
 app.use("/transcribe", transcribeRouter); // P2
 

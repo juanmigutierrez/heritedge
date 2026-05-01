@@ -22,15 +22,26 @@ export const sendMessage = async (
   return res.json();
 };
 
-// Kept for VoiceAssistant.tsx and VoiceCommand.tsx compatibility
-export const speak = (text: string): void => {
-  if (typeof window !== "undefined" && window.speechSynthesis) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-US";
-    utterance.rate = 0.9;
-    utterance.pitch = 1;
-    window.speechSynthesis.speak(utterance);
-  }
+export const speak = (text: string, onEnd?: () => void): void => {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "en-US";
+  utterance.rate = 0.9;
+  utterance.pitch = 1;
+
+  // Guard against Chrome's unreliable onend
+  let fired = false;
+  const finish = () => {
+    if (!fired) { fired = true; onEnd?.(); }
+  };
+  utterance.onend = finish;
+  utterance.onerror = finish;
+  // Chrome fallback — onend sometimes never fires
+  setTimeout(finish, Math.max(3000, (text.length / 10) * 1000));
+
+  window.speechSynthesis.speak(utterance);
 };
 
 export const stopSpeaking = (): void => {
