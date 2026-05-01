@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router";
 import { motion } from "motion/react";
-import { Home, MessageCircle, RotateCcw, Trophy, CheckCircle, XCircle } from "lucide-react";
+import { Home, RotateCcw, Trophy, CheckCircle, XCircle } from "lucide-react";
 
 const landmarks = [
   { id: "duomo", name: "Duomo di Milano", icon: "⛪" },
@@ -188,14 +188,6 @@ export function Summary() {
             className="w-full py-4 bg-stone-800 text-white rounded-2xl flex items-center justify-center gap-3 active:scale-[0.98] transition-transform"
           >
             <span>Continue AR Experience</span>
-          </button>
-
-          <button
-            onClick={() => navigate("/ai-chat")}
-            className="w-full py-4 bg-white border border-stone-200 text-stone-800 rounded-2xl flex items-center justify-center gap-3 active:scale-[0.98] transition-transform"
-          >
-            <MessageCircle className="w-5 h-5" />
-            <span>Ask AI More Questions</span>
           </button>
 
           <button
