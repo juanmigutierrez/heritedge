@@ -1,0 +1,61 @@
+{
+  "version": "0.2.0",
+  "updatedAt": "2026-04-27",
+  "_consumer": "src/app/components/TreasureHunt.tsx (P4) — replace the hardcoded `challenges` array with an import of this file. Schema mirrors the Challenge interface defined in that component.",
+  "challenges": [
+    {
+      "id": 1,
+      "landmark": "duomo",
+      "title": "The Golden Lady on Top",
+      "description": "At the very top of the Duomo's tallest spire stands the golden symbol of Milan. Go outside, look up, and capture her.",
+      "type": "photo",
+      "photoPrompt": "Take a photo of La Madonnina — the golden statue on top of the Duomo's tallest spire. Point your camera upward at the central spire.",
+      "feedback": {
+        "correct": "Well done! La Madonnina stands 108.5 m above Piazza Duomo. Placed in 1774, she is gilded copper and stands 4.16 m tall. A Milanese tradition says no building in Milan may exceed her height — a rule respected until 1958 when the first skyscrapers rose.",
+        "incorrect": "The statue is called La Madonnina (the little Madonna). Try again — stand in the piazza and look up at the tallest central spire."
+      },
+      "arHint": "Point your camera at the top of the Duomo's central facade and look for the glowing spire marker.",
+      "markerImage": "/markers/duomo-facade.jpg",
+      "location": "Duomo di Milano — central facade",
+      "period": "present",
+      "relatedFactIds": ["duomo-madonnina-1774", "duomo-1386-foundation"],
+      "points": 100
+    },
+    {
+      "id": 2,
+      "landmark": "galleria",
+      "title": "The Floor That Brings Luck",
+      "description": "Hidden in the Galleria's mosaic floor is a tradition that tourists travel from all over the world to perform.",
+      "type": "photo",
+      "photoPrompt": "Find the mosaic bull emblem on the Galleria floor and take a photo of it. Tip: look near the centre of the octagonal crossing.",
+      "feedback": {
+        "correct": "Well spotted! The bull is the emblem of Turin. Spinning on its heel three times is said to bring good luck — the mosaic is worn down from centuries of heel-spins.",
+        "incorrect": "The mosaic bull represents Turin, one of the four Italian cities whose crests decorate the floor. The other three are Milan, Florence, and Rome. Head to the centre of the octagonal crossing and look down."
+      },
+      "arHint": "Enter AR view and look for a highlighted circle at the centre of the octagonal crossing — the bull mosaic will be outlined.",
+      "markerImage": "/markers/galleria-crossing.jpg",
+      "location": "Galleria Vittorio Emanuele II — central octagon",
+      "period": "present",
+      "relatedFactIds": ["galleria-mosaic-floor", "galleria-mengoni-1865"],
+      "points": 120
+    },
+    {
+      "id": 3,
+      "landmark": "palazzo",
+      "title": "The Ballroom That Was Never Rebuilt",
+      "description": "Inside Palazzo Reale there is a room that was bombed in 1943 and deliberately left in ruins as a war memorial. Find it.",
+      "type": "photo",
+      "photoPrompt": "Enter Palazzo Reale and find the Sala delle Cariatidi — the bombed ballroom left unrestored since 1943. Take a photo of the room.",
+      "feedback": {
+        "correct": "Exactly! The Sala delle Cariatidi was the royal ballroom, destroyed by fire after the 1943 bombing and deliberately left unrestored as a permanent war memorial. Today Palazzo Reale is one of Italy's most visited exhibition venues, with over 600,000 visitors a year.",
+        "incorrect": "The room is called the Sala delle Cariatidi. Ask staff at the entrance for directions — it is one of the most striking spaces in the building."
+      },
+      "arHint": "Stand facing the Palazzo and activate AR — the facade will reveal layers showing its transformation across Medieval, Neoclassical, and present-day phases.",
+      "markerImage": "/markers/palazzo-reale-facade.jpg",
+      "location": "Palazzo Reale — main facade on Piazza del Duomo",
+      "period": "present",
+      "relatedFactIds": ["palazzo-reale-history", "palazzo-reale-postwar-restoration"],
+      "points": 100
+    }
+  ]
+}

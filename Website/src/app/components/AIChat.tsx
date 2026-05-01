@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowLeft, Send, Mic, MicOff, Pause, Play, X } from "lucide-react";
 import { useVoiceService } from "@/services/voiceService";
+import { sendMessage } from "@/services/chatService";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -11,6 +12,12 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   detailedContent?: string;
+}
+
+interface ChatSource {
+  id: string;
+  title: string;
+  url?: string;
 }
 
 // ─── Suggested prompts ────────────────────────────────────────────────────────
@@ -22,58 +29,6 @@ const suggestedPrompts = [
   "When was the Galleria built?",
   "What happened during the war?",
 ];
-
-// ─── Static response bank ────────────────────────────────────────────────────
-
-const aiResponses: Record<string, { short: string; detailed: string }> = {
-  "tell me about the duomo history": {
-    short:
-      "Construction began in 1386 and took nearly 600 years to complete. It's one of Italy's largest Gothic cathedrals, with over 3,400 statues.",
-    detailed:
-      "The Duomo di Milano's history began in 1386 under Archbishop Antonio da Saluzzo. The cathedral showcases stunning Gothic architecture with 3,400+ statues and 135 spires. Its pink-white Candoglia marble was sourced from a quarry near Lake Maggiore, and the iconic Madonnina statue was placed on top in 1775.",
-  },
-  "what changed over time?": {
-    short:
-      "The medieval structure was enhanced during the Renaissance, then restored after WWII bomb damage. Modern conservation continues today.",
-    detailed:
-      "Famous architects like Bramante contributed Renaissance enhancements. Allied bombing in WWII caused damage that required post-war restoration. Today, ongoing conservation preserves the Candoglia marble facade while maintaining historical integrity.",
-  },
-  "why is this place important?": {
-    short:
-      "Piazza Duomo is Milan's symbolic heart — witness to coronations, protests, and liberation. The Duomo is the third-largest church in Europe.",
-    detailed:
-      "The square embodies Milanese identity across centuries: it hosted royal coronations, popular uprisings, WWII liberation celebrations, and contemporary cultural events. The cathedral itself took nearly 600 years to complete, making it a monument to collective effort and civic pride.",
-  },
-  "when was the galleria built?": {
-    short:
-      "Built 1865–1877, designed by Giuseppe Mengoni. It's among the world's oldest shopping malls, famed for its glass-vaulted arcade.",
-    detailed:
-      "The Galleria Vittorio Emanuele II connects Piazza Duomo to Teatro alla Scala. Mengoni's iron-and-glass roof and intricate mosaic floors were revolutionary for their time. Tragically, Mengoni died after falling from the building during the final construction phase.",
-  },
-  "what happened during the war?": {
-    short:
-      "Milan suffered heavy WWII bombing, but the Duomo survived. The square became a focal point of liberation celebrations in April 1945.",
-    detailed:
-      "Many surrounding buildings were destroyed and rebuilt in the 1950s, but the Duomo was largely spared — local legend credits the Madonnina's protection. Liberation Day on 25 April 1945 saw crowds fill the square; the event is commemorated annually.",
-  },
-};
-
-function getAIResponse(query: string): { short: string; detailed: string } {
-  const q = query.toLowerCase();
-  const key = Object.keys(aiResponses).find(
-    (k) => q.includes(k) || k.includes(q.split(" ").slice(0, 3).join(" "))
-  );
-  return (
-    key
-      ? aiResponses[key]
-      : {
-          short:
-            "I can answer questions about Piazza Duomo's heritage sites: the Duomo, Galleria, and Palazzo Reale.",
-          detailed:
-            "Please ask about the Duomo di Milano, Galleria Vittorio Emanuele II, or Palazzo Reale — their architecture, history, or cultural significance.",
-        }
-  );
-}
 
 // ─── Mic button ───────────────────────────────────────────────────────────────
 
@@ -96,11 +51,9 @@ function MicButton({
   onResume,
   onCancel,
 }: MicButtonProps) {
-  // While TTS is active show Pause/Resume/Cancel cluster
   if (isSpeaking || isPaused) {
     return (
       <div className="flex items-center gap-1">
-        {/* Cancel */}
         <button
           onClick={onCancel}
           className="w-9 h-9 rounded-full bg-stone-200 text-stone-600 flex items-center justify-center active:scale-90 transition-transform"
@@ -108,8 +61,6 @@ function MicButton({
         >
           <X className="w-4 h-4" />
         </button>
-
-        {/* Pause / Resume */}
         <button
           onClick={isPaused ? onResume : onPause}
           className="w-12 h-12 rounded-full bg-amber-500 text-white flex items-center justify-center active:scale-90 transition-transform shadow-md"
@@ -157,10 +108,7 @@ function MessageBubble({ message }: { message: Message }) {
             : "bg-stone-800 text-white"
         }`}
       >
-        {/* Main (short) content — never overflows */}
         <p className="text-sm leading-relaxed break-words">{message.content}</p>
-
-        {/* Expand / collapse detail */}
         {isAssistant && message.detailedContent && (
           <>
             <button
@@ -169,7 +117,6 @@ function MessageBubble({ message }: { message: Message }) {
             >
               {expanded ? "Show less ▲" : "Learn more ▼"}
             </button>
-
             <AnimatePresence>
               {expanded && (
                 <motion.div
@@ -205,8 +152,9 @@ export function AIChat() {
         "Hello! Ask me anything about Piazza Duomo — the cathedral, the Galleria, or Palazzo Reale.",
     },
   ]);
+  const [sources, setSources] = useState<ChatSource[]>([]);
   const [inputValue, setInputValue] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // ── Voice integration ────────────────────────────────────────────────────
@@ -217,15 +165,12 @@ export function AIChat() {
         role: "user",
         content: question,
       };
-      const { short, detailed } = getAIResponse(question);
       const aiMsg: Message = {
         id: `a-${Date.now() + 1}`,
         role: "assistant",
-        content: short,
-        detailedContent: detailed !== short ? detailed : undefined,
+        content: answer, // Using real response instead of static fallback!
       };
       setMessages((prev) => [...prev, userMsg, aiMsg]);
-      // Keep inputValue clean after voice
       setInputValue("");
     },
     []
@@ -244,30 +189,43 @@ export function AIChat() {
   // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping]);
+  }, [messages, isLoading]);
 
-  // ── Text send ────────────────────────────────────────────────────────────
-  const handleSend = useCallback(() => {
+  // ── Text send (RAG API) ──────────────────────────────────────────────────
+  const handleSend = () => {
     const text = inputValue.trim();
     if (!text) return;
 
     const userMsg: Message = { id: `u-${Date.now()}`, role: "user", content: text };
     setMessages((prev) => [...prev, userMsg]);
     setInputValue("");
-    setIsTyping(true);
+    setIsLoading(true);
 
-    setTimeout(() => {
-      const { short, detailed } = getAIResponse(text);
-      const aiMsg: Message = {
-        id: `a-${Date.now() + 1}`,
-        role: "assistant",
-        content: short,
-        detailedContent: detailed !== short ? detailed : undefined,
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-      setIsTyping(false);
-    }, 800);
-  }, [inputValue]);
+    // Call your actual Knowledge Base!
+    sendMessage(text, "duomo")
+      .then((res) => {
+        const responseContent = res.answer || res.reply || "I could not generate an answer.";
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: responseContent,
+        };
+
+        setSources(res.sources ?? []);
+        setMessages((prev) => [...prev, aiMessage]);
+      })
+      .catch(() => {
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: "Sorry, I couldn't reach the knowledge base right now. Please try again.",
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -320,9 +278,9 @@ export function AIChat() {
           </motion.div>
         ))}
 
-        {/* Typing indicator */}
+        {/* Typing indicator (from teammate's code) */}
         <AnimatePresence>
-          {isTyping && (
+          {isLoading && (
             <motion.div
               key="typing"
               initial={{ opacity: 0, y: 6 }}
@@ -342,6 +300,26 @@ export function AIChat() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Citations Box (from your code) */}
+        {sources.length > 0 && (
+          <div className="text-xs text-stone-500 px-1 mt-2">
+            <p className="mb-1 uppercase tracking-wide font-semibold text-emerald-800">📚 Sources</p>
+            <ul className="space-y-1">
+              {sources.map((source) => (
+                <li key={source.id}>
+                  {source.url ? (
+                    <a className="text-emerald-700 underline hover:text-emerald-900" href={source.url} target="_blank" rel="noreferrer">
+                      {source.title}
+                    </a>
+                  ) : (
+                    source.title
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div ref={messagesEndRef} />
       </div>
@@ -412,10 +390,10 @@ export function AIChat() {
             />
           </div>
 
-          {/* Send button */}
+          {/* Send button (Combined disabled logic) */}
           <button
             onClick={handleSend}
-            disabled={!inputValue.trim() || listeningState === "LISTENING" || isSpeaking || isPaused}
+            disabled={!inputValue.trim() || isLoading || listeningState === "LISTENING" || isSpeaking || isPaused}
             className="w-12 h-12 rounded-full bg-stone-800 text-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed active:scale-90 transition-transform shadow-sm flex-shrink-0"
             aria-label="Send"
           >

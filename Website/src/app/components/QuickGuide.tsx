@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useSpeechRecognition } from "@/features/voice/useSpeechRecognition";
 import { sendMessage, speak, stopSpeaking } from "@/services/chatService";
+import knowledgeBase from "@/content/knowledge-base.json";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -21,6 +22,7 @@ interface ChatMessage {
   detail?: string;     // extra content shown / spoken on expand
   followUp?: string;   // Luca's follow-up question after answering
   isExpanded?: boolean;
+  sources?: Array<{ id: string; title: string; url?: string }>; // ADDED RAG SOURCES
 }
 
 // ─── Luca persona injected into every LLM request ────────────────────────────
@@ -112,7 +114,7 @@ function AIBubble({
       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-1 shadow-sm">
         L
       </div>
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 flex flex-col gap-2">
         <div className="bg-white border border-stone-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
           <p className="text-sm leading-relaxed text-stone-800 break-words">{msg.text}</p>
 
@@ -157,6 +159,26 @@ function AIBubble({
             </>
           )}
         </div>
+
+        {/* 📚 RAG Citations Integration for AI Chat */}
+        {msg.sources && msg.sources.length > 0 && (
+          <div className="max-w-[90%] px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900 shadow-sm">
+            <p className="font-semibold mb-1">📚 Sources:</p>
+            <ul className="space-y-1">
+              {msg.sources.map((source) => (
+                <li key={source.id}>
+                  {source.url ? (
+                    <a className="text-amber-700 underline hover:text-amber-800" href={source.url} target="_blank" rel="noreferrer">
+                      {source.title}
+                    </a>
+                  ) : (
+                    source.title
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {msg.followUp && !msg.isExpanded && (
           <motion.p
@@ -255,6 +277,25 @@ export function QuickGuide() {
 
   const { transcript, listeningState, startListening, stopListening, resetTranscript } =
     useSpeechRecognition();
+
+  // 📚 Resolve a KB fact for the selected era if available (Your RAG Logic!)
+  const getFactForEra = (era: TimePeriod) => {
+    try {
+      const kb: any = knowledgeBase;
+      const mapping: Record<TimePeriod, string> = {
+        foundations: "duomo-1386-foundation",
+        visconti: "visconti-era-overview",
+        sforza: "sforza-rule-overview",
+        habsburg: "habsburg-period-overview",
+      };
+      const factId = mapping[era];
+      return kb.facts.find((f: any) => f.id === factId) ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  const selectedFact = getFactForEra(selectedEra);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -372,7 +413,18 @@ export function QuickGuide() {
 
       const aiId = `ai-${Date.now()}`;
       lastAIIdRef.current = aiId;
-      const aiMsg: ChatMessage = { id: aiId, role: "ai", text: short, detail, followUp, isExpanded: false };
+      
+      // 📚 Attaching your ChromaDB sources to the message!
+      const aiMsg: ChatMessage = { 
+        id: aiId, 
+        role: "ai", 
+        text: short, 
+        detail, 
+        followUp, 
+        isExpanded: false,
+        sources: res.sources 
+      };
+      
       setChatMessages((prev) => [...prev, aiMsg]);
 
       // Speak short answer + follow-up question aloud
@@ -584,14 +636,38 @@ export function QuickGuide() {
                       <p className="text-xs text-stone-400">{timelineData[selectedEra].years}</p>
                     </div>
                   </div>
-                  <p className="text-sm text-stone-700 leading-relaxed mb-3">{timelineData[selectedEra].content}</p>
-                  <div className="space-y-1.5">
-                    {timelineData[selectedEra].highlights.map((h, i) => (
-                      <div key={i} className="flex items-start gap-2">
-                        <div className={`w-1.5 h-1.5 rounded-full border-2 ${timelineData[selectedEra].borderColor} mt-1.5 flex-shrink-0`} />
-                        <p className="text-sm text-stone-600">{h}</p>
-                      </div>
-                    ))}
+                  
+                  {/* 📚 RAG Integration for Timeline Content */}
+                  <p className="text-sm text-stone-700 leading-relaxed mb-4">{selectedFact?.body ?? timelineData[selectedEra].content}</p>
+
+                  {selectedFact?.source && (
+                    <div className="mb-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+                      <p className="font-semibold mb-1">📚 Source:</p>
+                      {selectedFact.source.url ? (
+                        <a
+                          href={selectedFact.source.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-amber-700 underline hover:text-amber-800"
+                        >
+                          {selectedFact.source.label}
+                        </a>
+                      ) : (
+                        <span>{selectedFact.source.label}</span>
+                      )}
+                    </div>
+                  )}
+
+                  <div>
+                    <p className="text-xs text-stone-500 mb-2">Key Highlights:</p>
+                    <div className="space-y-2">
+                      {timelineData[selectedEra].highlights.map((highlight, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <div className={`w-1.5 h-1.5 rounded-full bg-white border-2 ${timelineData[selectedEra].borderColor} mt-1.5 flex-shrink-0`} />
+                          <p className="text-sm text-stone-700 leading-relaxed">{highlight}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </motion.div>
               </AnimatePresence>
