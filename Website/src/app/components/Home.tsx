@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { Link } from "react-router";
+import { motion } from "motion/react";
 import { MessageCircle, Compass, Trophy, ChevronRight, Camera } from "lucide-react";
 import heroImage from "../../assets/heritage-sites.png";
 import duomoImg from "../../assets/duomo.png";

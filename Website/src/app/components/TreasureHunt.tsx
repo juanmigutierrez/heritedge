@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowLeft, Camera, Check, Info, Sparkles, MapPin, Trophy, X, ZoomIn } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import knowledgeBase from "@/content/knowledge-base.json";
 
 interface Challenge {
   id: number;
@@ -27,6 +28,25 @@ interface ARHotspot {
   info: string;
   image?: string;
   discovered: boolean;
+}
+
+// Mapping from hotspot IDs to KB fact IDs
+const hotspotToFactMapping: Record<string, string> = {
+  spire1: "duomo-madonnina",
+  spire2: "duomo-spires-medieval",
+  spire3: "duomo-statues-count",
+  galleria1: "galleria-glass-dome",
+  galleria2: "galleria-mengoni-1865",
+  portal1: "duomo-1386-foundation",
+  portal2: "duomo-spires-medieval",
+};
+
+// Helper to find KB fact for a hotspot
+function getSourceForHotspot(hotspotId: string) {
+  const factId = hotspotToFactMapping[hotspotId];
+  if (!factId) return null;
+  const fact = knowledgeBase.facts.find(f => f.id === factId);
+  return fact?.source || null;
 }
 
 const challenges: Challenge[] = [
@@ -525,6 +545,20 @@ export function TreasureHunt() {
                           </p>
                         </div>
                       </div>
+
+                      {getSourceForHotspot(selectedHotspot.id) && (
+                        <div className="mb-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+                          <p className="font-semibold mb-1">📚 Source:</p>
+                          <a 
+                            href={getSourceForHotspot(selectedHotspot.id)?.url} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="text-amber-700 underline hover:text-amber-800"
+                          >
+                            {getSourceForHotspot(selectedHotspot.id)?.label}
+                          </a>
+                        </div>
+                      )}
 
                       <button
                         onClick={() => setSelectedHotspot(null)}
