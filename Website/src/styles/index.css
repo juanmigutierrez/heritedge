@@ -1,3 +1,44 @@
-@import './fonts.css';
-@import './tailwind.css';
-@import './theme.css';
+/* ==============================
+   GLOBAL STYLES ENTRY POINT
+   ============================== */
+
+/* 1. Fonts first (base typography system) */
+@import "./fonts.css";
+
+/* 2. Theme variables (colors, spacing, design tokens) */
+@import "./theme.css";
+
+/* 3. Tailwind (utilities override everything) */
+@import "./tailwind.css";
+
+/* ==============================
+   BASE RESET / GLOBAL BEHAVIOR
+   ============================== */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg, #fafaf9); /* fallback stone-50 */
+  color: var(--text, #1c1c1c);
+}
+
+/* Better text rendering globally */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Remove default focus outline but keep accessibility-safe replacement */
+:focus-visible {
+  outline: 2px solid #d97706; /* amber-600 */
+  outline-offset: 2px;
+}
+
+/* Smooth transitions globally (optional but nice for UI apps) */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}

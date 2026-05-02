@@ -1,4 +1,7 @@
-import { createBrowserRouter } from "react-router-dom";
+// src/app/routes.tsx
+
+import { createBrowserRouter } from "react-router";
+
 import { Home } from "./components/Home";
 import { QuickGuide } from "./components/QuickGuide";
 import { AROverview } from "./components/AROverview";
@@ -6,7 +9,6 @@ import { ARArtifactDetail } from "./components/ARArtifactDetail";
 import { TreasureHunt } from "./components/TreasureHunt";
 import { QuizFeedback } from "./components/QuizFeedback";
 import { Summary } from "./components/Summary";
-import { PanoramaScene } from "../features/ar/xr/PanoramaScene";
 
 export const router = createBrowserRouter([
   {
@@ -22,11 +24,7 @@ export const router = createBrowserRouter([
     element: <AROverview />,
   },
   {
-    path: "/ar-xr",
-    Component: PanoramaScene,
-  },
-  {
-    path: "/ar-artifact/:landmarkId",
+    path: "/ar/artifact/:landmarkId",
     element: <ARArtifactDetail />,
   },
   {
@@ -34,7 +32,7 @@ export const router = createBrowserRouter([
     element: <TreasureHunt />,
   },
   {
-    path: "/quiz-feedback",
+    path: "/quiz",
     element: <QuizFeedback />,
   },
   {
