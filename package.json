@@ -3,6 +3,9 @@
     "@types/dom-speech-recognition": "^0.0.9"
   },
   "dependencies": {
-    "openai": "^6.34.0"
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^1.11.0",
+    "openai": "^6.34.0",
+    "react-router-dom": "^7.14.2"
   }
 }
