@@ -3,6 +3,7 @@
     "@types/dom-speech-recognition": "^0.0.9"
   },
   "dependencies": {
-    "openai": "^6.34.0"
+    "openai": "^6.34.0",
+    "sharp": "^0.34.5"
   }
 }
