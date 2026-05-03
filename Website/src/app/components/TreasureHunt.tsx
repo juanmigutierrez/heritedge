@@ -273,30 +273,30 @@ export function TreasureHunt() {
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-4 py-4">
+      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-sm border-b border-stone-200 text-stone-900 px-4 py-4 shadow-sm">
         <div className="flex items-center gap-3 mb-3">
           <button 
             onClick={() => navigate(-1)}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 active:scale-95 transition-transform"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-stone-100 text-stone-900 hover:bg-stone-200 active:scale-95 transition-transform"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
-            <h1 className="text-lg">AR Treasure Hunt</h1>
-            <p className="text-xs text-emerald-50">
+            <h1 className="text-lg font-semibold">AR Treasure Hunt</h1>
+            <p className="text-xs text-stone-500">
               Challenge {currentChallengeIndex + 1} of {challenges.length}
             </p>
           </div>
-          <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
-            <Trophy className="w-4 h-4" />
-            <span className="text-sm">{totalScore}</span>
+          <div className="flex items-center gap-2 bg-stone-100 px-3 py-1.5 rounded-full text-stone-700">
+            <Trophy className="w-4 h-4 text-amber-600" />
+            <span className="text-sm font-semibold">{totalScore}</span>
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+        <div className="w-full h-2 bg-stone-200 rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-white"
+            className="h-full bg-amber-600"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5 }}
@@ -323,8 +323,8 @@ export function TreasureHunt() {
                 transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
                 className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 ${
                   isCorrect
-                    ? "bg-emerald-100 text-emerald-600"
-                    : "bg-amber-100 text-amber-600"
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-stone-100 text-stone-700"
                 }`}
               >
                 {isCorrect ? (
@@ -347,8 +347,8 @@ export function TreasureHunt() {
               </p>
 
               {currentChallenge.type === "ar-explore" && isCorrect && (
-                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6 max-w-sm">
-                  <p className="text-sm text-blue-900">
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 max-w-sm">
+                  <p className="text-sm text-amber-900">
                     You discovered all {requiredDiscoveries} AR hotspots! Great exploration skills.
                   </p>
                 </div>
@@ -356,7 +356,7 @@ export function TreasureHunt() {
 
               <button
                 onClick={handleNext}
-                className="px-8 py-4 bg-emerald-600 text-white rounded-2xl active:scale-95 transition-transform"
+                className="px-8 py-4 bg-stone-900 text-white rounded-2xl active:scale-95 transition-transform"
               >
                 {currentChallengeIndex < challenges.length - 1 ? "Next Challenge" : "View Results"}
               </button>
@@ -368,7 +368,7 @@ export function TreasureHunt() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="relative h-full bg-stone-900"
+              className="relative h-full bg-stone-950"
             >
               {/* AR Camera Feed */}
               <div className="relative h-full">
@@ -381,14 +381,14 @@ export function TreasureHunt() {
                 {/* AR Overlay Grid */}
                 <div className="absolute inset-0">
                   {/* Corner Markers */}
-                  <div className="absolute top-4 left-4 w-12 h-12 border-t-2 border-l-2 border-emerald-400" />
-                  <div className="absolute top-4 right-4 w-12 h-12 border-t-2 border-r-2 border-emerald-400" />
-                  <div className="absolute bottom-4 left-4 w-12 h-12 border-b-2 border-l-2 border-emerald-400" />
-                  <div className="absolute bottom-4 right-4 w-12 h-12 border-b-2 border-r-2 border-emerald-400" />
+                  <div className="absolute top-4 left-4 w-12 h-12 border-t-2 border-l-2 border-amber-300" />
+                  <div className="absolute top-4 right-4 w-12 h-12 border-t-2 border-r-2 border-amber-300" />
+                  <div className="absolute bottom-4 left-4 w-12 h-12 border-b-2 border-l-2 border-amber-300" />
+                  <div className="absolute bottom-4 right-4 w-12 h-12 border-b-2 border-r-2 border-amber-300" />
 
                   {/* Scanning Line Animation */}
                   <motion.div
-                    className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent"
+                    className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-amber-300 to-transparent"
                     animate={{ top: ["10%", "90%", "10%"] }}
                     transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
                   />
@@ -409,18 +409,18 @@ export function TreasureHunt() {
                       {/* Pulse Animation */}
                       <motion.div
                         className={`absolute inset-0 rounded-full ${
-                          hotspot.discovered ? "bg-emerald-400/30" : "bg-blue-400/30"
+                          hotspot.discovered ? "bg-amber-300/30" : "bg-amber-400/30"
                         }`}
                         animate={{ scale: [1, 1.5, 1], opacity: [0.6, 0, 0.6] }}
                         transition={{ repeat: Infinity, duration: 2 }}
                       />
-                      
+
                       {/* Hotspot Marker */}
                       <div
                         className={`relative w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-sm border-2 ${
                           hotspot.discovered
-                            ? "bg-emerald-500/90 border-emerald-300"
-                            : "bg-blue-500/90 border-blue-300"
+                            ? "bg-stone-900/90 border-stone-500"
+                            : "bg-stone-700/90 border-stone-400"
                         }`}
                       >
                         {hotspot.discovered ? (
@@ -443,7 +443,7 @@ export function TreasureHunt() {
                   <div className="bg-black/60 backdrop-blur-sm text-white px-4 py-3 rounded-2xl">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-emerald-400" />
+                        <Sparkles className="w-4 h-4 text-amber-400" />
                         <span className="text-sm">AR Active</span>
                       </div>
                       <button
@@ -456,13 +456,13 @@ export function TreasureHunt() {
                     <div className="flex items-center gap-2">
                       <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
                         <motion.div
-                          className="h-full bg-emerald-400"
+                          className="h-full bg-amber-400"
                           initial={{ width: 0 }}
                           animate={{ width: `${(discoveredCount / requiredDiscoveries) * 100}%` }}
                           transition={{ duration: 0.5 }}
                         />
                       </div>
-                      <span className="text-xs text-emerald-400">
+                      <span className="text-xs text-amber-400">
                         {discoveredCount}/{requiredDiscoveries}
                       </span>
                     </div>
@@ -475,7 +475,7 @@ export function TreasureHunt() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 1 }}
-                    className="absolute bottom-24 left-4 right-4 bg-blue-500/90 backdrop-blur-sm text-white px-4 py-3 rounded-2xl text-center"
+                    className="absolute bottom-24 left-4 right-4 bg-amber-500/95 backdrop-blur-sm text-white px-4 py-3 rounded-2xl text-center"
                   >
                     <p className="text-sm">👆 Tap the glowing markers to discover AR information</p>
                   </motion.div>
@@ -490,7 +490,7 @@ export function TreasureHunt() {
                   >
                     <button
                       onClick={handleSubmit}
-                      className="w-full py-4 bg-emerald-500 text-white rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2"
+                      className="w-full py-4 bg-stone-900 text-white rounded-2xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2"
                     >
                       <Check className="w-5 h-5" />
                       Complete Challenge
@@ -527,7 +527,7 @@ export function TreasureHunt() {
                             className="w-full h-full object-cover"
                           />
                           {selectedHotspot.discovered && (
-                            <div className="absolute top-3 right-3 w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center">
+                            <div className="absolute top-3 right-3 w-10 h-10 bg-stone-900 rounded-full flex items-center justify-center">
                               <Check className="w-5 h-5 text-white" />
                             </div>
                           )}
@@ -535,8 +535,8 @@ export function TreasureHunt() {
                       )}
 
                       <div className="flex items-start gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                          <Info className="w-5 h-5 text-emerald-600" />
+                        <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center flex-shrink-0">
+                          <Info className="w-5 h-5 text-stone-700" />
                         </div>
                         <div className="flex-1">
                           <h3 className="text-lg mb-1">{selectedHotspot.title}</h3>
@@ -553,7 +553,7 @@ export function TreasureHunt() {
                             href={getSourceForHotspot(selectedHotspot.id)?.url} 
                             target="_blank" 
                             rel="noreferrer"
-                            className="text-amber-700 underline hover:text-amber-800"
+                            className="text-stone-800 underline hover:text-stone-950"
                           >
                             {getSourceForHotspot(selectedHotspot.id)?.label}
                           </a>
@@ -584,7 +584,7 @@ export function TreasureHunt() {
               {/* Challenge Header */}
               <div className="bg-white rounded-2xl p-5 shadow-sm">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center flex-shrink-0">
                     {currentChallenge.type === "ar-explore" ? "🎯" : currentChallenge.type === "question" ? "❓" : "📷"}
                   </div>
                   <div className="flex-1">
@@ -596,16 +596,16 @@ export function TreasureHunt() {
                 <div className="flex items-center gap-2 text-xs text-stone-500">
                   <MapPin className="w-3.5 h-3.5" />
                   <span>{currentChallenge.location}</span>
-                  <span className="ml-auto text-emerald-600">+{currentChallenge.points} pts</span>
+                  <span className="ml-auto text-stone-700">+{currentChallenge.points} pts</span>
                 </div>
               </div>
 
               {/* AR Hint */}
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-2xl p-4">
+              <div className="bg-gradient-to-r from-amber-50 to-stone-50 border border-amber-200 rounded-2xl p-4">
                 <div className="flex items-start gap-3 mb-3">
-                  <Sparkles className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <Sparkles className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <p className="text-sm text-blue-900">
+                    <p className="text-sm text-amber-900">
                       <span className="font-medium">AR Hint:</span> {currentChallenge.arHint}
                     </p>
                   </div>
@@ -613,7 +613,7 @@ export function TreasureHunt() {
                 {currentChallenge.type === "ar-explore" && (
                   <button
                     onClick={handleEnterAR}
-                    className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl flex items-center justify-center gap-2 text-sm active:scale-95 transition-transform"
+                    className="w-full py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-xl flex items-center justify-center gap-2 text-sm active:scale-95 transition-transform"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -637,7 +637,7 @@ export function TreasureHunt() {
                       onClick={() => setSelectedAnswer(index)}
                       className={`w-full text-left p-4 rounded-2xl border-2 transition-all ${
                         selectedAnswer === index
-                          ? "border-emerald-500 bg-emerald-50"
+                          ? "border-stone-900 bg-stone-900 text-white"
                           : "border-stone-200 bg-white hover:border-stone-300"
                       }`}
                     >
@@ -645,7 +645,7 @@ export function TreasureHunt() {
                         <div
                           className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                             selectedAnswer === index
-                              ? "border-emerald-500 bg-emerald-500"
+                            ? "border-stone-900 bg-stone-900"
                               : "border-stone-300"
                           }`}
                         >
@@ -674,7 +674,7 @@ export function TreasureHunt() {
                         alt="Uploaded"
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute top-3 right-3 w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center">
+                      <div className="absolute top-3 right-3 w-10 h-10 bg-amber-600 text-white rounded-full flex items-center justify-center">
                         <Check className="w-5 h-5" />
                       </div>
                       <button
@@ -698,8 +698,8 @@ export function TreasureHunt() {
                         onClick={() => fileInputRef.current?.click()}
                         className="w-full aspect-[4/3] border-2 border-dashed border-stone-300 rounded-2xl bg-stone-50 flex flex-col items-center justify-center gap-3 active:scale-[0.98] transition-transform"
                       >
-                        <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
-                          <Camera className="w-8 h-8 text-emerald-600" />
+                        <div className="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
+                          <Camera className="w-8 h-8 text-amber-600" />
                         </div>
                         <div className="text-center px-6">
                           <p className="text-base text-stone-800 mb-1">Take Photo</p>
@@ -714,21 +714,21 @@ export function TreasureHunt() {
               {/* AR Explore Type */}
               {currentChallenge.type === "ar-explore" && (
                 <div className="space-y-3">
-                  <div className="bg-gradient-to-br from-emerald-50 to-blue-50 border border-emerald-200 rounded-2xl p-5">
+                  <div className="bg-gradient-to-br from-amber-50 to-stone-50 border border-amber-200 rounded-2xl p-5">
                     <div className="flex items-center gap-2 mb-3">
-                      <ZoomIn className="w-5 h-5 text-emerald-600" />
-                      <h3 className="text-base text-emerald-900">AR Exploration Required</h3>
+                      <ZoomIn className="w-5 h-5 text-amber-600" />
+                      <h3 className="text-base text-amber-900">AR Exploration Required</h3>
                     </div>
                     <p className="text-sm text-stone-700 leading-relaxed mb-3">
                       Enter AR mode and discover all {requiredDiscoveries} interactive hotspots to complete this challenge.
                     </p>
                     <div className="flex items-center gap-2 text-xs text-stone-600">
                       <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded-full bg-blue-500" />
+                        <div className="w-3 h-3 rounded-full bg-amber-500" />
                         <span>Undiscovered</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                        <div className="w-3 h-3 rounded-full bg-amber-700" />
                         <span>Discovered</span>
                       </div>
                     </div>
@@ -757,7 +757,7 @@ export function TreasureHunt() {
               (currentChallenge.type === "photo" && !uploadedPhoto) ||
               (currentChallenge.type === "ar-explore" && discoveredCount < requiredDiscoveries)
             }
-            className="w-full py-4 bg-emerald-600 text-white rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-transform"
+            className="w-full py-4 bg-amber-600 text-white rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-transform"
           >
             Submit {currentChallenge.type === "question" ? "Answer" : currentChallenge.type === "photo" ? "Photo" : "AR Discovery"}
           </button>
