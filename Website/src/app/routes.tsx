@@ -1,7 +1,4 @@
-// src/app/routes.tsx
-
 import { createBrowserRouter } from "react-router";
-
 import { Home } from "./components/Home";
 import { QuickGuide } from "./components/QuickGuide";
 import { AROverview } from "./components/AROverview";
