@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "ingest-kb": "tsx src/scripts/ingest-kb.ts",
+    "test-verify-photo": "tsx src/scripts/test-verify-photo.ts",
     "build": "tsc",
     "start": "node dist/index.js"
   },

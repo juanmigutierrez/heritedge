@@ -1,7 +1,7 @@
 {
-  "version": "0.2.0",
-  "updatedAt": "2026-04-27",
-  "_consumer": "src/app/components/TreasureHunt.tsx (P4) — replace the hardcoded `challenges` array with an import of this file. Schema mirrors the Challenge interface defined in that component.",
+  "version": "0.3.0",
+  "updatedAt": "2026-05-03",
+  "_consumer": "src/app/components/TreasureHunt.tsx (P5) — drop the hardcoded `challenges` array and import this file. Schema mirrors the Challenge interface defined in that component.",
   "challenges": [
     {
       "id": 1,
@@ -56,6 +56,46 @@
       "period": "present",
       "relatedFactIds": ["palazzo-reale-history", "palazzo-reale-postwar-restoration"],
       "points": 100
+    },
+    {
+      "id": 4,
+      "landmark": "duomo",
+      "title": "When the First Stone Was Laid",
+      "description": "Standing in front of the Duomo, you are looking at six centuries of construction. Tell us when it began.",
+      "type": "question",
+      "question": "In what year did construction of the Duomo di Milano begin?",
+      "expectedAnswer": "1386",
+      "acceptedAnswers": ["1386", "thirteen eighty-six", "1386 ad", "in 1386", "year 1386"],
+      "feedback": {
+        "correct": "Correct — 1386, under Archbishop Antonio da Saluzzo. Construction continued for nearly six centuries, spanning Milan's evolution from medieval commune to modern metropolis.",
+        "incorrect": "Not quite. The first stone was laid in 1386. The building took almost 600 years to finish."
+      },
+      "arHint": "Stand facing the cathedral's main facade — the layers you see span medieval, renaissance, and 19th-century work.",
+      "markerImage": "/markers/duomo-facade.jpg",
+      "location": "Duomo di Milano — central facade",
+      "period": "medieval",
+      "relatedFactIds": ["duomo-1386-foundation"],
+      "points": 80
+    },
+    {
+      "id": 5,
+      "landmark": "galleria",
+      "title": "The Architect of the Arcade",
+      "description": "The Galleria's iron-and-glass roof was a marvel of its century. Who designed it?",
+      "type": "question",
+      "question": "Who is the architect that designed the Galleria Vittorio Emanuele II?",
+      "expectedAnswer": "Giuseppe Mengoni",
+      "acceptedAnswers": ["mengoni", "giuseppe mengoni", "mengoni giuseppe", "g. mengoni"],
+      "feedback": {
+        "correct": "Right — Giuseppe Mengoni. He designed it between 1865 and 1877; it is one of the world's oldest shopping arcades and forms the northern edge of Piazza del Duomo.",
+        "incorrect": "The architect was Giuseppe Mengoni. He worked on the Galleria from 1865 until its completion in 1877."
+      },
+      "arHint": "Look up at the iron-and-glass dome — Mengoni's signature is the way the four arms meet at this octagon.",
+      "markerImage": "/markers/galleria-crossing.jpg",
+      "location": "Galleria Vittorio Emanuele II — central octagon",
+      "period": "present",
+      "relatedFactIds": ["galleria-mengoni-1865"],
+      "points": 80
     }
   ]
 }
