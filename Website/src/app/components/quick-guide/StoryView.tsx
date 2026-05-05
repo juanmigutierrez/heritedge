@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, ArrowRight, ArrowLeft, Quote, Check, Sparkles } from "lucide-react";
-import type { Scene } from "./scenes";
+import type { Scene, IllustrationId } from "./scenes";
+import { Illustration } from "./illustrations";
 
 interface StoryViewProps {
   chapterTitle: string;
@@ -10,19 +11,10 @@ interface StoryViewProps {
   totalChapters: number;
   scenes: Scene[];
   onClose: () => void;
-  /** Called when the user advances past the final scene. */
   onComplete: () => void;
-  /** Called when the user explicitly requests to chat with Luca about this chapter. */
   onAskLuca?: () => void;
 }
 
-/**
- * Instagram-style tap-through chapter player.
- * - Top: segmented progress bar
- * - Centre: scene content (animates between scenes)
- * - Bottom: explicit Back / Next so it works on desktop too
- * - Keyboard: Left / Right arrows + Esc to close
- */
 export function StoryView({
   chapterTitle,
   chapterYears,
@@ -37,6 +29,11 @@ export function StoryView({
   const scene = scenes[index];
   const isLast = index === scenes.length - 1;
   const isFirst = index === 0;
+
+  // Reset to scene 0 whenever the underlying scenes array changes (chapter switch).
+  useEffect(() => {
+    setIndex(0);
+  }, [scenes]);
 
   const next = useCallback(() => {
     if (isLast) {
@@ -100,7 +97,7 @@ export function StoryView({
         ))}
       </div>
 
-      {/* Header: chapter label + close */}
+      {/* Header */}
       <div className="px-5 sm:px-8 pt-3 pb-2 flex items-center justify-between">
         <div>
           <p className="text-caption">
@@ -119,7 +116,7 @@ export function StoryView({
         </button>
       </div>
 
-      {/* Scene content — centered, animates between scenes */}
+      {/* Scene content */}
       <main className="flex-1 min-h-0 overflow-y-auto px-5 sm:px-8 py-6 sm:py-10 flex items-center justify-center">
         <AnimatePresence mode="wait">
           <motion.div
@@ -147,7 +144,6 @@ export function StoryView({
           <span className="hidden sm:inline">Back</span>
         </button>
 
-        {/* Optional: jump to Luca */}
         {onAskLuca && (
           <button
             onClick={onAskLuca}
@@ -175,7 +171,7 @@ export function StoryView({
   );
 }
 
-// ─── Scene renderers ──────────────────────────────────────────────────────────
+// ─── Scene dispatcher ─────────────────────────────────────────────────────────
 
 function SceneContent({ scene, onAdvance }: { scene: Scene; onAdvance: () => void }) {
   switch (scene.kind) {
@@ -195,12 +191,23 @@ function SceneContent({ scene, onAdvance }: { scene: Scene; onAdvance: () => voi
           onAdvance={onAdvance}
         />
       );
+    case "illustration":
+      return (
+        <SceneIllustration
+          id={scene.id}
+          eyebrow={scene.eyebrow}
+          heading={scene.heading}
+          caption={scene.caption}
+        />
+      );
     case "closing":
       return <SceneClosing heading={scene.heading} body={scene.body} />;
     default:
       return null;
   }
 }
+
+// ─── Scene renderers ──────────────────────────────────────────────────────────
 
 function SceneQuote({ text }: { text: string }) {
   return (
@@ -378,6 +385,39 @@ function SceneQuiz({
             Continue →
           </button>
         </motion.div>
+      )}
+    </div>
+  );
+}
+
+function SceneIllustration({
+  id,
+  eyebrow,
+  heading,
+  caption,
+}: {
+  id: IllustrationId;
+  eyebrow?: string;
+  heading?: string;
+  caption?: string;
+}) {
+  return (
+    <div>
+      {eyebrow && (
+        <p className="text-caption" style={{ color: "var(--accent-strong)" }}>
+          {eyebrow}
+        </p>
+      )}
+      {heading && <h2 className="h2 mt-2 text-foreground">{heading}</h2>}
+
+      <div className="mt-5">
+        <Illustration id={id} />
+      </div>
+
+      {caption && (
+        <p className="mt-4 text-xs text-muted-foreground leading-relaxed text-center max-w-md mx-auto">
+          {caption}
+        </p>
       )}
     </div>
   );
