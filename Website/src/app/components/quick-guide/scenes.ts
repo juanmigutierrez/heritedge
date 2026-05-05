@@ -1,13 +1,20 @@
 // Scene data for the tap-through story player.
-// Each era has 5–7 scenes that move the user through the chapter at their own pace.
+// Each era has 6–7 scenes that move the user through the chapter at their own pace.
 
 export type TimePeriod = "foundations" | "visconti" | "sforza" | "habsburg";
+
+export type IllustrationId =
+  | "foundation-dig"
+  | "duomo-spires"
+  | "leonardo-tiburio"
+  | "madonnina-heights";
 
 export type Scene =
   | { kind: "quote"; text: string }
   | { kind: "narrative"; eyebrow?: string; heading: string; body: string }
   | { kind: "reveal"; question: string; answer: string }
   | { kind: "quiz"; question: string; options: string[]; correctIndex: number; explanation?: string }
+  | { kind: "illustration"; id: IllustrationId; eyebrow?: string; heading?: string; caption?: string }
   | { kind: "closing"; heading: string; body?: string };
 
 export const eraScenes: Record<TimePeriod, Scene[]> = {
@@ -27,6 +34,13 @@ export const eraScenes: Record<TimePeriod, Scene[]> = {
       eyebrow: "The choice",
       heading: "Gothic — a foreign style.",
       body: "Lombards normally built in Romanesque. Choosing Gothic was a statement to the rest of Europe: Milan belongs at the table.",
+    },
+    {
+      kind: "illustration",
+      id: "foundation-dig",
+      eyebrow: "Tap to dig",
+      heading: "Below the cathedral.",
+      caption: "Tap each layer to see what the foundation crews uncovered. The deeper they went, the older the city's memory got.",
     },
     {
       kind: "quiz",
@@ -61,21 +75,23 @@ export const eraScenes: Record<TimePeriod, Scene[]> = {
       body: "Duke of Milan. He saw the Duomo as the city's calling card to Europe — and was willing to pay for it.",
     },
     {
+      kind: "illustration",
+      id: "duomo-spires",
+      eyebrow: "Tap a spire",
+      heading: "A skyline of saints.",
+      caption: "Each spire holds a different story. Tap one to discover its secret. Find all five hidden histories.",
+    },
+    {
       kind: "reveal",
       question: "How many statues line the cathedral?",
-      answer: "More than 3,400 — saints, biblical figures, animals, gargoyles, even Visconti family members. The largest sculptural ensemble of any Gothic cathedral in Italy.",
+      answer:
+        "More than 3,400 — saints, biblical figures, animals, gargoyles, even Visconti family members. The largest sculptural ensemble of any Gothic cathedral in Italy.",
     },
     {
       kind: "narrative",
       eyebrow: "The team",
       heading: "An international project.",
       body: "Visconti invited architects from France, Germany, and beyond. The Duomo became a place where European Gothic met Lombard pride.",
-    },
-    {
-      kind: "narrative",
-      eyebrow: "The scale",
-      heading: "Italy's largest Gothic cathedral.",
-      body: "By the time the Visconti era ended, the cathedral's bones were unmistakable on the Milanese skyline.",
     },
     {
       kind: "closing",
@@ -96,21 +112,23 @@ export const eraScenes: Record<TimePeriod, Scene[]> = {
       body: "The Sforza family took control of Milan. The Renaissance was sweeping through Europe, and the Duomo was about to feel its breath.",
     },
     {
+      kind: "illustration",
+      id: "leonardo-tiburio",
+      eyebrow: "Leonardo's design",
+      heading: "Anatomy of a dome.",
+      caption: "Leonardo's tiburio sketch from 1487. Tap each part to see what it does — and how Renaissance proportions were sneaking into a Gothic cathedral.",
+    },
+    {
       kind: "reveal",
       question: "Did Leonardo da Vinci really work on the Duomo?",
-      answer: "Yes. He submitted designs for the tiburio — the central dome over the crossing — in 1487. His sketches still exist in the Codex Atlanticus.",
+      answer:
+        "Yes. He submitted designs for the tiburio — the central dome over the crossing — in 1487. His sketches still exist in the Codex Atlanticus.",
     },
     {
       kind: "narrative",
       eyebrow: "The blend",
       heading: "Gothic bones, Renaissance proportions.",
       body: "Spires kept rising in the medieval style, while interior chapels and details borrowed Renaissance harmony. The result: a building unlike any other in Italy.",
-    },
-    {
-      kind: "narrative",
-      eyebrow: "The skyline",
-      heading: "The tiburio takes shape.",
-      body: "By 1535, the central dome was structurally complete. Milan finally had its silhouette.",
     },
     {
       kind: "closing",
@@ -132,15 +150,16 @@ export const eraScenes: Record<TimePeriod, Scene[]> = {
     },
     {
       kind: "narrative",
-      eyebrow: "The completion",
-      heading: "All 135 spires, finished.",
-      body: "What started in 1386 finally reached its full, bristling silhouette. Every spire holds a saint at its peak.",
-    },
-    {
-      kind: "narrative",
       eyebrow: "1774",
       heading: "The Madonnina rises.",
       body: "A four-meter gilded statue of the Virgin Mary was placed atop the central spire. Milan's golden guardian.",
+    },
+    {
+      kind: "illustration",
+      id: "madonnina-heights",
+      eyebrow: "Tap a tower",
+      heading: "How tall is she, really?",
+      caption: "For two centuries, no Milanese building was allowed to rise above her. Even modern towers honor her with a small replica on top.",
     },
     {
       kind: "quiz",
