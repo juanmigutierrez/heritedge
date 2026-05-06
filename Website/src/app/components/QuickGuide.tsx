@@ -1,14 +1,16 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowLeft, MessageCircle, Volume2, Send, Sparkles,
   Mic, MicOff, Building2, Calendar, Users, Church,
-  Pause, Play, X, ChevronDown, ChevronUp,
+  Pause, Play, X, ChevronDown, ChevronUp, Quote,
 } from "lucide-react";
 import { useSpeechRecognition } from "@/features/voice/useSpeechRecognition";
 import { sendMessage, speak, stopSpeaking } from "@/services/chatService";
 import knowledgeBase from "@/content/knowledge-base.json";
+import { StoryView } from "./quick-guide/StoryView";
+import { eraScenes } from "./quick-guide/scenes";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,14 +20,14 @@ type SuggestedTopic = "architecture" | "history" | "events" | "statues";
 interface ChatMessage {
   id: string;
   role: "user" | "ai";
-  text: string;        // short teaser shown immediately
-  detail?: string;     // extra content shown / spoken on expand
-  followUp?: string;   // Luca's follow-up question after answering
+  text: string;
+  detail?: string;
+  followUp?: string;
   isExpanded?: boolean;
-  sources?: Array<{ id: string; title: string; url?: string }>; // ADDED RAG SOURCES
+  sources?: Array<{ id: string; title: string; url?: string }>;
 }
 
-// ─── Luca persona injected into every LLM request ────────────────────────────
+// ─── Luca persona ────────────────────────────────────────────────────────────
 
 const GUIDE_PERSONA = `You are Luca, a warm, enthusiastic, and slightly theatrical heritage guide for Piazza Duomo in Milan.
 Your rules:
@@ -37,52 +39,67 @@ Your rules:
 - If the user says yes / sure / tell me more / go on → expand on your last topic with enthusiasm.
 - If the user declines → pivot gracefully to another topic suggestion.`;
 
-// ─── Static data ──────────────────────────────────────────────────────────────
+// ─── Era data — story-driven, with pull quotes and ambient hints ─────────────
 
 const timelineData: Record<TimePeriod, {
-  id: TimePeriod; title: string; years: string;
-  color: string; bgColor: string; borderColor: string;
-  content: string; highlights: string[];
+  id: TimePeriod;
+  title: string;
+  years: string;
+  era: string;            // a short narrative tag — "the awakening", etc.
+  pullQuote: string;
+  content: string;
+  highlights: string[];
   source: { label: string; url?: string };
 }> = {
   foundations: {
-    id: "foundations", title: "Foundations", years: "1386–1400",
-    color: "text-stone-700", bgColor: "bg-stone-50", borderColor: "border-stone-300",
+    id: "foundations",
+    title: "Foundations",
+    years: "1386–1400",
+    era: "the first stone",
+    pullQuote: "A city dared to begin a cathedral that would outlive every hand that touched it.",
     content: "The first stone was laid in 1386. Archbishop Antonio da Saluzzo initiated the project, choosing Gothic style to rival Europe's greatest cathedrals.",
-    highlights: ["First stone 1386", "Gothic style chosen", "Deep foundation excavations", "Design by Simone da Orsenigo"],
+    highlights: ["First stone, 1386", "Gothic style chosen", "Deep foundation excavations", "Designed by Simone da Orsenigo"],
     source: { label: "Veneranda Fabbrica del Duomo (official)", url: "https://www.duomomilano.it" },
   },
   visconti: {
-    id: "visconti", title: "Visconti Era", years: "1386–1450",
-    color: "text-purple-700", bgColor: "bg-purple-50", borderColor: "border-purple-300",
+    id: "visconti",
+    title: "Visconti Era",
+    years: "1386–1450",
+    era: "the awakening",
+    pullQuote: "Every spire became a statement. Every statue, a question answered in stone.",
     content: "Duke Gian Galeazzo Visconti turned the Duomo into a symbol of Milanese ambition — commissioning 3,400+ statues and inviting Europe's finest architects.",
-    highlights: ["Funded by Visconti dynasty", "3,400+ statues commissioned", "International architects invited", "Largest Gothic cathedral in Italy"],
+    highlights: ["Funded by the Visconti dynasty", "3,400+ statues commissioned", "International architects invited", "Largest Gothic cathedral in Italy"],
     source: { label: "Archivio Storico Civico di Milano", url: "https://www.comune.milano.it" },
   },
   sforza: {
-    id: "sforza", title: "Sforza Rule", years: "1450–1535",
-    color: "text-amber-700", bgColor: "bg-amber-50", borderColor: "border-amber-300",
-    content: "Leonardo da Vinci himself contributed designs for the tiburio. Spires rose and Renaissance ideas blended beautifully with Gothic bones.",
+    id: "sforza",
+    title: "Sforza Rule",
+    years: "1450–1535",
+    era: "the renaissance",
+    pullQuote: "Leonardo sketched the dome's heart. The Gothic listened, and answered in marble.",
+    content: "Leonardo da Vinci himself contributed designs for the tiburio. Spires rose, and Renaissance ideas blended beautifully with Gothic bones.",
     highlights: ["Leonardo da Vinci's involvement", "Tiburio construction begins", "Spires take shape", "Renaissance meets Gothic"],
     source: { label: "Archivio Storico Civico di Milano", url: "https://www.comune.milano.it" },
   },
   habsburg: {
-    id: "habsburg", title: "Habsburg Period", years: "1535–1700s",
-    color: "text-blue-700", bgColor: "bg-blue-50", borderColor: "border-blue-300",
+    id: "habsburg",
+    title: "Habsburg Period",
+    years: "1535–1700s",
+    era: "the crowning",
+    pullQuote: "On the highest spire, the Madonnina has been watching Milan for two and a half centuries.",
     content: "All 135 spires were completed and the Madonnina — Milan's golden guardian — was placed atop the central spire in 1774, watching over the city ever since.",
-    highlights: ["135 spires completed", "Imperial coronations held", "Baroque elements added", "Madonnina placed 1774"],
+    highlights: ["135 spires completed", "Imperial coronations held", "Baroque elements added", "Madonnina placed, 1774"],
     source: { label: "Archivio Storico Civico di Milano", url: "https://www.comune.milano.it" },
   },
 };
 
 const topicSuggestions: {
-  id: SuggestedTopic; title: string; icon: any;
-  color: string; bgColor: string; question: string;
+  id: SuggestedTopic; title: string; icon: any; question: string; tagline: string;
 }[] = [
-  { id: "architecture", title: "Architecture", icon: Building2, color: "text-emerald-700", bgColor: "bg-emerald-50", question: "Tell me about the Gothic architecture of the Duomo" },
-  { id: "history",      title: "History",      icon: Church,    color: "text-blue-700",    bgColor: "bg-blue-50",    question: "What's the most fascinating part of the Duomo's history?" },
-  { id: "events",       title: "Events",       icon: Calendar,  color: "text-purple-700",  bgColor: "bg-purple-50",  question: "What ceremonies and events happened at the Duomo?" },
-  { id: "statues",      title: "Statues",      icon: Users,     color: "text-amber-700",   bgColor: "bg-amber-50",   question: "Tell me about the 3,400 statues — who are they?" },
+  { id: "architecture", title: "Architecture", icon: Building2, question: "Tell me about the Gothic architecture of the Duomo", tagline: "Pinnacles, flying buttresses, the geometry of devotion." },
+  { id: "history",      title: "History",      icon: Church,    question: "What's the most fascinating part of the Duomo's history?", tagline: "Six centuries condensed into one good story." },
+  { id: "events",       title: "Events",       icon: Calendar,  question: "What ceremonies and events happened at the Duomo?", tagline: "Coronations, weddings, the city's loudest moments." },
+  { id: "statues",      title: "Statues",      icon: Users,     question: "Tell me about the 3,400 statues — who are they?", tagline: "A frozen crowd of saints, monsters, and patrons." },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -104,7 +121,7 @@ function declinesMore(s: string) {
   return /\b(no|nope|that'?s? (?:ok|fine|enough)|stop|nevermind|skip|not now|maybe later)\b/i.test(s);
 }
 
-// ─── AI bubble with expand / hear-more ───────────────────────────────────────
+// ─── AI bubble — token-driven ────────────────────────────────────────────────
 
 function AIBubble({
   msg, onExpand, onHearMore, isSpeaking,
@@ -116,12 +133,15 @@ function AIBubble({
 }) {
   return (
     <div className="flex justify-start gap-2.5">
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-1 shadow-sm">
+      <div
+        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-1"
+        style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+      >
         L
       </div>
       <div className="flex-1 min-w-0 flex flex-col gap-2">
-        <div className="bg-white border border-stone-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
-          <p className="text-sm leading-relaxed text-stone-800 break-words">{msg.text}</p>
+        <div className="bg-card border border-border rounded-2xl rounded-tl-sm px-4 py-3">
+          <p className="text-sm leading-relaxed text-foreground break-words">{msg.text}</p>
 
           {msg.detail && (
             <>
@@ -133,17 +153,18 @@ function AIBubble({
                     animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ duration: 0.25 }}
-                    className="mt-2 pt-2 border-t border-stone-100 text-sm leading-relaxed text-stone-500 break-words overflow-hidden"
+                    className="mt-2 pt-2 border-t border-border text-sm leading-relaxed text-muted-foreground break-words overflow-hidden"
                   >
                     {msg.detail}
                   </motion.p>
                 )}
               </AnimatePresence>
 
-              <div className="flex items-center gap-3 mt-2 flex-wrap">
+              <div className="flex flex-wrap gap-3 mt-2">
                 <button
                   onClick={() => onExpand(msg.id)}
-                  className="flex items-center gap-1 text-xs font-medium text-amber-600 hover:text-amber-800 transition-colors"
+                  className="flex items-center gap-1 text-xs font-medium transition-colors"
+                  style={{ color: "var(--accent-strong)" }}
                 >
                   {msg.isExpanded
                     ? <><ChevronUp className="w-3 h-3" />Show less</>
@@ -154,7 +175,7 @@ function AIBubble({
                   <button
                     onClick={() => onHearMore(msg.id)}
                     disabled={isSpeaking}
-                    className="flex items-center gap-1 text-xs text-stone-400 hover:text-amber-500 transition-colors disabled:opacity-40"
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
                   >
                     <Volume2 className="w-3 h-3" />
                     Hear more
@@ -165,15 +186,14 @@ function AIBubble({
           )}
         </div>
 
-        {/* 📚 RAG Citations Integration for AI Chat */}
         {msg.sources && msg.sources.length > 0 && (
-          <div className="max-w-[90%] px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900 shadow-sm">
-            <p className="font-semibold mb-1">📚 Sources:</p>
+          <div className="max-w-[90%] px-3 py-2 bg-secondary border border-border rounded-lg text-xs text-foreground">
+            <p className="font-semibold mb-1">Sources</p>
             <ul className="space-y-1">
               {msg.sources.map((source) => (
                 <li key={source.id}>
                   {source.url ? (
-                    <a className="text-amber-700 underline hover:text-amber-800" href={source.url} target="_blank" rel="noreferrer">
+                    <a className="underline hover:text-foreground" href={source.url} target="_blank" rel="noreferrer" style={{ color: "var(--accent-strong)" }}>
                       {source.title}
                     </a>
                   ) : (
@@ -190,7 +210,8 @@ function AIBubble({
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
-            className="mt-1.5 ml-1 text-xs text-stone-400 italic leading-relaxed"
+            className="mt-1.5 ml-1 text-xs italic leading-relaxed font-display"
+            style={{ color: "var(--muted-foreground)" }}
           >
             {msg.followUp}
           </motion.p>
@@ -200,7 +221,7 @@ function AIBubble({
   );
 }
 
-// ─── Voice controls cluster ───────────────────────────────────────────────────
+// ─── Voice controls ──────────────────────────────────────────────────────────
 
 function VoiceControls({
   isListening, isSpeaking, isPaused, isLoading,
@@ -213,11 +234,12 @@ function VoiceControls({
     return (
       <div className="flex items-center gap-1 flex-shrink-0">
         <button onClick={onCancel} aria-label="Cancel"
-          className="w-9 h-9 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center active:scale-90 transition-transform">
+          className="w-9 h-9 rounded-full bg-secondary text-muted-foreground flex items-center justify-center active:scale-90 transition-transform">
           <X className="w-4 h-4" />
         </button>
         <button onClick={isPaused ? onResume : onPause} aria-label={isPaused ? "Resume" : "Pause"}
-          className="w-12 h-12 rounded-full bg-amber-500 text-white flex items-center justify-center active:scale-90 transition-transform shadow-md">
+          className="w-12 h-12 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+          style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}>
           {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
         </button>
       </div>
@@ -226,8 +248,12 @@ function VoiceControls({
 
   return (
     <button onClick={onToggleMic} disabled={isLoading} aria-label={isListening ? "Stop" : "Speak"}
-      className={`w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0 shadow-sm ${
-        isListening ? "bg-red-500 text-white" : isLoading ? "bg-stone-100 text-stone-300 cursor-not-allowed" : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+      className={`w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-90 flex-shrink-0 ${
+        isListening
+          ? "bg-[var(--destructive)] text-white"
+          : isLoading
+          ? "bg-secondary text-muted-foreground cursor-not-allowed"
+          : "bg-secondary text-foreground hover:bg-muted"
       }`}>
       {isListening
         ? <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 0.8 }}><MicOff className="w-5 h-5" /></motion.div>
@@ -236,36 +262,137 @@ function VoiceControls({
   );
 }
 
-// ─── Quick-reply chips ────────────────────────────────────────────────────────
+// ─── Quick replies ────────────────────────────────────────────────────────────
 
-const YES_CHIPS = ["Yes, tell me more! 🙌", "Go on…", "Absolutely!"];
+const YES_CHIPS = ["Yes, tell me more!", "Go on…", "Absolutely"];
 const NO_CHIPS  = ["Maybe later", "Change topic"];
 
 function QuickReplies({ onSelect }: { onSelect: (t: string) => void }) {
   return (
     <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
       className="flex flex-wrap gap-2 px-2 pb-1">
-      {[...YES_CHIPS, ...NO_CHIPS].map((chip) => (
-        <button key={chip} onClick={() => onSelect(chip)}
-          className={`px-3 py-1.5 rounded-full text-xs border transition-all active:scale-95 ${
-            YES_CHIPS.includes(chip)
-              ? "bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100"
-              : "bg-stone-50 border-stone-200 text-stone-500 hover:bg-stone-100"
-          }`}>
-          {chip}
-        </button>
-      ))}
+      {[...YES_CHIPS, ...NO_CHIPS].map((chip) => {
+        const isYes = YES_CHIPS.includes(chip);
+        return (
+          <button
+            key={chip}
+            onClick={() => onSelect(chip)}
+            className="px-3 py-1.5 rounded-full text-xs border transition-all active:scale-95"
+            style={
+              isYes
+                ? { background: "color-mix(in srgb, var(--accent) 15%, transparent)", borderColor: "var(--accent)", color: "var(--accent-strong)" }
+                : { background: "var(--secondary)", borderColor: "var(--border)", color: "var(--muted-foreground)" }
+            }
+          >
+            {chip}
+          </button>
+        );
+      })}
     </motion.div>
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Building blocks ──────────────────────────────────────────────────────────
+
+const timelinePeriods: TimePeriod[] = ["foundations", "visconti", "sforza", "habsburg"];
+
+function TopicCard({ topic, onSelect, delay }: {
+  topic: typeof topicSuggestions[number];
+  onSelect: () => void;
+  delay: number;
+}) {
+  const Icon = topic.icon;
+  return (
+    <motion.button
+      key={topic.id}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.3 }}
+      onClick={onSelect}
+      className="bg-card border border-border rounded-2xl p-4 text-left hover:border-[var(--border-strong)] hover:bg-secondary transition-all active:scale-[0.98]"
+    >
+      <div
+        className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
+        style={{ background: "color-mix(in srgb, var(--accent) 18%, transparent)", color: "var(--accent-strong)" }}
+      >
+        <Icon className="w-4 h-4" />
+      </div>
+      <p className="text-sm font-medium text-foreground">{topic.title}</p>
+      <p className="text-xs text-muted-foreground mt-1 leading-snug">{topic.tagline}</p>
+    </motion.button>
+  );
+}
+
+function SourceBadge({ label, url }: { label: string; url?: string }) {
+  return url ? (
+    <a href={url} target="_blank" rel="noreferrer" className="underline decoration-[var(--border-strong)] underline-offset-2 hover:text-foreground" style={{ color: "var(--accent-strong)" }}>
+      {label}
+    </a>
+  ) : (
+    <span>{label}</span>
+  );
+}
+
+function EmptyChatState({ onPrompt }: { onPrompt: (text: string) => void }) {
+  const prompts = useMemo(() => [
+    "What's the most fascinating thing about the Duomo?",
+    "Tell me about Leonardo da Vinci's involvement",
+    "Who is the Madonnina?",
+  ], []);
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center py-8 text-center px-4">
+      <div
+        className="w-16 h-16 rounded-full flex items-center justify-center mb-3 text-2xl font-display font-medium"
+        style={{ background: "color-mix(in srgb, var(--accent) 18%, transparent)", color: "var(--accent-strong)" }}
+      >
+        L
+      </div>
+      <p className="text-foreground font-medium mb-1">Ciao! I'm Luca, your guide.</p>
+      <p className="text-muted-foreground text-sm mb-5 max-w-md">Ask me anything, or pick a starter below.</p>
+      <div className="space-y-2 w-full max-w-xs">
+        {prompts.map((prompt) => (
+          <button key={prompt} onClick={() => onPrompt(prompt)}
+            className="w-full py-2.5 px-4 bg-card border border-border rounded-xl text-sm text-left text-foreground hover:border-[var(--accent)] hover:bg-secondary transition-colors">
+            {prompt}
+          </button>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
+function ChatMessage({ msg, onExpand, onHearMore, isSpeaking }: {
+  msg: ChatMessage;
+  onExpand: (id: string) => void;
+  onHearMore: (id: string) => void;
+  isSpeaking: boolean;
+}) {
+  if (msg.role === "user") {
+    return (
+      <div className="flex justify-end">
+        <div
+          className="max-w-[78%] rounded-2xl rounded-tr-sm px-4 py-3"
+          style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+        >
+          <p className="text-sm leading-relaxed break-words">{msg.text}</p>
+        </div>
+      </div>
+    );
+  }
+  return <AIBubble msg={msg} onExpand={onExpand} onHearMore={onHearMore} isSpeaking={isSpeaking} />;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════════════════════
 
 export function QuickGuide() {
   const navigate = useNavigate();
-  const [selectedEra, setSelectedEra]         = useState<TimePeriod>("visconti");
+
+  const [selectedEra, setSelectedEra]         = useState<TimePeriod>("foundations");
   const [showChat, setShowChat]               = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [storyOpen, setStoryOpen]             = useState(false);
   const [chatMessages, setChatMessages]       = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage]       = useState("");
   const [isListening, setIsListening]         = useState(false);
@@ -276,15 +403,12 @@ export function QuickGuide() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastAIIdRef    = useRef<string>("");
-  // Keep a live ref to chatMessages for callbacks that close over stale state
   const msgsRef        = useRef<ChatMessage[]>([]);
   msgsRef.current      = chatMessages;
 
-  const { transcript, listeningState, startListening, stopListening, resetTranscript } =
-    useSpeechRecognition();
+  const { transcript, listeningState, startListening, stopListening, resetTranscript } = useSpeechRecognition();
 
-  // 📚 Resolve a KB fact for the selected era if available (Your RAG Logic!)
-  const getFactForEra = (era: TimePeriod) => {
+  const selectedFact = useMemo(() => {
     try {
       const kb: any = knowledgeBase;
       const mapping: Record<TimePeriod, string> = {
@@ -293,20 +417,19 @@ export function QuickGuide() {
         sforza: "sforza-rule-overview",
         habsburg: "habsburg-period-overview",
       };
-      const factId = mapping[era];
+      const factId = mapping[selectedEra];
       return kb.facts.find((f: any) => f.id === factId) ?? null;
     } catch {
       return null;
     }
-  };
+  }, [selectedEra]);
 
-  const selectedFact = getFactForEra(selectedEra);
+  const isChatBusy = isLoadingResponse || isListening || isSpeaking || isPaused;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, isLoadingResponse, showQuickReplies]);
 
-  // STT DONE → send
   useEffect(() => {
     if (listeningState === "DONE" && transcript) {
       setIsListening(false);
@@ -316,10 +439,8 @@ export function QuickGuide() {
       handleSendMessageText(text);
     }
     if (listeningState === "IDLE" && isListening) setIsListening(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listeningState, transcript]);
-
-  // ── TTS ─────────────────────────────────────────────────────────────────────
 
   const speakWithState = useCallback((text: string) => {
     setIsSpeaking(true);
@@ -347,13 +468,10 @@ export function QuickGuide() {
     setIsSpeaking(false); setIsPaused(false);
   }, []);
 
-  // ── Expand handlers ──────────────────────────────────────────────────────────
-
   const handleExpand = useCallback((id: string) => {
     setChatMessages((prev) =>
       prev.map((m) => {
         if (m.id !== id) return m;
-        // Speak detail when expanding for the first time
         if (!m.isExpanded && m.detail) speakWithState(m.detail);
         return { ...m, isExpanded: !m.isExpanded };
       })
@@ -370,8 +488,6 @@ export function QuickGuide() {
     );
   }, [speakWithState]);
 
-  // ── Send ─────────────────────────────────────────────────────────────────────
-
   const handleSendMessageText = useCallback(async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -379,18 +495,15 @@ export function QuickGuide() {
     handleCancelSpeech();
     setShowQuickReplies(false);
 
-    // ── "yes, more" shortcut ──
     if (wantsMore(trimmed) && lastAIIdRef.current) {
       const lastMsg = msgsRef.current.find((m) => m.id === lastAIIdRef.current);
       if (lastMsg?.detail) {
         setChatMessages((prev) => [...prev, { id: `u-${Date.now()}`, role: "user", text: trimmed }]);
-        // Expand + speak detail inline — no new API call needed
         handleHearMore(lastAIIdRef.current);
         return;
       }
     }
 
-    // ── "no thanks" pivot ──
     if (declinesMore(trimmed)) {
       const pivot = "No worries at all! There's so much to explore here — shall I tell you about the architecture, the statues, or perhaps a specific era?";
       setChatMessages((prev) => [
@@ -402,40 +515,29 @@ export function QuickGuide() {
       return;
     }
 
-    // ── Normal LLM call ──
     const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: "user", text: trimmed };
     setChatMessages((prev) => [...prev, userMsg]);
     setInputMessage("");
     setIsLoadingResponse(true);
 
     try {
-      const res = await sendMessage(
-        `${GUIDE_PERSONA}\n\nUser: ${trimmed}`,
-        null
-      );
+      const res = await sendMessage(`${GUIDE_PERSONA}\n\nUser: ${trimmed}`, null);
       const raw = res.answer || res.reply || "I'd love to help — could you rephrase that?";
       const { text: short, detail, followUp } = parseReply(raw);
-
       const aiId = `ai-${Date.now()}`;
       lastAIIdRef.current = aiId;
-      
-      // 📚 Attaching your ChromaDB sources to the message!
-      const aiMsg: ChatMessage = { 
-        id: aiId, 
-        role: "ai", 
-        text: short, 
-        detail, 
-        followUp, 
+      const aiMsg: ChatMessage = {
+        id: aiId,
+        role: "ai",
+        text: short,
+        detail,
+        followUp,
         isExpanded: false,
-        sources: res.sources 
+        sources: res.sources,
       };
-      
       setChatMessages((prev) => [...prev, aiMsg]);
-
-      // Speak short answer + follow-up question aloud
       speakWithState(followUp ? `${short} … ${followUp}` : short);
       if (followUp) setShowQuickReplies(true);
-
     } catch {
       const fallback = "Hmm, I seem to have lost my signal for a moment — the marble walls play tricks! Try again and I promise a great story.";
       setChatMessages((prev) => [...prev, { id: `ai-err-${Date.now()}`, role: "ai", text: fallback }]);
@@ -445,314 +547,494 @@ export function QuickGuide() {
     }
   }, [handleCancelSpeech, handleHearMore, speakWithState]);
 
-  const handleSendMessage = () => {
-    if (!inputMessage.trim() || isLoadingResponse) return;
+  const handleSendMessage = useCallback(() => {
     handleSendMessageText(inputMessage);
-  };
+  }, [inputMessage, handleSendMessageText]);
 
   const handleVoiceToggle = () => {
-    if (isListening) { stopListening(); setIsListening(false); }
-    else { handleCancelSpeech(); resetTranscript(); startListening(); setIsListening(true); }
+    if (isListening) { stopListening(); setIsListening(false); return; }
+    handleCancelSpeech();
+    resetTranscript();
+    startListening();
+    setIsListening(true);
   };
 
   const handleVoiceGuide = () => {
-    speakWithState("Welcome to the Duomo di Milano — one of the most breathtaking Gothic cathedrals on Earth. Over 600 years of history, 135 soaring spires, and more than 3,400 statues all compete for your attention. Would you like to explore a specific era, or shall I tell you about the golden Madonnina watching over Milan from above?");
+    const era = timelineData[selectedEra];
+    speakWithState(`${era.title}, ${era.years}. ${era.content}`);
   };
 
-  const statusText = isSpeaking ? "Luca is speaking…" : isPaused ? "Paused" : isListening ? "Listening…" : "Explore different historical periods";
+  // Era progression — what number are we on?
+  const eraIndex = timelinePeriods.indexOf(selectedEra);
+  const totalEras = timelinePeriods.length;
 
-  // ─── Render ───────────────────────────────────────────────────────────────
+  const era = timelineData[selectedEra];
 
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col">
-
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-white border-b border-stone-100 px-4 py-3.5 shadow-sm">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-stone-100 active:scale-95 transition-transform">
-            <ArrowLeft className="w-5 h-5" />
+    <div className="min-h-[100dvh] bg-background text-foreground">
+      {/* Top bar */}
+      <div className="sticky top-0 z-30 bg-background/85 backdrop-blur-md border-b border-border">
+        <div className="max-w-3xl mx-auto px-5 py-3 sm:px-8 flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            aria-label="Back"
+            className="w-9 h-9 rounded-full bg-secondary text-foreground flex items-center justify-center hover:bg-muted active:scale-95 transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-base font-semibold truncate text-stone-900">Heritage Quick Guide</h1>
-            <p className="text-xs text-stone-400 truncate">{statusText}</p>
+            <p className="text-caption">Heritage Quick Guide</p>
+            <p className="text-xs text-muted-foreground -mt-0.5">A six-century journey, told in four chapters</p>
           </div>
-          <button onClick={() => setShowChat(!showChat)}
-            className={`w-10 h-10 flex items-center justify-center rounded-full transition-colors flex-shrink-0 ${showChat ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-600"}`}>
-            <MessageCircle className="w-5 h-5" />
-          </button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden">
-        <AnimatePresence mode="wait">
-
-          {/* ── CHAT VIEW ─────────────────────────────────────────────────── */}
-          {showChat ? (
-            <motion.div key="chat" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.25 }}
-              className="flex flex-col h-[calc(100vh-64px)]">
-
-              {/* Luca header */}
-              <div className="px-5 py-4 bg-gradient-to-r from-stone-900 via-stone-800 to-stone-700 text-white flex items-center gap-3 flex-shrink-0">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold shadow-md flex-shrink-0 text-sm">L</div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold">Luca</span>
-                    <span className="text-xs text-amber-400">• Heritage Guide</span>
-                  </div>
-                  <p className="text-xs text-stone-400">Ask me anything — I love a good story 🏛️</p>
-                </div>
+      <AnimatePresence mode="wait">
+        {showChat ? (
+          <motion.div
+            key="chat"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.25 }}
+            className="flex flex-col min-h-[calc(100dvh-64px)]"
+          >
+            {/* Chat header */}
+            <div className="px-5 py-4 border-b border-border flex items-center gap-3 bg-card">
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-sm"
+                style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+              >
+                L
               </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-foreground">Luca</span>
+                  <span className="text-xs" style={{ color: "var(--accent-strong)" }}>· Heritage Guide</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Ask me anything — I love a good story.</p>
+              </div>
+              <button
+                onClick={() => setShowChat(false)}
+                aria-label="Back to journey"
+                className="w-9 h-9 rounded-full bg-secondary text-muted-foreground hover:text-foreground flex items-center justify-center active:scale-95 transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-
-                <AnimatePresence>
-                  {isListening && (
-                    <motion.div key="listen" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                      className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
-                      <motion.div className="w-2.5 h-2.5 bg-red-500 rounded-full flex-shrink-0"
-                        animate={{ scale: [1, 1.4, 1] }} transition={{ repeat: Infinity, duration: 0.8 }} />
-                      <span className="text-sm text-red-700">I'm listening… tap the mic again when you're done</span>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Empty state */}
-                {chatMessages.length === 0 && !isListening && !isLoadingResponse && (
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col items-center justify-center py-8 text-center px-4">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center mb-3 text-3xl">🏛️</div>
-                    <p className="text-stone-800 font-medium mb-1">Ciao! I'm Luca, your guide.</p>
-                    <p className="text-stone-400 text-sm mb-5">Ask me anything — or tap a suggestion below.</p>
-                    <div className="space-y-2 w-full max-w-xs">
-                      {[
-                        "What's the most fascinating thing about the Duomo?",
-                        "Tell me about Leonardo da Vinci's involvement",
-                        "Who is the Madonnina?",
-                      ].map((q) => (
-                        <button key={q} onClick={() => handleSendMessageText(q)}
-                          className="w-full py-2.5 px-4 bg-white border border-stone-200 rounded-xl text-sm text-left text-stone-700 hover:border-amber-300 hover:bg-amber-50 transition-colors">
-                          {q}
-                        </button>
-                      ))}
-                    </div>
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-4 sm:px-5 sm:py-5 max-w-3xl mx-auto w-full">
+              <AnimatePresence>
+                {isListening && (
+                  <motion.div
+                    key="listen"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex items-center gap-3 rounded-2xl px-4 py-3"
+                    style={{
+                      background: "color-mix(in srgb, var(--destructive) 12%, transparent)",
+                      border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)",
+                      color: "var(--destructive)",
+                    }}
+                  >
+                    <motion.div
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ background: "var(--destructive)" }}
+                      animate={{ scale: [1, 1.4, 1] }}
+                      transition={{ repeat: Infinity, duration: 0.8 }}
+                    />
+                    <span className="text-sm">I'm listening… tap the mic again when you're done.</span>
                   </motion.div>
                 )}
-
-                {/* Message bubbles */}
-                {chatMessages.map((msg) => (
-                  <motion.div key={msg.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                    {msg.role === "user" ? (
-                      <div className="flex justify-end">
-                        <div className="max-w-[78%] bg-stone-800 text-white rounded-2xl rounded-tr-sm px-4 py-3">
-                          <p className="text-sm leading-relaxed break-words">{msg.text}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <AIBubble msg={msg} onExpand={handleExpand} onHearMore={handleHearMore} isSpeaking={isSpeaking} />
-                    )}
-                  </motion.div>
-                ))}
-
-                {/* Quick-reply chips */}
-                <AnimatePresence>
-                  {showQuickReplies && !isLoadingResponse && (
-                    <QuickReplies key="chips" onSelect={(chip) => { setShowQuickReplies(false); handleSendMessageText(chip); }} />
-                  )}
-                </AnimatePresence>
-
-                {/* Typing indicator */}
-                <AnimatePresence>
-                  {isLoadingResponse && (
-                    <motion.div key="typing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex gap-2.5">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">L</div>
-                      <div className="bg-white border border-stone-100 rounded-2xl rounded-tl-sm px-4 py-3 flex gap-1 items-center shadow-sm">
-                        {[0,1,2].map((i) => (
-                          <motion.div key={i} className="w-2 h-2 bg-stone-300 rounded-full"
-                            animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.7, delay: i * 0.15 }} />
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Input */}
-              <div className="bg-white border-t border-stone-100 px-4 py-3 flex-shrink-0">
-                <div className="flex gap-2 items-center">
-                  <VoiceControls isListening={isListening} isSpeaking={isSpeaking} isPaused={isPaused} isLoading={isLoadingResponse}
-                    onToggleMic={handleVoiceToggle} onPause={handlePause} onResume={handleResume} onCancel={handleCancelSpeech} />
-                  <input type="text" value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    placeholder={isListening ? "Listening…" : isSpeaking ? "Luca is speaking…" : "Ask Luca anything…"}
-                    disabled={isListening || isSpeaking || isPaused}
-                    className="flex-1 px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-full text-sm focus:outline-none focus:border-amber-400 min-w-0 disabled:text-stone-400 transition-colors" />
-                  <button onClick={handleSendMessage}
-                    disabled={!inputMessage.trim() || isLoadingResponse || isListening || isSpeaking || isPaused}
-                    className="w-10 h-10 bg-stone-900 text-white rounded-full flex items-center justify-center disabled:opacity-40 active:scale-90 transition-transform flex-shrink-0">
-                    <Send className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-
-          ) : (
-            /* ── TIMELINE VIEW ─────────────────────────────────────────── */
-            <motion.div key="timeline" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.25 }}
-              className="h-[calc(100vh-64px)] overflow-y-auto px-5 py-5 space-y-4">
-
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                className="bg-gradient-to-br from-stone-900 to-stone-700 rounded-2xl p-6 text-white">
-                <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <h2 className="text-lg font-semibold">Time Exploration</h2>
-                </div>
-                <p className="text-sm text-stone-300 leading-relaxed">Six centuries of ambition, faith, and artistry. Select an era to begin.</p>
-              </motion.div>
-
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-                className="bg-white rounded-2xl p-3 shadow-sm">
-                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                  {(["foundations","visconti","sforza","habsburg"] as TimePeriod[]).map((era) => {
-                    const d = timelineData[era]; const sel = selectedEra === era;
-                    return (
-                      <button key={era} onClick={() => setSelectedEra(era)}
-                        className={`flex-shrink-0 px-4 py-2.5 rounded-xl border-2 transition-all ${sel ? `${d.borderColor} ${d.bgColor}` : "border-stone-200 bg-stone-50 hover:border-stone-300"}`}>
-                        <p className={`text-sm whitespace-nowrap font-medium ${sel ? d.color : "text-stone-600"}`}>{d.title}</p>
-                        <p className="text-xs text-stone-400 mt-0.5">{d.years}</p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </motion.div>
-
-              <AnimatePresence mode="wait">
-                <motion.div key={selectedEra} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.22 }}
-                  className={`rounded-2xl border-2 ${timelineData[selectedEra].borderColor} ${timelineData[selectedEra].bgColor} p-5`}>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center text-xl shadow-sm">🏛️</div>
-                    <div>
-                      <h3 className={`text-base font-semibold ${timelineData[selectedEra].color}`}>{timelineData[selectedEra].title}</h3>
-                      <p className="text-xs text-stone-400">{timelineData[selectedEra].years}</p>
-                    </div>
-                  </div>
-
-                  <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs text-amber-900">
-                    <span className="font-semibold">Source:</span>
-                    {timelineData[selectedEra].source.url ? (
-                      <a
-                        href={timelineData[selectedEra].source.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="underline decoration-amber-400 underline-offset-2 hover:text-amber-950"
-                      >
-                        {timelineData[selectedEra].source.label}
-                      </a>
-                    ) : (
-                      <span>{timelineData[selectedEra].source.label}</span>
-                    )}
-                  </div>
-                  
-                  {/* 📚 RAG Integration for Timeline Content */}
-                  <p className="text-sm text-stone-700 leading-relaxed mb-4">{selectedFact?.body ?? timelineData[selectedEra].content}</p>
-
-                  {selectedFact?.source && (
-                    <div className="mb-4 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
-                      <p className="font-semibold mb-1">📚 Source:</p>
-                      {selectedFact.source.url ? (
-                        <a
-                          href={selectedFact.source.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-amber-700 underline hover:text-amber-800"
-                        >
-                          {selectedFact.source.label}
-                        </a>
-                      ) : (
-                        <span>{selectedFact.source.label}</span>
-                      )}
-                    </div>
-                  )}
-
-                  <div>
-                    <p className="text-xs text-stone-500 mb-2">Key Highlights:</p>
-                    <div className="space-y-2">
-                      {timelineData[selectedEra].highlights.map((highlight, i) => (
-                        <div key={i} className="flex items-start gap-2">
-                          <div className={`w-1.5 h-1.5 rounded-full bg-white border-2 ${timelineData[selectedEra].borderColor} mt-1.5 flex-shrink-0`} />
-                          <p className="text-sm text-stone-700 leading-relaxed">{highlight}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
               </AnimatePresence>
 
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
-                className="bg-white rounded-2xl p-5 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-amber-500" />
-                    <h3 className="text-sm font-semibold text-stone-800">Ask Luca about…</h3>
-                  </div>
-                  <button onClick={() => setShowSuggestions(!showSuggestions)} className="text-xs text-stone-400 hover:text-stone-600">
-                    {showSuggestions ? "Less" : "Details"}
-                  </button>
+              {chatMessages.length === 0 && !isListening && !isLoadingResponse && (
+                <EmptyChatState onPrompt={handleSendMessageText} />
+              )}
+
+              {chatMessages.map((msg) => (
+                <motion.div key={msg.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                  <ChatMessage msg={msg} onExpand={handleExpand} onHearMore={handleHearMore} isSpeaking={isSpeaking} />
+                </motion.div>
+              ))}
+
+              <AnimatePresence>
+                {showQuickReplies && !isLoadingResponse && (
+                  <QuickReplies key="chips" onSelect={(chip) => { setShowQuickReplies(false); handleSendMessageText(chip); }} />
+                )}
+              </AnimatePresence>
+
+              <AnimatePresence>
+                {isLoadingResponse && (
+                  <motion.div key="typing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex gap-2.5">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+                    >
+                      L
+                    </div>
+                    <div className="bg-card border border-border rounded-2xl rounded-tl-sm px-4 py-3 flex gap-1 items-center">
+                      {[0, 1, 2].map((i) => (
+                        <motion.div
+                          key={i}
+                          className="w-2 h-2 rounded-full"
+                          style={{ background: "var(--muted-foreground)" }}
+                          animate={{ y: [0, -5, 0] }}
+                          transition={{ repeat: Infinity, duration: 0.7, delay: i * 0.15 }}
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Chat input */}
+            <div className="border-t border-border px-4 py-3 flex-shrink-0 bg-card">
+              <div className="max-w-3xl mx-auto flex flex-col gap-3 sm:flex-row sm:items-center">
+                <VoiceControls
+                  isListening={isListening}
+                  isSpeaking={isSpeaking}
+                  isPaused={isPaused}
+                  isLoading={isLoadingResponse}
+                  onToggleMic={handleVoiceToggle}
+                  onPause={handlePause}
+                  onResume={handleResume}
+                  onCancel={handleCancelSpeech}
+                />
+                <input
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                  placeholder={isListening ? "Listening…" : isSpeaking ? "Luca is speaking…" : "Ask Luca anything…"}
+                  disabled={isChatBusy}
+                  className="flex-1 px-4 py-2.5 bg-secondary border border-border rounded-full text-sm text-foreground focus:outline-none focus:border-[var(--accent)] min-w-0 disabled:opacity-60 transition-colors"
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!inputMessage.trim() || isChatBusy}
+                  className="w-10 h-10 rounded-full flex items-center justify-center disabled:opacity-40 active:scale-90 transition-transform flex-shrink-0"
+                  style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="timeline"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.25 }}
+            className="max-w-3xl mx-auto px-5 sm:px-8 pb-12"
+          >
+            {/* CINEMATIC HERO */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="relative mt-6 rounded-3xl overflow-hidden border border-border"
+              style={{
+                background:
+                  "linear-gradient(135deg, #14110F 0%, #25201D 60%, #3a2a18 100%)",
+                minHeight: "260px",
+              }}
+            >
+              {/* faint grid texture for depth */}
+              <div
+                aria-hidden
+                className="absolute inset-0 opacity-[0.07]"
+                style={{
+                  backgroundImage:
+                    "radial-gradient(circle at 1px 1px, #E5B948 1px, transparent 0)",
+                  backgroundSize: "24px 24px",
+                }}
+              />
+
+              <div className="relative p-6 sm:p-8 flex flex-col gap-3">
+                <div
+                  className="inline-flex items-center gap-2 self-start rounded-full px-3 py-1 text-[10px] font-medium tracking-[0.2em] uppercase"
+                  style={{
+                    background: "color-mix(in srgb, #E5B948 20%, transparent)",
+                    border: "0.5px solid color-mix(in srgb, #E5B948 50%, transparent)",
+                    color: "#E5B948",
+                  }}
+                >
+                  <Sparkles className="w-3 h-3" />
+                  <span>Six centuries · four chapters</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2.5">
-                  {topicSuggestions.map((t, i) => {
-                    const Icon = t.icon;
+
+                <h1 className="hero-title text-white" style={{ fontSize: "clamp(2rem, 6vw, 2.75rem)", lineHeight: 1.05 }}>
+                  Time Exploration
+                </h1>
+
+                <p className="text-sm sm:text-base text-white/75 max-w-md leading-snug">
+                  Walk the Duomo's story from a single laid stone to the gilded
+                  Madonna at its peak. Tap a chapter to begin.
+                </p>
+
+                {/* Reading progress dots */}
+                <div className="mt-4 flex items-center gap-2">
+                  {timelinePeriods.map((era, i) => {
+                    const visited = i <= eraIndex;
                     return (
-                      <motion.button key={t.id} initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.28 + i * 0.07 }}
-                        onClick={() => { setShowChat(true); handleSendMessageText(t.question); }}
-                        className={`${t.bgColor} rounded-xl p-3.5 text-left hover:shadow-md transition-all active:scale-95`}>
-                        <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center mb-2.5 shadow-sm">
-                          <Icon className={`w-4 h-4 ${t.color}`} />
-                        </div>
-                        <p className={`text-sm font-medium ${t.color}`}>{t.title}</p>
-                        {showSuggestions && <p className="text-xs text-stone-500 mt-0.5 leading-snug">{t.question}</p>}
-                      </motion.button>
+                      <div
+                        key={era}
+                        className="h-[3px] flex-1 rounded-full transition-all"
+                        style={{
+                          background: visited ? "#E5B948" : "rgba(237,230,218,0.18)",
+                        }}
+                      />
                     );
                   })}
                 </div>
-              </motion.div>
+                <p className="text-[11px] text-white/55 tracking-wider uppercase">
+                  Chapter {eraIndex + 1} of {totalEras}
+                </p>
+              </div>
+            </motion.div>
 
-              {/* Voice guide button with pause/resume */}
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
-                {isSpeaking || isPaused ? (
-                  <div className="flex gap-2">
-                    <button onClick={handleCancelSpeech} className="flex-1 py-3.5 bg-white border border-stone-200 text-stone-500 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform text-sm">
-                      <X className="w-4 h-4" /> Stop
+            {/* TIMELINE STRIP — visual era selector */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="mt-6"
+            >
+              <div className="flex items-stretch gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+                {timelinePeriods.map((id) => {
+                  const data = timelineData[id];
+                  const isActive = selectedEra === id;
+                  const i = timelinePeriods.indexOf(id);
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setSelectedEra(id)}
+                      className="flex-1 min-w-[8.5rem] text-left rounded-2xl border transition-all active:scale-[0.98] p-3"
+                      style={{
+                        background: isActive ? "var(--accent)" : "var(--card)",
+                        borderColor: isActive ? "var(--accent)" : "var(--border)",
+                        color: isActive ? "var(--accent-foreground)" : "var(--foreground)",
+                      }}
+                    >
+                      <div
+                        className="text-[10px] tracking-[0.16em] uppercase font-medium"
+                        style={{
+                          color: isActive ? "var(--accent-foreground)" : "var(--muted-foreground)",
+                          opacity: isActive ? 0.85 : 1,
+                        }}
+                      >
+                        Chapter {i + 1}
+                      </div>
+                      <div className="mt-1 text-sm font-medium leading-tight">{data.title}</div>
+                      <div
+                        className="text-[11px] mt-0.5"
+                        style={{
+                          color: isActive ? "var(--accent-foreground)" : "var(--muted-foreground)",
+                          opacity: isActive ? 0.75 : 1,
+                        }}
+                      >
+                        {data.years}
+                      </div>
                     </button>
-                    <button onClick={isPaused ? handleResume : handlePause} className="flex-1 py-3.5 bg-amber-500 text-white rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform text-sm shadow-md">
-                      {isPaused ? <><Play className="w-4 h-4" />Resume</> : <><Pause className="w-4 h-4" />Pause</>}
+                  );
+                })}
+              </div>
+            </motion.div>
+
+            {/* ERA STORY CARD */}
+            <AnimatePresence mode="wait">
+              <motion.section
+                key={selectedEra}
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -14 }}
+                transition={{ duration: 0.32 }}
+                className="mt-6 bg-card border border-border rounded-3xl overflow-hidden"
+              >
+                {/* Era header */}
+                <header className="px-5 sm:px-7 pt-6 sm:pt-8">
+                  <p className="text-caption" style={{ color: "var(--accent-strong)" }}>
+                    {era.years} · {era.era}
+                  </p>
+                  <h2 className="h2 mt-2 text-foreground">{era.title}</h2>
+                </header>
+
+                {/* Pull quote — the dramatic, emotional anchor */}
+                <figure className="px-5 sm:px-7 mt-5">
+                  <div
+                    className="relative rounded-2xl px-5 py-5 sm:px-6 sm:py-6"
+                    style={{
+                      background:
+                        "color-mix(in srgb, var(--accent) 12%, transparent)",
+                      borderLeft: "3px solid var(--accent)",
+                    }}
+                  >
+                    <Quote
+                      className="absolute -top-2 -left-2 w-5 h-5 opacity-80"
+                      style={{ color: "var(--accent)" }}
+                      aria-hidden
+                    />
+                    <blockquote
+                      className="font-display italic text-base sm:text-lg leading-snug text-foreground"
+                      style={{ letterSpacing: "-0.005em" }}
+                    >
+                      “{era.pullQuote}”
+                    </blockquote>
+                  </div>
+                </figure>
+
+                {/* Narrative paragraph */}
+                <div className="px-5 sm:px-7 mt-5">
+                  <p className="text-[15px] leading-relaxed text-foreground">
+                    {selectedFact?.body ?? era.content}
+                  </p>
+                </div>
+
+                {/* Source */}
+                <div className="px-5 sm:px-7 mt-4 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="text-caption">Source</span>
+                  <SourceBadge
+                    label={selectedFact?.source?.label ?? era.source.label}
+                    url={selectedFact?.source?.url ?? era.source.url}
+                  />
+                </div>
+
+                {/* Highlights as chips */}
+                <div className="px-5 sm:px-7 mt-5 pb-6 sm:pb-7">
+                  <p className="text-caption mb-3">Beats</p>
+                  <div className="flex flex-wrap gap-2">
+                    {era.highlights.map((h) => (
+                      <span
+                        key={h}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border bg-secondary text-foreground"
+                        style={{ borderColor: "var(--border)" }}
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{ background: "var(--accent)" }}
+                        />
+                        {h}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Primary action: enter the story player */}
+                <div className="px-5 sm:px-7 pb-3">
+                  {isSpeaking || isPaused ? (
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <button
+                        onClick={handleCancelSpeech}
+                        className="flex-1 py-3 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform text-sm bg-secondary text-foreground border border-border"
+                      >
+                        <X className="w-4 h-4" /> Stop
+                      </button>
+                      <button
+                        onClick={isPaused ? handleResume : handlePause}
+                        className="flex-1 py-3 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform text-sm font-medium"
+                        style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+                      >
+                        {isPaused ? <><Play className="w-4 h-4" />Resume</> : <><Pause className="w-4 h-4" />Pause</>}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setStoryOpen(true)}
+                      className="w-full py-3.5 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform text-sm font-medium"
+                      style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Begin chapter
+                      <span aria-hidden>→</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Secondary actions */}
+                {!(isSpeaking || isPaused) && (
+                  <div className="px-5 sm:px-7 pb-6 sm:pb-7 flex flex-col sm:flex-row gap-2 text-sm">
+                    <button
+                      onClick={handleVoiceGuide}
+                      className="flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    >
+                      <Volume2 className="w-4 h-4" />
+                      Listen to summary
+                    </button>
+                    <button
+                      onClick={() => setShowChat(true)}
+                      className="flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Ask Luca
                     </button>
                   </div>
-                ) : (
-                  <button onClick={handleVoiceGuide} className="w-full py-3.5 bg-white border border-stone-200 text-stone-800 rounded-2xl flex items-center justify-center gap-2.5 active:scale-[0.98] transition-transform hover:border-stone-300">
-                    <Volume2 className="w-5 h-5 text-amber-500" />
-                    <span className="text-sm font-medium">Play Voice Guide</span>
-                  </button>
                 )}
-              </motion.div>
+              </motion.section>
+            </AnimatePresence>
 
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }} className="text-center pb-6">
-                <p className="text-xs text-stone-400 mb-2">Have a question for Luca?</p>
-                <button onClick={() => setShowChat(true)} className="inline-flex items-center gap-2 px-5 py-2 bg-stone-900 text-white rounded-full text-sm active:scale-95 transition-transform hover:bg-stone-800">
-                  <MessageCircle className="w-4 h-4" />
-                  Chat with Luca
-                </button>
-              </motion.div>
+            {/* "Ask Luca about" topic grid */}
+            <motion.section
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.18 }}
+              className="mt-8"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="w-4 h-4" style={{ color: "var(--accent-strong)" }} />
+                <h3 className="text-base font-medium text-foreground">Or wander off the main path…</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {topicSuggestions.map((topic, index) => (
+                  <TopicCard
+                    key={topic.id}
+                    topic={topic}
+                    onSelect={() => { setShowChat(true); handleSendMessageText(topic.question); }}
+                    delay={0.22 + index * 0.06}
+                  />
+                ))}
+              </div>
+            </motion.section>
 
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+            {/* Footer note */}
+            <p className="mt-10 text-center text-xs text-muted-foreground">
+              Curated from the Veneranda Fabbrica del Duomo &amp; Archivio Storico Civico di Milano.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Tap-through chapter player */}
+      <AnimatePresence>
+        {storyOpen && (
+          <StoryView
+            chapterTitle={era.title}
+            chapterYears={era.years}
+            chapterIndex={eraIndex}
+            totalChapters={timelinePeriods.length}
+            scenes={eraScenes[selectedEra]}
+            onClose={() => setStoryOpen(false)}
+            onComplete={() => {
+              const next = timelinePeriods[eraIndex + 1];
+              if (next) {
+                setSelectedEra(next);
+              } else {
+                setStoryOpen(false);
+              }
+            }}
+            onAskLuca={() => {
+              setStoryOpen(false);
+              setShowChat(true);
+              handleSendMessageText(`Tell me more about the ${era.title} era.`);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
