@@ -5,23 +5,27 @@
 // Deps (run `pnpm install` after package.json update):
 //   three  @react-three/fiber  @react-three/drei  @types/three
 
-import { useRef, useState, useEffect, useCallback, Suspense } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Sky, Html } from "@react-three/drei";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Clock, Navigation, RotateCcw } from "lucide-react";
+import { X, Compass, Camera, CameraOff } from "lucide-react";
 import * as THREE from "three";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { ERAS, getEra, listLandmarks, type EraId, type LandmarkId } from "@/content/landmarks";
+import { EraScrub, FG, MONO, SERIF, VoicePill } from "@/app/components/ar/shared";
+import { pickVoiceHint } from "@/app/components/ar/voiceHints";
+import { landmarkVT } from "@/app/components/ar/viewTransition";
+import { sendMessage, speak, stopSpeaking } from "@/services/chatService";
+import { useCameraStream } from "./useCameraStream";
 
-type Era = "medieval" | "postwar" | "present";
+// ─── Per-era render config (sky / fog / ground) ───────────────────────────────
+// Age metadata (label, year, accent color) lives in content/landmarks.ts so
+// every screen shares one source of truth. Render-only details that only the
+// 3D scene needs stay here, keyed by EraId.
 
-interface EraConfig {
-  id: Era;
-  label: string;
-  century: string;
-  subtitle: string;
+interface EraRender {
   description: string;
   skyProps: {
     sunPosition: [number, number, number];
@@ -34,17 +38,22 @@ interface EraConfig {
   groundColor: string;
   ambientColor: string;
   ambientIntensity: number;
-  accentClass: string;
 }
 
-// ─── Era data ─────────────────────────────────────────────────────────────────
+// CSS filters applied to the live camera feed — re-tints reality so picking a
+// past era *feels* like time travel even though the camera always shows present
+// day. Kept small so the scene stays recognizable; tune to taste per era.
+const ERA_CAMERA_FILTER: Record<EraId, string> = {
+  medieval:
+    "sepia(0.55) hue-rotate(-12deg) saturate(0.85) brightness(0.92) contrast(1.05)",
+  postwar:
+    "grayscale(0.7) sepia(0.15) contrast(1.08) brightness(0.95)",
+  present:
+    "saturate(1.05) brightness(1.02)",
+};
 
-const ERAS: EraConfig[] = [
-  {
-    id: "medieval",
-    label: "Medieval",
-    century: "14th Century",
-    subtitle: "Gothic Spires",
+const ERA_RENDER: Record<EraId, EraRender> = {
+  medieval: {
     description: "Construction of the Gothic cathedral spans five centuries",
     skyProps: {
       sunPosition: [0.3, 0.06, -1],
@@ -57,13 +66,8 @@ const ERAS: EraConfig[] = [
     groundColor: "#6b4c1e",
     ambientColor: "#d49060",
     ambientIntensity: 0.55,
-    accentClass: "bg-amber-600",
   },
-  {
-    id: "postwar",
-    label: "1950s",
-    century: "Post-War",
-    subtitle: "Reconstruction",
+  postwar: {
     description: "Post-WWII Milan restores and rebuilds the piazza",
     skyProps: {
       sunPosition: [1, 0.25, 0],
@@ -76,13 +80,8 @@ const ERAS: EraConfig[] = [
     groundColor: "#5a5a5a",
     ambientColor: "#b0b0b0",
     ambientIntensity: 0.35,
-    accentClass: "bg-stone-500",
   },
-  {
-    id: "present",
-    label: "Present",
-    century: "2020s",
-    subtitle: "Modern Milan",
+  present: {
     description: "Busy cultural hub — tourists, pigeons, and living history",
     skyProps: {
       sunPosition: [1, 0.65, 0],
@@ -95,31 +94,103 @@ const ERAS: EraConfig[] = [
     groundColor: "#3a5a2a",
     ambientColor: "#cce8ff",
     ambientIntensity: 0.9,
-    accentClass: "bg-blue-500",
   },
+};
+
+// Landmark hotspot positions (facing the main square).
+// Names come from content/landmarks.ts (canonical) — keep `name`/`shortName`
+// in sync with that source. Only positions and emoji glyphs are scene-local.
+// Order matches the geographic layout (left-to-right as the user faces the
+// piazza), so chips and sheet rows read intuitively: Galleria · Duomo · Palazzo.
+const LANDMARKS: Array<{
+  id: LandmarkId;
+  name: string;
+  shortName: string;
+  emoji: string;
+  pos: [number, number, number];
+}> = [
+  { id: "galleria", name: "Galleria Vittorio Emanuele II",   shortName: "Galleria", emoji: "🏛️", pos: [-7, 0.8, -5.6] },
+  { id: "duomo",    name: "Duomo di Milano",                 shortName: "Duomo",    emoji: "⛪",  pos: [0, 0.8, -9] },
+  { id: "palazzo",  name: "Palazzo Reale",                   shortName: "Palazzo",  emoji: "🏰",  pos: [7, 0.8, -5.6] },
 ];
 
-// Landmark hotspot positions (facing the main square)
-const LANDMARKS = [
-  { id: "duomo",    name: "Duomo di Milano",  emoji: "⛪", pos: [0, 0.8, -9] as [number, number, number] },
-  { id: "galleria", name: "Galleria Vittorio", emoji: "🏛️", pos: [-7, 0.8, -5.6] as [number, number, number] },
-  { id: "palazzo",  name: "Palazzo Reale",    emoji: "🏰", pos: [7, 0.8, -5.6] as [number, number, number] },
-];
+// Yaw (radians) the camera should look at to face each landmark from origin.
+// World axis convention: yaw 0 looks down -Z, positive yaw turns left (toward +X
+// in our LookAround math: we *subtract* dx*sens). Compute from the landmark's
+// (x, z) so it stays correct if positions move.
+const landmarkYaw = (pos: [number, number, number]) => Math.atan2(-pos[0], -pos[2]);
+
+// sessionStorage keys — preserve user state across navigation within a tab
+// session (panorama → detail → back) so the experience feels continuous.
+const GYRO_STORAGE_KEY = "heritedge:gyro";
+const VIEW_STORAGE_KEY = "heritedge:view"; // last camera yaw/pitch as JSON
+const ERA_STORAGE_KEY  = "heritedge:era";  // last selected era id
+
+const isEraId = (v: string | null): v is EraId =>
+  v === "medieval" || v === "postwar" || v === "present";
+
 
 // ─── Camera controllers ───────────────────────────────────────────────────────
 
+// Imperative handle the page can use to nudge the look target (e.g. snap to a
+// landmark). Lives outside the component so refs can be passed in via props.
+export interface LookHandle {
+  /** Set the target yaw (and optional pitch). Easing in LookAround animates the rest. */
+  lookAt: (yaw: number, pitch?: number) => void;
+  /** Whether the user has interacted at least once (drag / key / programmatic). */
+  hasInteracted: () => boolean;
+  /** Current displayed yaw/pitch (in radians). For persisting across navigation. */
+  getView: () => { yaw: number; pitch: number };
+}
+
+interface LookAroundProps {
+  /** Imperative handle — call lookAt() to snap-to-landmark from outside. */
+  handleRef?: React.MutableRefObject<LookHandle | null>;
+  /** Fired the first time the user drags / presses arrows / snaps. */
+  onFirstInteract?: () => void;
+  /** Initial yaw/pitch (radians) — used to restore the panorama view after
+   *  navigating to a detail page and back. Defaults to (0, 0) = looking at
+   *  the central Duomo hotspot. */
+  initialView?: { yaw: number; pitch: number };
+}
+
 // Keeps camera fixed at origin; translates mouse/touch drag and arrow keys
 // into smooth, damped yaw/pitch rotation.
-function LookAround() {
+function LookAround({ handleRef, onFirstInteract, initialView }: LookAroundProps) {
   const { camera, gl } = useThree();
 
-  // Target rotation (driven by input) and current rotation (eased per frame).
-  const target  = useRef({ x: 0, y: 0 });
-  const current = useRef({ x: 0, y: 0 });
+  // Initial framing: pitch=0 + yaw=0 looks straight at the central Duomo
+  // hotspot, which is what the "Look at Duomo" snap button does. The earlier
+  // attempt to bias pitch upward used the wrong sign (positive X in YXZ-Euler
+  // convention here pitches the camera *down*, not up) and ended up pointing
+  // at the ground.
+  // initialView lets the page restore the user's last view after navigating
+  // back from the detail page.
+  const initX = initialView?.pitch ?? 0;
+  const initY = initialView?.yaw ?? 0;
+  const target  = useRef({ x: initX, y: initY });
+  const current = useRef({ x: initX, y: initY });
   const dragging = useRef(false);
   const last     = useRef({ x: 0, y: 0 });
   const keys     = useRef<Record<string, boolean>>({});
   const euler    = useRef(new THREE.Euler(0, 0, 0, "YXZ"));
+  const interacted = useRef(false);
+
+  // Active "transport-me-there" tween — used by lookAt(). We need a separate
+  // path from the per-frame drag damping so we can pick a longer duration and
+  // a stronger ease curve, giving the snap a sense of travel rather than snap.
+  const tween = useRef<{
+    fromX: number; fromY: number;
+    toX: number;   toY: number;
+    start: number; duration: number;
+  } | null>(null);
+  const SNAP_DURATION_MS = 1200;
+
+  const markInteracted = () => {
+    if (interacted.current) return;
+    interacted.current = true;
+    onFirstInteract?.();
+  };
 
   const PITCH_MIN   = -Math.PI / 3.3;   // ~ -54°
   const PITCH_MAX   =  Math.PI / 2.4;   // ~ +75°
@@ -131,6 +202,13 @@ function LookAround() {
     camera.position.set(0, 0, 0);
     (camera as THREE.PerspectiveCamera).fov = 90;
     camera.updateProjectionMatrix();
+    // Apply the initial orientation synchronously. Without this, the first
+    // rendered frame uses whatever R3F's default lookAt() gave us — which,
+    // because the configured position [0,0,0.001] is essentially *at* the
+    // origin and looks at it, produces an unstable downward tilt that lands
+    // the user staring at the green ground plane.
+    euler.current.set(current.current.x, current.current.y, 0);
+    camera.quaternion.setFromEuler(euler.current);
   }, [camera]);
 
   useEffect(() => {
@@ -142,6 +220,7 @@ function LookAround() {
       dragging.current = true;
       last.current = { x, y };
       el.style.cursor = "grabbing";
+      markInteracted();
     };
 
     const updateDrag = (x: number, y: number) => {
@@ -179,7 +258,18 @@ function LookAround() {
     const onTouchEnd = () => endDrag();
 
     // ── Keyboard (window-level so canvas doesn't need focus) ──────────
-    const onKeyDown = (e: KeyboardEvent) => { keys.current[e.key] = true; };
+    const onKeyDown = (e: KeyboardEvent) => {
+      keys.current[e.key] = true;
+      // Only the keys we actually use count as interaction.
+      if (
+        e.key === "ArrowLeft" || e.key === "ArrowRight" ||
+        e.key === "ArrowUp"   || e.key === "ArrowDown"  ||
+        e.key === "w" || e.key === "W" ||
+        e.key === "a" || e.key === "A" ||
+        e.key === "s" || e.key === "S" ||
+        e.key === "d" || e.key === "D"
+      ) markInteracted();
+    };
     const onKeyUp   = (e: KeyboardEvent) => { keys.current[e.key] = false; };
 
     // Mousedown on canvas; move/up on window so drags continue off-canvas.
@@ -210,10 +300,74 @@ function LookAround() {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup",   onKeyUp);
     };
+    // markInteracted is stable for the lifetime of the component (refs only).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gl]);
+
+  // Imperative handle for the page (snap-to-landmark, etc.).
+  useEffect(() => {
+    if (!handleRef) return;
+    handleRef.current = {
+      lookAt: (yaw, pitch) => {
+        // Pick the equivalent yaw closest to the *current view* so the
+        // shortest arc is taken (avoids spinning the long way round).
+        const TWO_PI = Math.PI * 2;
+        const cur = current.current.y;
+        const delta = ((yaw - cur + Math.PI) % TWO_PI + TWO_PI) % TWO_PI - Math.PI;
+        const toY = cur + delta;
+        const toX = typeof pitch === "number"
+          ? clamp(pitch, PITCH_MIN, PITCH_MAX)
+          : current.current.x;
+
+        tween.current = {
+          fromX: current.current.x,
+          fromY: current.current.y,
+          toX, toY,
+          start: performance.now(),
+          duration: SNAP_DURATION_MS,
+        };
+        // Park the drag target on the destination so when the tween hands
+        // off to the damping loop, nothing yanks the camera back.
+        target.current.x = toX;
+        target.current.y = toY;
+        markInteracted();
+      },
+      hasInteracted: () => interacted.current,
+      getView: () => ({ yaw: current.current.y, pitch: current.current.x }),
+    };
+    return () => { if (handleRef) handleRef.current = null; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Per-frame: keyboard input → target, then ease current toward target.
   useFrame((_, dt) => {
+    // If a snap tween is running it takes over current.* directly. Active drag
+    // cancels it so the user always wins.
+    if (tween.current) {
+      if (dragging.current) {
+        // Park target at the current view, otherwise the damping loop eases
+        // toward the snap destination after we exit and the snap visibly
+        // "finalizes" before the drag takes over.
+        target.current.x = current.current.x;
+        target.current.y = current.current.y;
+        tween.current = null;
+      } else {
+        const tw = tween.current;
+        const t = Math.min(1, (performance.now() - tw.start) / tw.duration);
+        // easeInOutCubic — accelerates and decelerates symmetrically, which
+        // reads as "travel" rather than the linear glide of a slider.
+        const eased = t < 0.5
+          ? 4 * t * t * t
+          : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        current.current.x = tw.fromX + (tw.toX - tw.fromX) * eased;
+        current.current.y = tw.fromY + (tw.toY - tw.fromY) * eased;
+        if (t >= 1) tween.current = null;
+        euler.current.set(current.current.x, current.current.y, 0);
+        camera.quaternion.setFromEuler(euler.current);
+        return;
+      }
+    }
+
     const k = keys.current;
     const step = KEY_SPEED * dt;
     if (k["ArrowLeft"]  || k["a"] || k["A"]) target.current.y += step;
@@ -325,13 +479,17 @@ function GyroTracker({ active }: { active: boolean }) {
 
 interface HotspotProps {
   id: string;
+  /** Full name (kept for accessibility and parity with content/landmarks.ts). */
   name: string;
+  /** Short display label for the floating in-scene chip; SERIF italic looks
+   *  cramped at this distance-rescaled size, so we keep this short and SANS. */
+  shortName: string;
   emoji: string;
   pos: [number, number, number];
   onTap: (id: string) => void;
 }
 
-function Hotspot({ id, name, emoji, pos, onTap }: HotspotProps) {
+function Hotspot({ id, name, shortName, emoji, pos, onTap }: HotspotProps) {
   const groupRef = useRef<THREE.Group>(null!);
   const [hovered, setHovered] = useState(false);
 
@@ -348,7 +506,7 @@ function Hotspot({ id, name, emoji, pos, onTap }: HotspotProps) {
         onPointerOut={() => setHovered(false)}
         scale={hovered ? 1.15 : 1}
       >
-        <sphereGeometry args={[0.4, 16, 16]} />
+        <sphereGeometry args={[0.7, 24, 24]} />
         <meshStandardMaterial
           color={hovered ? "#3b82f6" : "#f5f0e8"}
           emissive={hovered ? "#1d4ed8" : "#888888"}
@@ -360,11 +518,11 @@ function Hotspot({ id, name, emoji, pos, onTap }: HotspotProps) {
       <Html center distanceFactor={12}>
         <div
           className="pointer-events-none select-none text-center"
-          style={{ marginTop: "-52px" }}
+          style={{ marginTop: "-78px" }}
         >
           <div className="text-2xl leading-none">{emoji}</div>
           <div className="text-white text-[11px] bg-black/55 backdrop-blur-sm px-2 py-0.5 rounded-full whitespace-nowrap mt-1 shadow">
-            {name}
+            {shortName}
           </div>
         </div>
       </Html>
@@ -375,31 +533,47 @@ function Hotspot({ id, name, emoji, pos, onTap }: HotspotProps) {
 // ─── 3-D scene ────────────────────────────────────────────────────────────────
 
 interface SceneProps {
-  era: Era;
+  era: EraId;
   gyro: boolean;
+  /** When true, hide the synthetic sky/ground/fog so the live camera feed
+   *  shows through the transparent canvas behind the landmark hotspots. */
+  cameraMode: boolean;
+  lookHandleRef: React.MutableRefObject<LookHandle | null>;
+  onFirstInteract: () => void;
+  /** Optional yaw/pitch to start at — restored after navigating back. */
+  initialView?: { yaw: number; pitch: number };
   onTap: (id: string) => void;
 }
 
-function Scene({ era, gyro, onTap }: SceneProps) {
-  const cfg = ERAS.find(e => e.id === era)!;
+function Scene({ era, gyro, cameraMode, lookHandleRef, onFirstInteract, initialView, onTap }: SceneProps) {
+  const cfg = ERA_RENDER[era];
   return (
     <>
-      <Sky {...cfg.skyProps} />
+      {/* Synthetic backdrop — only when not passing through the real camera. */}
+      {!cameraMode && (
+        <>
+          <Sky {...cfg.skyProps} />
+          <fog attach="fog" args={[cfg.fogColor, 10, 60]} />
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]}>
+            <circleGeometry args={[60, 64]} />
+            <meshStandardMaterial color={cfg.groundColor} />
+          </mesh>
+        </>
+      )}
+
+      {/* Lights stay on in both modes — landmark spheres need to be lit. */}
       <ambientLight color={cfg.ambientColor} intensity={cfg.ambientIntensity} />
       <directionalLight position={cfg.skyProps.sunPosition} intensity={0.9} castShadow={false} />
-      <fog attach="fog" args={[cfg.fogColor, 10, 60]} />
-
-      {/* Ground plane */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]}>
-        <circleGeometry args={[60, 64]} />
-        <meshStandardMaterial color={cfg.groundColor} />
-      </mesh>
 
       {LANDMARKS.map(lm => (
         <Hotspot key={lm.id} {...lm} onTap={onTap} />
       ))}
 
-      <LookAround />
+      <LookAround
+        handleRef={lookHandleRef}
+        onFirstInteract={onFirstInteract}
+        initialView={initialView}
+      />
       <GyroTracker active={gyro} />
     </>
   );
@@ -413,25 +587,117 @@ type IOSDeviceOrientation = typeof DeviceOrientationEvent & {
 
 export function PanoramaScene() {
   const navigate = useNavigate();
-  const [era,     setEra]     = useState<Era>("present");
+  // Restore the last era the user picked this session so back-navigating
+  // from a detail page doesn't reset to "present".
+  const [era,     setEra]     = useState<EraId>(() => {
+    if (typeof window === "undefined" || !window.sessionStorage) return "present";
+    const raw = window.sessionStorage.getItem(ERA_STORAGE_KEY);
+    return isEraId(raw) ? raw : "present";
+  });
   const [gyro,    setGyro]    = useState(false);
   const [canGyro, setCanGyro] = useState(false);
   const [fading,  setFading]  = useState(false);
-  const cfg = ERAS.find(e => e.id === era)!;
 
-  // Detect gyroscope; auto-enable on Android (no permission gate)
+  const era_ = getEra(era)!;            // shared age metadata (label/year/accent)
+  const cfg  = ERA_RENDER[era];          // 3D-only render config
+
+  const lookHandleRef = useRef<LookHandle | null>(null);
+
+  // Restore the last camera orientation on mount so navigating back from a
+  // detail view drops the user where they were, not at the default Duomo
+  // pose. Read once (useState initializer) so re-renders don't re-read.
+  const [initialView] = useState<{ yaw: number; pitch: number } | undefined>(() => {
+    if (typeof window === "undefined" || !window.sessionStorage) return undefined;
+    const raw = window.sessionStorage.getItem(VIEW_STORAGE_KEY);
+    if (!raw) return undefined;
+    try {
+      const parsed = JSON.parse(raw);
+      if (typeof parsed?.yaw === "number" && typeof parsed?.pitch === "number") {
+        return { yaw: parsed.yaw, pitch: parsed.pitch };
+      }
+    } catch { /* corrupt entry — ignore */ }
+    return undefined;
+  });
+
+  const persistView = useCallback(() => {
+    const view = lookHandleRef.current?.getView();
+    if (!view || typeof window === "undefined" || !window.sessionStorage) return;
+    window.sessionStorage.setItem(VIEW_STORAGE_KEY, JSON.stringify(view));
+  }, []);
+
+  // Save the view on every unmount path (back button, sphere tap, browser
+  // navigation, etc.) so the next mount can restore it.
+  useEffect(() => {
+    return () => persistView();
+  }, [persistView]);
+
+  // Camera-passthrough AR — opt-in enhancement layered behind the 3D overlays.
+  // When unavailable / denied, the panorama backdrop stays as the visual fallback.
+  const [cameraMode, setCameraMode] = useState(false);
+  const camera = useCameraStream(cameraMode);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  // Detect support upfront so the toggle doesn't appear on browsers that
+  // can't grant camera access (insecure context, very old browsers).
+  const cameraSupported =
+    typeof navigator !== "undefined" &&
+    !!navigator.mediaDevices?.getUserMedia;
+
+  // Bind / release the video element when the stream changes.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.srcObject = camera.stream;
+    if (camera.stream) {
+      v.play().catch(() => { /* autoplay blocked is fine — user gesture got us here */ });
+    }
+  }, [camera.stream]);
+
+  // If a stream request is denied or errors, fall back to panorama view.
+  useEffect(() => {
+    if (camera.status === "denied" || camera.status === "unsupported" || camera.status === "error") {
+      setCameraMode(false);
+    }
+  }, [camera.status]);
+
+  const toggleCamera = () => setCameraMode(c => !c);
+
+  // Detect gyroscope and restore the user's previous toggle for this tab
+  // session. Note we do NOT auto-enable on first visit — the original logic
+  // assumed "no requestPermission API ⇒ Android, safe to auto-enable", but
+  // desktop Chrome also has DeviceOrientationEvent without requestPermission
+  // and was getting incorrectly turned on. Always require an explicit tap.
   useEffect(() => {
     if (!("DeviceOrientationEvent" in window)) return;
     setCanGyro(true);
-    const reqPerm = (DeviceOrientationEvent as IOSDeviceOrientation).requestPermission;
-    if (typeof reqPerm !== "function") setGyro(true);
+    const remembered = typeof window !== "undefined" && window.sessionStorage?.getItem(GYRO_STORAGE_KEY) === "on";
+    if (remembered) {
+      // The user previously enabled gyro this session (e.g. on the panorama,
+      // then navigated to detail and back). Re-attach the listener silently;
+      // iOS keeps OS-level permission alive for the page lifetime.
+      setGyro(true);
+    }
   }, []);
 
-  const switchEra = (next: Era) => {
+  // Persist the user's gyro preference for the rest of the tab session.
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.sessionStorage) return;
+    if (gyro) window.sessionStorage.setItem(GYRO_STORAGE_KEY, "on");
+    else window.sessionStorage.removeItem(GYRO_STORAGE_KEY);
+  }, [gyro]);
+
+  // Persist the selected era so detail views (and a back-navigation here)
+  // start at the same point in time the user last picked.
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.sessionStorage) return;
+    window.sessionStorage.setItem(ERA_STORAGE_KEY, era);
+  }, [era]);
+
+  const switchEra = useCallback((next: EraId) => {
     if (next === era || fading) return;
     setFading(true);
     setTimeout(() => { setEra(next); setFading(false); }, 350);
-  };
+  }, [era, fading]);
 
   const requestGyro = async () => {
     const reqPerm = (DeviceOrientationEvent as IOSDeviceOrientation).requestPermission;
@@ -443,16 +709,123 @@ export function PanoramaScene() {
     }
   };
 
+  const handleSnapToLandmark = (pos: [number, number, number]) => {
+    lookHandleRef.current?.lookAt(landmarkYaw(pos), 0);
+  };
+
+  // Show snap-to-landmark chips only when there's no gyro experience: redirecting
+  // the view manually on a gyro-tracked phone breaks the immersive orientation feel.
+  const showLandmarkChips = !canGyro || !gyro;
+
+  // Landmarks shortcut sheet — same affordance as ARArtifactDetail's bottom
+  // hex button; lets the user jump straight into a landmark detail without
+  // hunting for the sphere.
+  const [landmarksOpen, setLandmarksOpen] = useState(false);
+  const allLandmarks = useMemo(() => listLandmarks(), []);
+
+  const goToLandmarkDetail = useCallback((id: LandmarkId) => {
+    setLandmarksOpen(false);
+    persistView();
+    navigate(`/ar-artifact/${id}?period=${era}`, { viewTransition: true });
+  }, [navigate, era, persistView]);
+
+  // Voice — landmark / era recognition, then RAG fallback. Mirrors the
+  // detail view's behavior so the same phrases work on both screens.
+  const voiceHint = useMemo(() => pickVoiceHint(), []);
+
+  const handleVoiceCommand = useCallback((transcript: string) => {
+    const cmd = transcript.toLowerCase();
+
+    let nextLandmark: LandmarkId | null = null;
+    if (/galleria/.test(cmd)) nextLandmark = "galleria";
+    else if (/palazzo/.test(cmd)) nextLandmark = "palazzo";
+    else if (/duomo/.test(cmd)) nextLandmark = "duomo";
+
+    let nextEra: EraId | null = null;
+    if (/medieval/.test(cmd)) nextEra = "medieval";
+    else if (/post[-\s]?war|war/.test(cmd)) nextEra = "postwar";
+    else if (/present|now|today/.test(cmd)) nextEra = "present";
+
+    if (nextEra && nextEra !== era) switchEra(nextEra);
+
+    if (nextLandmark) {
+      // On no-gyro experiences, "Duomo" pans the camera toward the sphere.
+      // With gyro, the user is in physical control of orientation, so a
+      // landmark utterance jumps straight into its detail view instead.
+      if (showLandmarkChips) {
+        const lm = LANDMARKS.find(l => l.id === nextLandmark)!;
+        handleSnapToLandmark(lm.pos);
+      } else {
+        goToLandmarkDetail(nextLandmark);
+      }
+      return;
+    }
+
+    if (nextEra) return; // era-only command, handled above.
+
+    // Nothing recognized — ask the RAG so the user always gets an answer.
+    stopSpeaking();
+    sendMessage(transcript, "duomo")
+      .then((res) => {
+        const reply = res.answer || res.reply;
+        if (reply) speak(reply);
+      })
+      .catch(() => { /* silent — voice nav alone is acceptable */ });
+  }, [era, switchEra, showLandmarkChips, goToLandmarkDetail]);
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-black touch-none select-none">
 
+      {/* ── Live camera feed (behind the 3-D canvas) ──────────────────────── */}
+      {cameraMode && camera.status === "live" && (
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          className="absolute inset-0 w-full h-full object-cover z-0"
+          style={{
+            filter: ERA_CAMERA_FILTER[era],
+            transition: "filter 0.7s cubic-bezier(0.4, 0.1, 0.2, 1)",
+          }}
+        />
+      )}
+
       {/* ── 3-D canvas ────────────────────────────────────────────────────── */}
-      <Canvas camera={{ fov: 90, position: [0, 0, 0.001] }} style={{ background: "#000" }}>
+      <Canvas
+        camera={{ fov: 90, position: [0, 0, 0.001] }}
+        style={{ background: cameraMode && camera.status === "live" ? "transparent" : "#000" }}
+        gl={{ alpha: true, powerPreference: "high-performance" }}
+        className="relative z-10"
+        onCreated={({ gl }) => {
+          // Mark context loss as recoverable so the browser doesn't blacklist
+          // the page if the GPU genuinely fails. The "Context Lost" console
+          // message that fires during navigation away is benign — it's
+          // Three.js logging the disposal of the old context; the new mount
+          // gets a fresh one. Three logs unconditionally; we don't suppress.
+          gl.domElement.addEventListener("webglcontextlost", (e) => {
+            e.preventDefault();
+          });
+        }}
+      >
         <Suspense fallback={null}>
           <Scene
             era={era}
             gyro={gyro}
-            onTap={id => navigate(`/ar-artifact/${id}?period=${era}`)}
+            cameraMode={cameraMode && camera.status === "live"}
+            lookHandleRef={lookHandleRef}
+            initialView={initialView}
+            onFirstInteract={() => { /* reserved for future first-interact UX */ }}
+            onTap={id => {
+              // R3F's event system dispatches outside React's normal commit
+              // flow, so the manual startViewTransition() + flushSync() path
+              // races with R3F's batching and the VT snapshot misses the
+              // chip before the new view mounts. React Router 7's built-in
+              // viewTransition option integrates with the router's commit
+              // lifecycle and handles this case correctly.
+              persistView();
+              navigate(`/ar-artifact/${id}?period=${era}`, { viewTransition: true });
+            }}
           />
         </Suspense>
       </Canvas>
@@ -470,96 +843,252 @@ export function PanoramaScene() {
         )}
       </AnimatePresence>
 
-      {/* ── Top HUD ───────────────────────────────────────────────────────── */}
-      <div className="absolute top-0 inset-x-0 px-5 pt-12 pb-4 bg-gradient-to-b from-black/70 to-transparent z-10">
+      {/* ── Top HUD ──────────────────────────────────────────────────────────
+          Layout:
+            Row 1 (controls bar): X on left · controls on right.
+            Row 2 (scene header, centered): era chip, then description.
+          The header uses the same MONO + SERIF tokens as ARArtifactDetail
+          so the type voice is consistent across screens. */}
+      <div className="absolute top-0 inset-x-0 px-5 pt-12 pb-5 bg-gradient-to-b from-black/70 to-transparent z-10">
+        {/* Row 1 — controls */}
         <div className="flex items-center justify-between">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/")}
+            aria-label="Back to home"
+            title="Back to home"
             className="w-10 h-10 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white active:scale-95 transition-transform"
           >
             <X className="w-5 h-5" />
           </button>
 
-          <motion.div
-            key={era}
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-black/50 backdrop-blur-sm px-4 py-2 rounded-full text-center"
-          >
-            <p className="text-white text-sm font-medium">{cfg.label}</p>
-            <p className="text-white/65 text-[11px]">{cfg.century}</p>
-          </motion.div>
+          <div className="flex items-center gap-2">
+            {/* Camera-passthrough toggle — opt-in enhancement when supported. */}
+            {cameraSupported && (
+              <button
+                onClick={toggleCamera}
+                title={cameraMode ? "Turn camera off" : "Turn camera on"}
+                aria-pressed={cameraMode}
+                disabled={camera.status === "requesting"}
+                className={`w-10 h-10 backdrop-blur-sm rounded-full flex items-center justify-center text-white active:scale-95 transition-all ${
+                  cameraMode && camera.status === "live"
+                    ? "bg-red-500/80"
+                    : "bg-black/50"
+                } ${camera.status === "requesting" ? "opacity-60" : ""}`}
+              >
+                {cameraMode && camera.status === "live"
+                  ? <Camera className="w-4 h-4" />
+                  : <CameraOff className="w-4 h-4" />}
+              </button>
+            )}
 
-          {canGyro ? (
-            <button
-              onClick={requestGyro}
-              title={gyro ? "Gyro on" : "Enable gyroscope"}
-              className={`w-10 h-10 backdrop-blur-sm rounded-full flex items-center justify-center text-white active:scale-95 transition-all ${
-                gyro ? "bg-blue-500/75" : "bg-black/50"
-              }`}
-            >
-              <Navigation className="w-5 h-5" />
-            </button>
-          ) : (
-            <div className="w-10" />
-          )}
+            {canGyro ? (
+              <button
+                onClick={requestGyro}
+                title={gyro ? "Gyro on" : "Enable gyroscope"}
+                className={`w-10 h-10 backdrop-blur-sm rounded-full flex items-center justify-center text-white active:scale-95 transition-all ${
+                  gyro ? "bg-blue-500/75" : "bg-black/50"
+                }`}
+              >
+                <Compass className="w-5 h-5" />
+              </button>
+            ) : (
+              <div className="w-10" />
+            )}
+          </div>
         </div>
 
-        <motion.p
-          key={era + "-desc"}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="mt-2 text-white/75 text-xs"
-        >
-          {cfg.description}
-        </motion.p>
+        {/* Row 2 — centered scene header */}
+        <div className="mt-4 flex flex-col items-center text-center">
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full backdrop-blur-sm"
+            style={{
+              background: "rgba(0,0,0,0.55)",
+              border: `1px solid ${era_.accent}55`,
+              color: era_.accent,
+              fontFamily: MONO,
+              fontSize: 10,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              fontWeight: 600,
+              textShadow: "0 1px 4px rgba(0,0,0,0.85)",
+              boxShadow: "0 4px 14px rgba(0,0,0,0.45)",
+            }}
+          >
+            <span
+              className="inline-block w-1.5 h-1.5 rounded-full"
+              style={{ background: era_.accent, boxShadow: `0 0 6px ${era_.accent}` }}
+            />
+            {era_.label} · {era_.year}
+          </div>
+
+          <motion.p
+            key={era + "-desc"}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-2 max-w-md text-white/90 italic"
+            style={{
+              fontFamily: SERIF,
+              fontSize: 13,
+              lineHeight: 1.35,
+              textShadow: "0 2px 8px rgba(0,0,0,0.7), 0 0 2px rgba(0,0,0,0.55)",
+            }}
+          >
+            {cfg.description}
+          </motion.p>
+        </div>
       </div>
 
-      {/* ── Drag hint (auto-fades after 3 s) ─────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 0 }}
-        transition={{ delay: 3, duration: 1.2 }}
-        className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"
-      >
-        <div className="bg-black/45 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2">
-          <RotateCcw className="w-4 h-4 text-white" />
-          <span className="text-white text-sm">Drag to explore</span>
+      {/* ── Bottom controls ────────────────────────────────────────────────── */}
+      <div className="absolute bottom-0 inset-x-0 px-5 pb-8 pt-6 bg-gradient-to-t from-black/80 to-transparent z-10">
+
+        {/* Snap-to-landmark chips — no-gyro fallback only.
+            On a phone with gyro, manual yaw snaps would break the
+            "looking-around-physically" feel of the immersive experience. */}
+        {showLandmarkChips && (
+          <div className="flex items-center justify-center gap-2 mb-3">
+            {LANDMARKS.map(lm => (
+              <button
+                key={lm.id}
+                onClick={() => handleSnapToLandmark(lm.pos)}
+                className="px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/15 text-white/95 flex items-center gap-1.5 active:scale-95 transition-transform"
+                aria-label={`Look at ${lm.name}`}
+                data-vt-name={!landmarksOpen ? landmarkVT(lm.id) : undefined}
+                style={{
+                  fontFamily: SERIF, fontStyle: "italic", fontSize: 13,
+                  // Shared-element source: when a follow-up sphere tap fires
+                  // a navigation, this chip morphs into the detail image.
+                  // Suppressed while the landmarks sheet is open so the sheet
+                  // rows can claim the same names without duplicates.
+                  ...(landmarksOpen ? {} : { viewTransitionName: landmarkVT(lm.id) }),
+                } as React.CSSProperties}
+              >
+                <span className="text-sm leading-none not-italic">{lm.emoji}</span>
+                <span>{lm.shortName}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Era slider — the single age-navigation control used app-wide
+            (also in ARArtifactDetail). Stays in sync via content/landmarks.ts. */}
+        <div className="mx-auto w-full max-w-md px-4 py-3 rounded-2xl bg-black/40 backdrop-blur-sm border border-white/10">
+          <EraScrub value={era} onChange={switchEra} accent={era_.accent} />
         </div>
-      </motion.div>
 
-      {/* ── Bottom era switcher ────────────────────────────────────────────── */}
-      <div className="absolute bottom-0 inset-x-0 px-5 pb-10 pt-6 bg-gradient-to-t from-black/80 to-transparent z-10">
-
-        {/* Era pills */}
-        <div className="flex items-center justify-center gap-2 mb-3">
-          {ERAS.map(e => (
-            <button
-              key={e.id}
-              onClick={() => switchEra(e.id)}
-              className={`px-4 py-2 rounded-2xl flex flex-col items-center transition-all active:scale-95 ${
-                era === e.id
-                  ? `${e.accentClass} text-white shadow-lg`
-                  : "bg-white/15 backdrop-blur-sm text-white/80"
-              }`}
-            >
-              <span className="text-xs font-medium">{e.label}</span>
-              <span className="text-[10px] opacity-70">{e.subtitle}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Quick toggle: present ↔ medieval */}
-        <div className="flex justify-center">
+        {/* Bottom action row — mirrors ARArtifactDetail: landmarks · voice. */}
+        <div className="mx-auto w-full max-w-md mt-3 flex items-center gap-2">
           <button
-            onClick={() => switchEra(era === "present" ? "medieval" : "present")}
-            className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-5 py-2.5 rounded-full text-white text-sm active:scale-95 transition-transform"
+            onClick={() => setLandmarksOpen(true)}
+            title="Landmarks"
+            aria-label="Open landmarks"
+            style={{
+              width: 46, height: 46, borderRadius: 23,
+              background: "rgba(255,255,255,0.10)",
+              backdropFilter: "blur(6px)",
+              WebkitBackdropFilter: "blur(6px)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              boxShadow: "0 4px 14px rgba(0,0,0,0.35)",
+              color: FG, cursor: "pointer",
+              display: "inline-flex", alignItems: "center", justifyContent: "center",
+              position: "relative", flexShrink: 0,
+            }}
           >
-            <Clock className="w-4 h-4" />
-            <span>Switch to {era === "present" ? "Medieval" : "Present"}</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 1.5L13.5 4.5V11.5L8 14.5L2.5 11.5V4.5L8 1.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+              <circle cx="8" cy="8" r="1.5" fill="currentColor" />
+            </svg>
           </button>
+
+          <VoicePill
+            era={era_}
+            onCommand={handleVoiceCommand}
+            hint={
+              <>
+                Try{" "}
+                <span style={{ color: era_.accent, fontWeight: 600 }}>
+                  "{voiceHint}"
+                </span>
+              </>
+            }
+          />
         </div>
       </div>
+
+      {/* ── Landmarks sheet ─────────────────────────────────────────────────
+          Same affordance as ARArtifactDetail; tapping a landmark navigates
+          straight into its detail view. */}
+      {landmarksOpen && (
+        <div
+          className="absolute inset-0 z-40 flex items-end"
+          style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
+          onClick={() => setLandmarksOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: "100%", color: FG,
+              background: era_.tintPanel,
+              borderTopLeftRadius: 18, borderTopRightRadius: 18,
+              padding: "14px 16px 22px", maxHeight: "60%", overflowY: "auto",
+              border: `1px solid ${era_.accent}33`,
+              animation: "panoSheetUp 0.3s cubic-bezier(0.4,0.1,0.2,1)",
+            }}
+          >
+            <div style={{ width: 36, height: 4, background: "rgba(255,255,255,0.2)", borderRadius: 2, margin: "0 auto 12px" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
+              <div style={{ fontSize: 10, fontFamily: MONO, letterSpacing: "0.14em", color: era_.accent, textTransform: "uppercase", fontWeight: 600 }}>
+                Landmarks · {allLandmarks.length}
+              </div>
+              <div style={{ fontSize: 10, fontFamily: MONO, color: "rgba(244,242,236,0.55)" }}>{era_.label}</div>
+            </div>
+            <div style={{ display: "grid", gap: 8 }}>
+              {allLandmarks.map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => goToLandmarkDetail(l.id)}
+                  style={{
+                    padding: 10, border: "none", cursor: "pointer", textAlign: "left",
+                    background: "rgba(255,255,255,0.04)",
+                    borderRadius: 10,
+                    display: "flex", alignItems: "center", gap: 12,
+                    fontFamily: SERIF,
+                  }}
+                >
+                  <span
+                    data-vt-name={landmarkVT(l.id)}
+                    style={{
+                      width: 36, height: 36, borderRadius: "50%",
+                      background: `${era_.accent}22`,
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 18, flexShrink: 0,
+                      // Shared-element source for the sheet row → detail morph.
+                      // Chips above suppress their VT name while the sheet is
+                      // open, so these rows own the names exclusively.
+                      viewTransitionName: landmarkVT(l.id),
+                    } as React.CSSProperties}
+                  >
+                    {l.emoji}
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{
+                      display: "block",
+                      fontFamily: SERIF, fontStyle: "italic",
+                      fontSize: 16, color: FG,
+                      marginBottom: 2,
+                    }}>
+                      {l.shortName}
+                    </span>
+                    <span style={{ display: "block", fontSize: 10, color: "rgba(244,242,236,0.6)", fontFamily: MONO, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                      {l.kicker}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+            <style>{`@keyframes panoSheetUp { from { transform: translateY(20px); opacity: 0; } to { transform: none; opacity: 1; } }`}</style>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

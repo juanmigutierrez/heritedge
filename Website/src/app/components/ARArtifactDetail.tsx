@@ -8,7 +8,6 @@ import { ImageWithFallback } from "./figma/ImageWithFallback";
 import { sendMessage, speak, stopSpeaking } from "@/services/chatService";
 import { useVisitedHotspots } from "@/features/progress/useVisitedHotspots";
 import {
-  ERAS,
   getEra,
   getEraContent,
   getHotspots,
@@ -19,7 +18,6 @@ import {
   type LandmarkId,
 } from "@/content/landmarks";
 import {
-  EraBadge,
   EraScrub,
   FG,
   HotspotMarker,
@@ -33,7 +31,7 @@ import {
   matchHotspot,
 } from "./ar/shared";
 import { pickVoiceHint } from "./ar/voiceHints";
-import { landmarkVT, startViewTransition } from "./ar/viewTransition";
+import { landmarkVT } from "./ar/viewTransition";
 
 type TabId = "story" | "history" | "meaning";
 const TABS: TabId[] = ["story", "history", "meaning"];
@@ -41,6 +39,10 @@ const PERIODS: EraId[] = ["medieval", "postwar", "present"];
 
 const isPeriod = (v: string | null): v is EraId =>
   !!v && (PERIODS as string[]).includes(v);
+
+// Mirrors the key used in features/ar/xr/PanoramaScene.tsx so both screens
+// share the same selected-era memory across navigation within a tab session.
+const ERA_STORAGE_KEY = "heritedge:era";
 
 // ─── FlipFact (3D flip) ───────────────────────────────────────────────────────
 
@@ -125,8 +127,16 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
   const params = useParams<{ landmarkId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Era resolution priority: URL param → sessionStorage (last one used this
+  // session) → "present". The URL param wins so direct links and explicit
+  // navigations like /ar-artifact/duomo?period=medieval still pin the era.
   const urlPeriod = searchParams.get("period");
-  const eraId: EraId = isPeriod(urlPeriod) ? urlPeriod : "present";
+  const storedPeriod = typeof window !== "undefined"
+    ? window.sessionStorage?.getItem(ERA_STORAGE_KEY)
+    : null;
+  const eraId: EraId = isPeriod(urlPeriod)
+    ? urlPeriod
+    : isPeriod(storedPeriod) ? storedPeriod : "present";
   const landmarkId = params.landmarkId as LandmarkId;
 
   const landmark = useMemo(() => getLandmark(landmarkId), [landmarkId]);
@@ -151,14 +161,17 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
   const [pulse, setPulse] = useState(false);
   const [hintsOpen, setHintsOpen] = useState(false);
   const [landmarksOpen, setLandmarksOpen] = useState(false);
-  const [shakeFact, setShakeFact] = useState<{ a: string } | null>(null);
-  const [showCompare, setShowCompare] = useState(false);
   const [openHotspotId, setOpenHotspotId] = useState<string | null>(null);
   const voiceHint = useMemo(() => pickVoiceHint(), []);
   const imageCardRef = useRef<HTMLDivElement | null>(null);
 
   const goBackToOverview = () => {
-    startViewTransition(() => navigate("/ar-overview"));
+    // Router-native viewTransition option, same pattern as the panorama's
+    // sphere-tap path. The manual startViewTransition() + flushSync() wrapper
+    // races with the WebGL canvas init on remount and triggers
+    // "THREE.WebGLRenderer: Context Lost", which also breaks gyro persistence
+    // (the canvas crash prevents the GyroTracker effect from re-running).
+    navigate("/ar-overview", { viewTransition: true });
   };
 
   const openHotspot: Hotspot | null = useMemo(
@@ -173,6 +186,24 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
   useEffect(() => {
     setOpenHotspotId(null);
   }, [landmarkId, eraId]);
+
+  // Mirror the resolved era to sessionStorage so the panorama (and any other
+  // detail page navigated to without an explicit ?period=) starts here.
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.sessionStorage) return;
+    window.sessionStorage.setItem(ERA_STORAGE_KEY, eraId);
+  }, [eraId]);
+
+  // If we resolved era from storage rather than the URL, write it back into
+  // the URL so the address bar matches the rendered era — keeps copied links
+  // semantic (the URL alone tells you what's on screen).
+  useEffect(() => {
+    if (!isPeriod(urlPeriod)) {
+      setSearchParams({ period: eraId }, { replace: true });
+    }
+    // Run only when the URL period is missing/invalid; ignore eraId churn.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlPeriod]);
 
   const setEra = (next: EraId) =>
     setSearchParams({ period: next }, { replace: true });
@@ -199,9 +230,7 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
 
     if (nextLandmark && nextLandmark !== landmarkId) {
       const targetEra = nextEra ?? eraId;
-      startViewTransition(() => {
-        navigate(`/ar-artifact/${nextLandmark}?period=${targetEra}`);
-      });
+      navigate(`/ar-artifact/${nextLandmark}?period=${targetEra}`, { viewTransition: true });
     } else if (nextEra && nextEra !== eraId) {
       setEra(nextEra);
     } else {
@@ -226,16 +255,6 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
     window.setTimeout(() => setPulse(false), 600);
   };
 
-  const triggerShake = () => {
-    if (!landmark) return;
-    const facts = landmark.didYouKnow;
-    if (facts.length === 0) return;
-    const f = facts[Math.floor(Math.random() * facts.length)];
-    haptic([10, 40, 10]);
-    setShakeFact({ a: f.a });
-    window.setTimeout(() => setShakeFact(null), 4500);
-  };
-
   if (!landmark || !eraContent) {
     return (
       <div style={{ minHeight: "100vh", background: "#0B0B0E", color: FG, padding: 24, fontFamily: SANS }}>
@@ -257,23 +276,91 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
       {/* faint grain */}
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none", backgroundImage: "repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 3px)" }} />
 
-      {/* Top bar */}
-      <div style={{ padding: "16px 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, position: "relative", zIndex: 2 }}>
-        <button
-          onClick={goBackToOverview}
-          aria-label="Back to overview"
-          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: FG, width: 34, height: 34, borderRadius: "50%", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <EraBadge era={era} />
-        <button
-          onClick={() => setHintsOpen((o) => !o)}
-          aria-label="Help"
-          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: FG, width: 34, height: 34, borderRadius: "50%", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
-        >
-          <HelpCircle size={14} />
-        </button>
+      {/* Top HUD — same two-row pattern and spacing as PanoramaScene so the
+            back/help buttons land in the same screen position as the X /
+            camera / gyro buttons there.
+            Row 1 (controls): back · help
+            Row 2 (scene header, centered): era chip · landmark name · kicker. */}
+      <div
+        style={{
+          padding: "48px 20px 20px",
+          flexShrink: 0,
+          position: "relative",
+          zIndex: 2,
+          background: "linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0))",
+        }}
+      >
+        {/* Row 1 — controls */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          {/* Buttons match the PanoramaScene HUD recipe exactly: 40px round,
+               bg-black/50 + backdrop-blur-sm, no border, active:scale-95
+               press feedback. Tailwind classes used directly so the spec is
+               literally the same string in both files. */}
+          <button
+            onClick={goBackToOverview}
+            aria-label="Back to overview"
+            title="Back to overview"
+            className="w-10 h-10 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white active:scale-95 transition-transform"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <button
+            onClick={() => setHintsOpen((o) => !o)}
+            aria-label="Help"
+            title="Help"
+            className="w-10 h-10 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white active:scale-95 transition-transform"
+          >
+            <HelpCircle size={16} />
+          </button>
+        </div>
+
+        {/* Row 2 — centered scene header (era chip + landmark + kicker) */}
+        <div style={{ marginTop: 14, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full backdrop-blur-sm"
+            style={{
+              background: "rgba(0,0,0,0.55)",
+              border: `1px solid ${era.accent}55`,
+              color: era.accent,
+              fontFamily: MONO,
+              fontSize: 10,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              fontWeight: 600,
+              textShadow: "0 1px 4px rgba(0,0,0,0.85)",
+              boxShadow: "0 4px 14px rgba(0,0,0,0.45)",
+            }}
+          >
+            <span
+              className="inline-block w-1.5 h-1.5 rounded-full"
+              style={{ background: era.accent, boxShadow: `0 0 6px ${era.accent}` }}
+            />
+            {era.label} · {era.year}
+          </div>
+
+          <h1
+            style={{
+              margin: "10px 0 0",
+              fontFamily: SERIF, fontWeight: 400, fontStyle: "italic",
+              fontSize: 22, lineHeight: 1.1, letterSpacing: "-0.01em",
+              color: FG,
+              textShadow: "0 2px 8px rgba(0,0,0,0.7), 0 0 2px rgba(0,0,0,0.55)",
+            }}
+          >
+            {landmark.name}
+          </h1>
+
+          <p
+            style={{
+              margin: "4px 0 0",
+              fontFamily: MONO, fontSize: 10,
+              letterSpacing: "0.14em", textTransform: "uppercase",
+              color: SUBTLE,
+            }}
+          >
+            {landmark.kicker}
+          </p>
+        </div>
       </div>
 
       {/* Multimodal hints */}
@@ -295,7 +382,6 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
             { icon: "📍", t: "Tap markers", d: "Each numbered marker reveals a fact about a feature in the image. Tapped ones turn into checkmarks." },
             { icon: "🤏", t: "Pinch in", d: "Pinch the image inward to zoom back out to the overview." },
             { icon: "🎤", t: "Voice", d: 'Say a feature ("the spires", "Madonnina") or a place ("Galleria postwar") to jump there.' },
-            { icon: "🔀", t: "Shake", d: 'Shake the device for a random "did you know" fact.' },
           ].map((r) => (
             <div key={r.t} style={{ display: "flex", gap: 10, padding: "8px 0", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
               <div style={{ fontSize: 16, lineHeight: 1, flexShrink: 0, width: 22, textAlign: "center" }}>{r.icon}</div>
@@ -305,9 +391,6 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
               </div>
             </div>
           ))}
-          <button onClick={triggerShake} style={{ marginTop: 8, width: "100%", padding: "8px", background: era.accent, color: "#0a0a0a", border: "none", borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>
-            Simulate shake →
-          </button>
         </div>
       )}
 
@@ -320,7 +403,10 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
           transition: "border-color 0.4s, box-shadow 0.4s",
           height: 220,
           touchAction: "none",
-        }}>
+          // Shared-element source for the panorama → detail morph. Browsers
+          // that don't support View Transitions just ignore this property.
+          viewTransitionName: landmarkVT(landmark.id),
+        } as React.CSSProperties}>
           <ImageWithFallback
             src={landmark.images[eraId]}
             alt={`${landmark.name} — ${era.label}`}
@@ -361,17 +447,6 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
             }} />
           ))}
 
-          {/* Landmark + era label */}
-          <div style={{
-            position: "absolute", left: 12, bottom: 10,
-            fontFamily: MONO, fontSize: 9, letterSpacing: "0.08em",
-            color: "rgba(255,255,255,0.7)", textTransform: "uppercase",
-            padding: "4px 8px", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 4,
-            backdropFilter: "blur(4px)", background: "rgba(0,0,0,0.2)",
-          }}>
-            AR model · {landmark.id} · {era.label}
-          </div>
-
           {/* Progress chip — top-left of image */}
           {hotspots.length > 0 && (
             <div style={{
@@ -386,54 +461,7 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
               {visitedCount} / {hotspots.length} explored
             </div>
           )}
-
-          <button
-            onClick={() => setShowCompare((c) => !c)}
-            style={{
-              position: "absolute", top: 10, right: 12, zIndex: 4,
-              background: "rgba(0,0,0,0.55)", backdropFilter: "blur(10px)",
-              border: "none", color: "#fff", cursor: "pointer",
-              padding: "5px 10px", borderRadius: 8,
-              fontSize: 10, fontFamily: MONO, letterSpacing: "0.1em", textTransform: "uppercase",
-            }}
-          >
-            ⇄ compare
-          </button>
         </div>
-
-        {/* Compare row */}
-        {showCompare && (
-          <div style={{
-            display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8,
-            marginTop: 10,
-          }}>
-            {ERAS.map((e) => (
-              <button
-                key={e.id}
-                onClick={() => setEra(e.id)}
-                style={{
-                  position: "relative", borderRadius: 10, overflow: "hidden", cursor: "pointer",
-                  border: e.id === eraId ? `2px solid ${era.accent}` : "1px solid rgba(255,255,255,0.1)",
-                  padding: 0, height: 70, background: "transparent",
-                }}
-              >
-                <ImageWithFallback
-                  src={landmark.images[e.id]}
-                  alt={e.label}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-                <div style={{
-                  position: "absolute", inset: 0,
-                  background: "linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.7) 100%)",
-                  display: "flex", alignItems: "flex-end", justifyContent: "center",
-                  fontSize: 10, fontFamily: MONO, color: "#fff", padding: 4,
-                }}>
-                  {e.label}
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* Era scrubber */}
         <div style={{
@@ -445,21 +473,14 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
         </div>
       </div>
 
-      {/* Title + content */}
+      {/* Content (title now lives in the top header above) */}
       <div style={{
         margin: "12px 16px 0", flex: 1, minHeight: 0, overflowY: "auto",
         background: era.tintPanel, borderRadius: 14, padding: "14px 16px",
         border: "1px solid rgba(255,255,255,0.06)",
         position: "relative", zIndex: 1,
       }}>
-        <div style={{ fontSize: 9, fontFamily: MONO, letterSpacing: "0.14em", color: SUBTLE, textTransform: "uppercase" }}>
-          {landmark.kicker}
-        </div>
-        <h1 style={{ margin: "2px 0 0", fontFamily: SERIF, fontWeight: 400, fontSize: 24, lineHeight: 1.05, letterSpacing: "-0.01em", fontStyle: "italic" }}>
-          {landmark.name}
-        </h1>
-
-        <div style={{ display: "flex", gap: 14, marginTop: 10, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <div style={{ display: "flex", gap: 14, borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           {TABS.map((t) => (
             <button
               key={t}
@@ -511,25 +532,6 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
         </div>
       </div>
 
-      {/* Shake toast */}
-      {shakeFact && (
-        <div style={{
-          position: "absolute", left: 16, right: 16, top: 64, zIndex: 25,
-          background: era.accent, color: "#0a0a0a",
-          padding: "10px 14px", borderRadius: 12,
-          display: "flex", alignItems: "center", gap: 10,
-          boxShadow: `0 10px 28px ${era.accent}66`,
-          animation: "toastIn 0.35s cubic-bezier(0.4,0.1,0.2,1)",
-        }}>
-          <span style={{ fontSize: 18 }}>📳</span>
-          <div>
-            <div style={{ fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.7 }}>Shake · did you know</div>
-            <div style={{ fontSize: 12, fontWeight: 600, marginTop: 2 }}>{shakeFact.a}</div>
-          </div>
-          <style>{`@keyframes toastIn { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }`}</style>
-        </div>
-      )}
-
       {/* Hotspot bottom sheet */}
       <HotspotSheet
         hotspot={openHotspot}
@@ -570,30 +572,43 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
                     key={l.id}
                     onClick={() => {
                       setLandmarksOpen(false);
-                      startViewTransition(() => {
-                        navigate(`/ar-artifact/${l.id}?period=${eraId}`);
-                      });
+                      navigate(`/ar-artifact/${l.id}?period=${eraId}`, { viewTransition: true });
                     }}
                     style={{
-                      padding: 8, border: "none", cursor: "pointer", textAlign: "left",
+                      padding: 10, border: "none", cursor: "pointer", textAlign: "left",
                       background: active ? `${era.accent}22` : "rgba(255,255,255,0.04)",
                       borderRadius: 10,
                       display: "flex", alignItems: "center", gap: 12,
-                      fontFamily: SANS,
+                      fontFamily: SERIF,
                     }}
                   >
-                    <span style={{ width: 44, height: 44, borderRadius: 8, overflow: "hidden", flexShrink: 0 }}>
-                      <ImageWithFallback
-                        src={l.images[eraId]}
-                        alt={l.name}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      />
+                    <span
+                      data-vt-name={!active ? landmarkVT(l.id) : undefined}
+                      style={{
+                        width: 36, height: 36, borderRadius: "50%",
+                        background: `${era.accent}22`,
+                        display: "inline-flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 18, flexShrink: 0,
+                        // Shared-element source: this thumbnail morphs into the
+                        // big image card on the next page. Only the inactive
+                        // rows get a name; the active landmark's name belongs
+                        // to the big card already on this page.
+                        ...(active ? {} : { viewTransitionName: landmarkVT(l.id) }),
+                      } as React.CSSProperties}
+                    >
+                      {l.emoji}
                     </span>
                     <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ display: "block", fontSize: 13, fontWeight: active ? 700 : 500, color: active ? era.accent : FG, marginBottom: 2 }}>
-                        {l.name}
+                      <span style={{
+                        display: "block",
+                        fontFamily: SERIF, fontStyle: "italic",
+                        fontSize: 16, fontWeight: 400,
+                        color: active ? era.accent : FG,
+                        marginBottom: 2,
+                      }}>
+                        {l.shortName}
                       </span>
-                      <span style={{ display: "block", fontSize: 10, color: SUBTLE, fontFamily: MONO, letterSpacing: "0.06em" }}>
+                      <span style={{ display: "block", fontSize: 10, color: SUBTLE, fontFamily: MONO, letterSpacing: "0.06em", textTransform: "uppercase" }}>
                         {l.kicker}
                       </span>
                     </span>
@@ -609,16 +624,23 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
         </div>
       )}
 
-      {/* Bottom row: landmarks · voice · shake */}
-      <div style={{ padding: "12px 16px 14px", flexShrink: 0, display: "flex", gap: 8, alignItems: "center", position: "relative", zIndex: 2, width: "100%", boxSizing: "border-box" }}>
+      {/* Bottom row: landmarks · voice — uses the same px-5 / pt-6 / pb-8
+           outer spacing as PanoramaScene's bottom-controls container so the
+           row sits at the same screen-edge offset and the same vertical
+           breathing room on both screens. */}
+      <div className="px-5 pb-8 pt-6" style={{ flexShrink: 0, position: "relative", zIndex: 2 }}>
+        <div className="mx-auto w-full max-w-md mt-3 flex items-center gap-2">
         <button
           onClick={() => setLandmarksOpen(true)}
           title="Landmarks"
           aria-label="Open landmarks"
           style={{
             width: 46, height: 46, borderRadius: 23,
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.1)",
+            background: "rgba(255,255,255,0.10)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+            border: "1px solid rgba(255,255,255,0.18)",
+            boxShadow: "0 4px 14px rgba(0,0,0,0.35)",
             color: FG, cursor: "pointer",
             display: "inline-flex", alignItems: "center", justifyContent: "center",
             position: "relative", flexShrink: 0,
@@ -628,43 +650,21 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
             <path d="M8 1.5L13.5 4.5V11.5L8 14.5L2.5 11.5V4.5L8 1.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
             <circle cx="8" cy="8" r="1.5" fill="currentColor" />
           </svg>
-          <span style={{
-            position: "absolute", top: -2, right: -2,
-            width: 16, height: 16, borderRadius: "50%",
-            background: era.accent, color: "#0a0a0a",
-            fontSize: 9, fontWeight: 700, fontFamily: MONO,
-            display: "inline-flex", alignItems: "center", justifyContent: "center",
-            border: `2px solid ${era.tintBg}`,
-          }}>{allLandmarks.length}</span>
         </button>
 
-        <VoicePill
-          era={era}
-          onCommand={handleVoiceCommand}
-          hint={
-            <>
-              Try{" "}
-              <span style={{ color: era.accent, fontWeight: 600 }}>
-                "{voiceHint}"
-              </span>
-            </>
-          }
-        />
-
-        <button
-          onClick={triggerShake}
-          title="Shake for fact"
-          aria-label="Shake for a random fact"
-          style={{
-            width: 46, height: 46, borderRadius: 23,
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            color: era.accent, cursor: "pointer",
-            display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0,
-          }}
-        >
-          📳
-        </button>
+          <VoicePill
+            era={era}
+            onCommand={handleVoiceCommand}
+            hint={
+              <>
+                Try{" "}
+                <span style={{ color: era.accent, fontWeight: 600 }}>
+                  "{voiceHint}"
+                </span>
+              </>
+            }
+          />
+        </div>
       </div>
     </div>
   );
