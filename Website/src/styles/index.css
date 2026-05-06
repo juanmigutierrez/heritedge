@@ -1,3 +1,37 @@
-@import './fonts.css';
-@import './tailwind.css';
-@import './theme.css';
+/* ==============================
+   GLOBAL STYLES ENTRY POINT
+   ============================== */
+
+/* 1. Fonts first (base typography system) */
+@import "./fonts.css";
+
+/* 2. Theme variables (colors, spacing, design tokens) */
+@import "./theme.css";
+
+/* 3. Tailwind (utilities override everything) */
+@import "./tailwind.css";
+
+/* ==============================
+   BASE RESET / GLOBAL BEHAVIOR
+   Tailwind preflight already covers font-smoothing for us; we just
+   layer on smooth scrolling and a theme-aware focus ring.
+   ============================== */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--background);
+    color: var(--foreground);
+    min-height: 100dvh;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+}

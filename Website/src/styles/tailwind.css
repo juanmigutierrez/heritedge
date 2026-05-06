@@ -1,4 +1,19 @@
-@import 'tailwindcss' source(none);
-@source '../**/*.{js,ts,jsx,tsx}';
+/* Tailwind core */
+@import "tailwindcss";
+@import "tw-animate-css";
 
-@import 'tw-animate-css';
+@source "../**/*.{js,ts,jsx,tsx}";
+
+@layer base {
+  html { font-size: 16px; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-[var(--accent)] text-[var(--accent-foreground)] px-5 py-2 rounded-full text-sm transition-all duration-300 hover:opacity-90 active:scale-95;
+  }
+
+  .card {
+    @apply bg-card rounded-2xl border border-border shadow-sm;
+  }
+}
