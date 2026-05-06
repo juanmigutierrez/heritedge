@@ -1,11 +1,7 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { motion, AnimatePresence } from "motion/react";
-import { ArrowLeft, Send, Mic, MicOff, Pause, Play, X } from "lucide-react";
-import { useVoiceService } from "@/services/voiceService";
-import { sendMessage } from "@/services/chatService";
-
-// ─── Types ─────────────────────────────────────────────────────────────────────
+import { motion } from "motion/react";
+import { ArrowLeft, Send, Mic, MicOff } from "lucide-react";
 
 interface Message {
   id: string;

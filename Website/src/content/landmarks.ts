@@ -85,9 +85,14 @@ export interface Quiz {
 
 export interface LandmarkMeta {
   id: LandmarkId;
+  /** Full canonical name — used in titles, sheets, summaries. */
   name: string;
+  /** One-word short name for tight contexts: in-scene 3D labels, snap chips. */
+  shortName: string;
   /** Short overline above the title — context-setting one-liner. */
   kicker: string;
+  /** Single-glyph icon used as a thumbnail in landmark sheets / chips. */
+  emoji: string;
   /** Period-keyed image URLs. */
   images: Record<EraId, string>;
   /** Per-era hotspot lists. Up to ~4 per era. */
@@ -150,7 +155,9 @@ const LANDMARK_META: Record<LandmarkId, LandmarkMeta> = {
   duomo: {
     id: "duomo",
     name: "Duomo di Milano",
+    shortName: "Duomo",
     kicker: "Milan's gothic heart",
+    emoji: "⛪",
     images: {
       medieval:
         "https://images.unsplash.com/photo-1611165967659-c382c59011bf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpZXZhbCUyMGNhdGhlZHJhbCUyMGdvdGhpYyUyMGFyY2hpdGVjdHVyZXxlbnwxfHx8fDE3NzQ3MjI5Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080",
@@ -230,7 +237,9 @@ const LANDMARK_META: Record<LandmarkId, LandmarkMeta> = {
   galleria: {
     id: "galleria",
     name: "Galleria Vittorio Emanuele II",
+    shortName: "Galleria",
     kicker: "Milan's living room",
+    emoji: "🏛️",
     images: {
       medieval:
         "https://images.unsplash.com/photo-1611165967659-c382c59011bf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpZXZhbCUyMGNhdGhlZHJhbCUyMGdvdGhpYyUyMGFyY2hpdGVjdHVyZXxlbnwxfHx8fDE3NzQ3MjI5Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080",
@@ -301,7 +310,9 @@ const LANDMARK_META: Record<LandmarkId, LandmarkMeta> = {
   palazzo: {
     id: "palazzo",
     name: "Palazzo Reale",
+    shortName: "Palazzo",
     kicker: "Seat of power, now of art",
+    emoji: "🏰",
     images: {
       medieval:
         "https://images.unsplash.com/photo-1611165967659-c382c59011bf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpZXZhbCUyMGNhdGhlZHJhbCUyMGdvdGhpYyUyMGFyY2hpdGVjdHVyZXxlbnwxfHx8fDE3NzQ3MjI5Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080",
@@ -402,7 +413,14 @@ const FALLBACK_CONTENT: EraContent = {
 // Keep these synchronous for now. When you wire a real backend, change the
 // signatures to async and use the loader pattern shown in ARArtifactDetail.tsx.
 
-export const listLandmarks = (): LandmarkMeta[] => Object.values(LANDMARK_META);
+// Display order mirrors the geographic layout of the piazza (left-to-right
+// when facing the cathedral): Galleria on the west side, Duomo central,
+// Palazzo on the east. Used by all sheets / rows so navigation reads
+// intuitively. Change here to change everywhere.
+const DISPLAY_ORDER: LandmarkId[] = ["galleria", "duomo", "palazzo"];
+
+export const listLandmarks = (): LandmarkMeta[] =>
+  DISPLAY_ORDER.map((id) => LANDMARK_META[id]);
 
 export const getLandmark = (id: LandmarkId): LandmarkMeta | undefined =>
   LANDMARK_META[id];
