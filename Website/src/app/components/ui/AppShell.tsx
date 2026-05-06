@@ -10,8 +10,9 @@ import { BottomNav } from "./BottomNav";
 export function AppShell() {
   const { pathname } = useLocation();
 
-  // The AR artefact detail screen is full-bleed by design — hide chrome there.
-  const isImmersive = pathname.startsWith("/ar/artifact");
+  // AR artefact detail and the panoramic AR overview are full-bleed by design — hide chrome there.
+  const isImmersive =
+    pathname.startsWith("/ar-artifact") || pathname === "/ar-overview";
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground">

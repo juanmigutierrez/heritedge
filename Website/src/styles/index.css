@@ -35,3 +35,28 @@
     border-radius: 6px;
   }
 }
+
+/* ==============================
+   VIEW TRANSITIONS
+   The browser fires these whenever startViewTransition() is called.
+   Default cross-fade is fine; we slow it slightly and give shared-element
+   morphs (e.g. landmark snap chip → detail image card) a longer, eased
+   timing so they read as travel rather than a snap.
+   ============================== */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.45s;
+  animation-timing-function: cubic-bezier(0.4, 0.1, 0.2, 1);
+}
+
+/* Shared-element morphs use the landmark-* names assigned via inline style
+   (viewTransitionName). Longer easing sells the "transportation" feel. */
+::view-transition-old(landmark-duomo),
+::view-transition-new(landmark-duomo),
+::view-transition-old(landmark-galleria),
+::view-transition-new(landmark-galleria),
+::view-transition-old(landmark-palazzo),
+::view-transition-new(landmark-palazzo) {
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.4, 0.0, 0.2, 1);
+}
