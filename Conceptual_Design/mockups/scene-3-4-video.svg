@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 720" font-family="sans-serif">
+<rect width="380" height="720" rx="32" fill="#14110F"/>
+<rect x="8" y="8" width="364" height="704" rx="26" fill="#14110F" stroke="rgba(237,230,218,0.06)"/>
+<text x="22" y="38" font-size="11" fill="#8A847C">9:41</text>
+<g transform="translate(22,60)">
+<rect width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="50" width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="100" width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="150" width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="200" width="44" height="3" rx="1.5" fill="rgba(229,185,72,0.7)"/>
+<rect x="250" width="44" height="3" rx="1.5" fill="rgba(237,230,218,0.18)"/>
+<rect x="300" width="44" height="3" rx="1.5" fill="rgba(237,230,218,0.18)"/>
+</g>
+<text x="22" y="92" font-size="10" fill="#8A847C" letter-spacing="1.5">CHAPTER 3 · MODERN · SCENE 3.4 · VIDEO</text>
+<text x="22" y="125" font-size="11" fill="#E5B948" letter-spacing="1.5">25 APRIL 1945</text>
+<text x="22" y="165" font-size="22" font-weight="500" fill="#EDE6DA" font-family="Georgia,serif">Milan, liberated.</text>
+<g transform="translate(22,195)">
+<rect width="336" height="220" rx="14" fill="#0a0807"/>
+<g opacity="0.65">
+<rect x="40" y="80" width="20" height="40" fill="#888" rx="2"/>
+<rect x="70" y="70" width="20" height="50" fill="#888" rx="2"/>
+<rect x="100" y="60" width="20" height="60" fill="#999" rx="2"/>
+<rect x="130" y="68" width="20" height="52" fill="#888" rx="2"/>
+<rect x="160" y="75" width="20" height="45" fill="#888" rx="2"/>
+<rect x="190" y="65" width="20" height="55" fill="#999" rx="2"/>
+<rect x="220" y="78" width="20" height="42" fill="#888" rx="2"/>
+<rect x="250" y="72" width="20" height="48" fill="#888" rx="2"/>
+<rect x="280" y="80" width="16" height="40" fill="#888" rx="2"/>
+<rect x="40" y="140" width="280" height="2" fill="#666"/>
+<text x="180" y="40" font-size="11" fill="rgba(237,230,218,0.55)" text-anchor="middle" letter-spacing="1.5">▶ ARCHIVAL FOOTAGE · 0:00 / 0:30</text>
+</g>
+<g transform="translate(168,105)">
+<circle r="22" fill="rgba(229,185,72,0.18)" stroke="#E5B948" stroke-width="2"/>
+<path d="M-6 -8 L8 0 L-6 8 Z" fill="#E5B948"/>
+</g>
+<rect x="14" y="200" width="180" height="12" rx="6" fill="rgba(237,230,218,0.15)"/>
+<rect x="14" y="200" width="56" height="12" rx="6" fill="#E5B948"/>
+<text x="206" y="210" font-size="10" fill="rgba(237,230,218,0.6)">0:10 / 0:30</text>
+<g transform="translate(296,200)">
+<rect width="28" height="12" rx="6" fill="rgba(20,17,15,0.5)" stroke="rgba(237,230,218,0.25)"/>
+<text x="14" y="9" font-size="8" fill="#EDE6DA" text-anchor="middle">🔊</text>
+</g>
+</g>
+<text x="22" y="445" font-size="12" fill="rgba(237,230,218,0.85)" font-family="Georgia,serif">
+<tspan x="22" dy="0">Three years earlier the square was empty under</tspan>
+<tspan x="22" dy="18">air-raid sirens. Today, this is the first crowd to</tspan>
+<tspan x="22" dy="18">fill it freely.</tspan>
+</text>
+<g transform="translate(22,520)">
+<rect width="336" height="44" rx="12" fill="#E5B948"/>
+<text x="168" y="28" font-size="13" font-weight="500" fill="#1A1614" text-anchor="middle">Continue →</text>
+</g>
+<text x="190" y="585" font-size="10" fill="#8A847C" text-anchor="middle">Source: Istituto Luce · public-domain</text>
+<rect x="60" y="676" width="260" height="22" rx="11" fill="rgba(255,255,255,0.05)" stroke="rgba(237,230,218,0.08)"/>
+<text x="190" y="691" font-size="9" fill="#8A847C" text-anchor="middle">Home · AR · Guide · Hunt</text>
+</svg>

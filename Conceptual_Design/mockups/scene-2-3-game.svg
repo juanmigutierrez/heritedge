@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 720" font-family="sans-serif">
+<rect width="380" height="720" rx="32" fill="#14110F"/>
+<rect x="8" y="8" width="364" height="704" rx="26" fill="#14110F" stroke="rgba(237,230,218,0.06)"/>
+<text x="22" y="38" font-size="11" fill="#8A847C">9:41</text>
+<g transform="translate(22,60)">
+<rect width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="50" width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="100" width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="150" width="44" height="3" rx="1.5" fill="rgba(229,185,72,0.7)"/>
+<rect x="200" width="44" height="3" rx="1.5" fill="rgba(237,230,218,0.18)"/>
+<rect x="250" width="44" height="3" rx="1.5" fill="rgba(237,230,218,0.18)"/>
+<rect x="300" width="44" height="3" rx="1.5" fill="rgba(237,230,218,0.18)"/>
+</g>
+<text x="22" y="92" font-size="10" fill="#8A847C" letter-spacing="1.5">CHAPTER 2 · CROWN · SCENE 2.3 · MINI-GAME</text>
+<text x="22" y="125" font-size="11" fill="#E5B948" letter-spacing="1.5">DRAG TO MATCH</text>
+<text x="22" y="165" font-size="20" font-weight="500" fill="#EDE6DA" font-family="Georgia,serif">Match the architect</text>
+<text x="22" y="190" font-size="20" font-weight="500" fill="#EDE6DA" font-family="Georgia,serif">to the building.</text>
+<text x="22" y="240" font-size="10" fill="#8A847C" letter-spacing="1">BUILDINGS</text>
+<g transform="translate(22,255)">
+<rect width="100" height="60" rx="10" fill="#25201D"/>
+<text x="50" y="30" font-size="10" fill="#EDE6DA" text-anchor="middle">Duomo</text>
+<text x="50" y="45" font-size="8" fill="#8A847C" text-anchor="middle">1386</text>
+</g>
+<g transform="translate(140,255)">
+<rect width="100" height="60" rx="10" fill="#25201D"/>
+<text x="50" y="30" font-size="10" fill="#EDE6DA" text-anchor="middle">Palazzo Reale</text>
+<text x="50" y="45" font-size="8" fill="#8A847C" text-anchor="middle">1773</text>
+</g>
+<g transform="translate(258,255)">
+<rect width="100" height="60" rx="10" fill="#25201D"/>
+<text x="50" y="30" font-size="10" fill="#EDE6DA" text-anchor="middle">La Scala</text>
+<text x="50" y="45" font-size="8" fill="#8A847C" text-anchor="middle">1778</text>
+</g>
+<line x1="72" y1="315" x2="72" y2="395" stroke="#E5B948" stroke-width="1.5" stroke-dasharray="3 3"/>
+<line x1="190" y1="315" x2="245" y2="395" stroke="#E5B948" stroke-width="1.5"/>
+<line x1="308" y1="315" x2="245" y2="395" stroke="#E5B948" stroke-width="1.5"/>
+<text x="22" y="425" font-size="10" fill="#8A847C" letter-spacing="1">ARCHITECTS</text>
+<g transform="translate(22,440)">
+<rect width="100" height="46" rx="10" fill="rgba(229,185,72,0.15)" stroke="#E5B948"/>
+<text x="50" y="22" font-size="10" fill="#EDE6DA" text-anchor="middle">Simone da</text>
+<text x="50" y="34" font-size="10" fill="#EDE6DA" text-anchor="middle">Orsenigo</text>
+</g>
+<g transform="translate(195,440)">
+<rect width="100" height="46" rx="10" fill="rgba(229,185,72,0.15)" stroke="#E5B948"/>
+<text x="50" y="22" font-size="10" fill="#EDE6DA" text-anchor="middle">Giuseppe</text>
+<text x="50" y="34" font-size="10" fill="#EDE6DA" text-anchor="middle">Piermarini</text>
+</g>
+<text x="190" y="525" font-size="11" fill="rgba(143,185,135,1)" text-anchor="middle">Piermarini designed both. They share a wall.</text>
+<g transform="translate(22,545)">
+<rect width="336" height="44" rx="12" fill="#E5B948"/>
+<text x="168" y="28" font-size="13" font-weight="500" fill="#1A1614" text-anchor="middle">Continue →</text>
+</g>
+<rect x="60" y="676" width="260" height="22" rx="11" fill="rgba(255,255,255,0.05)" stroke="rgba(237,230,218,0.08)"/>
+<text x="190" y="691" font-size="9" fill="#8A847C" text-anchor="middle">Home · AR · Guide · Hunt</text>
+</svg>

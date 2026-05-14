@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 720" font-family="sans-serif">
+<rect width="380" height="720" rx="32" fill="#14110F"/>
+<rect x="8" y="8" width="364" height="704" rx="26" fill="#14110F" stroke="rgba(237,230,218,0.06)"/>
+<text x="22" y="38" font-size="11" fill="#8A847C">9:41</text>
+<g transform="translate(22,60)">
+<rect width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="50" width="44" height="3" rx="1.5" fill="rgba(237,230,218,0.18)"/>
+<rect x="100" width="44" height="3" rx="1.5" fill="rgba(237,230,218,0.18)"/>
+<rect x="150" width="44" height="3" rx="1.5" fill="rgba(237,230,218,0.18)"/>
+<rect x="200" width="44" height="3" rx="1.5" fill="rgba(237,230,218,0.18)"/>
+<rect x="250" width="44" height="3" rx="1.5" fill="rgba(237,230,218,0.18)"/>
+<rect x="300" width="44" height="3" rx="1.5" fill="rgba(237,230,218,0.18)"/>
+</g>
+<text x="22" y="92" font-size="10" fill="#8A847C" letter-spacing="1.5">CHAPTER 1 · BIRTH · SCENE 1.1</text>
+<g transform="translate(190,260)">
+<path d="M-20 -8 L-12 -22 L-4 -22 L-12 -8 Z M0 -8 L8 -22 L16 -22 L8 -8 Z" fill="#E5B948"/>
+</g>
+<text x="32" y="340" font-size="20" font-weight="500" fill="#EDE6DA" font-family="Georgia,serif" font-style="italic">
+<tspan x="32" dy="0">A city dared to begin</tspan>
+<tspan x="32" dy="32">a cathedral that would</tspan>
+<tspan x="32" dy="32">outlive every hand that</tspan>
+<tspan x="32" dy="32">touched it.</tspan>
+</text>
+<text x="190" y="510" font-size="10" fill="#8A847C" text-anchor="middle">Luca · 15 s narration</text>
+<g transform="translate(22,560)">
+<rect width="110" height="44" rx="12" fill="#1F1B19" stroke="rgba(237,230,218,0.1)"/>
+<text x="55" y="28" font-size="13" fill="#EDE6DA" text-anchor="middle">← Back</text>
+</g>
+<g transform="translate(248,560)">
+<rect width="110" height="44" rx="12" fill="#E5B948"/>
+<text x="55" y="28" font-size="13" font-weight="500" fill="#1A1614" text-anchor="middle">Next →</text>
+</g>
+<rect x="60" y="676" width="260" height="22" rx="11" fill="rgba(255,255,255,0.05)" stroke="rgba(237,230,218,0.08)"/>
+<text x="190" y="691" font-size="9" fill="#8A847C" text-anchor="middle">Home · AR · Guide · Hunt</text>
+</svg>
