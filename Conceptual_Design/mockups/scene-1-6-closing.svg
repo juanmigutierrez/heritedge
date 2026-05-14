@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 720" font-family="sans-serif">
+<rect width="380" height="720" rx="32" fill="#14110F"/>
+<rect x="8" y="8" width="364" height="704" rx="26" fill="#14110F" stroke="rgba(237,230,218,0.06)"/>
+<text x="22" y="38" font-size="11" fill="#8A847C">9:41</text>
+<g transform="translate(22,60)">
+<rect width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="50" width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="100" width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="150" width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="200" width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="250" width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="300" width="44" height="3" rx="1.5" fill="rgba(229,185,72,0.7)"/>
+</g>
+<text x="22" y="92" font-size="10" fill="#8A847C" letter-spacing="1.5">CHAPTER 1 · BIRTH · SCENE 1.6 · CLOSING</text>
+<text x="190" y="160" font-size="11" fill="#E5B948" text-anchor="middle" letter-spacing="2">END OF CHAPTER</text>
+<text x="190" y="280" font-size="28" font-weight="500" fill="#EDE6DA" text-anchor="middle" font-family="Georgia,serif">But this was</text>
+<text x="190" y="320" font-size="28" font-weight="500" fill="#EDE6DA" text-anchor="middle" font-family="Georgia,serif">only the beginning.</text>
+<text x="190" y="380" font-size="13" fill="rgba(237,230,218,0.7)" text-anchor="middle" font-family="Georgia,serif">
+<tspan x="190" dy="0">The Visconti gave the cathedral marble.</tspan>
+<tspan x="190" dy="18">The Sforza would give it Leonardo.</tspan>
+<tspan x="190" dy="18">Napoleon would come centuries later.</tspan>
+</text>
+<g transform="translate(190,470)">
+<circle r="32" fill="rgba(229,185,72,0.15)"/>
+<text y="6" font-size="22" fill="#E5B948" text-anchor="middle">→</text>
+</g>
+<g transform="translate(40,560)">
+<rect width="300" height="48" rx="14" fill="#E5B948"/>
+<text x="150" y="30" font-size="14" font-weight="500" fill="#1A1614" text-anchor="middle">Begin Chapter 2 — Crown</text>
+</g>
+<text x="190" y="630" font-size="11" fill="#8A847C" text-anchor="middle">Tap to continue the journey</text>
+<rect x="60" y="676" width="260" height="22" rx="11" fill="rgba(255,255,255,0.05)" stroke="rgba(237,230,218,0.08)"/>
+<text x="190" y="691" font-size="9" fill="#8A847C" text-anchor="middle">Home · AR · Guide · Hunt</text>
+</svg>

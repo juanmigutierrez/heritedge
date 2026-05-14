@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 720" font-family="-apple-system, system-ui, sans-serif">
+  <rect width="380" height="720" rx="32" fill="#14110F"/>
+  <defs>
+    <linearGradient id="selfieBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#252028"/>
+      <stop offset="1" stop-color="#14110F"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="364" height="704" rx="26" fill="url(#selfieBg)"/>
+
+  <text x="22" y="38" font-size="11" fill="#8A847C">9:41</text>
+
+  <text x="190" y="78" font-size="10" fill="#E5B948" text-anchor="middle" letter-spacing="1.5">YOUR MILAN SOUVENIR</text>
+  <text x="190" y="112" font-size="22" font-weight="500" fill="#EDE6DA" text-anchor="middle" font-family="Georgia, serif">Take a portrait.</text>
+
+  <g transform="translate(60,140)">
+    <rect width="260" height="340" rx="20" fill="rgba(255,255,255,0.04)" stroke="rgba(237,230,218,0.1)"/>
+
+    <g transform="translate(130,160)">
+      <ellipse cx="0" cy="0" rx="62" ry="78" fill="#3a2a18"/>
+      <ellipse cx="-22" cy="-15" rx="6" ry="9" fill="#1A1614"/>
+      <ellipse cx="22" cy="-15" rx="6" ry="9" fill="#1A1614"/>
+      <path d="M-18 30 Q0 40 18 30" stroke="#1A1614" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </g>
+
+    <g transform="translate(130,82)">
+      <ellipse cx="0" cy="0" rx="36" ry="10" fill="none" stroke="#E5B948" stroke-width="2.5"/>
+      <circle cx="0" cy="-3" r="3" fill="#E5B948"/>
+    </g>
+
+    <g opacity="0.55">
+      <path d="M68 28 L84 8 L100 28 Z" fill="#E5B948"/>
+      <path d="M88 50 L104 18 L120 50 Z" fill="#E5B948"/>
+      <path d="M140 12 L156 -10 L172 12 Z" fill="#E5B948"/>
+      <path d="M170 30 L186 0 L202 30 Z" fill="#E5B948"/>
+    </g>
+
+    <text x="20" y="316" font-size="10" fill="#E5B948" letter-spacing="1">THE MADONNINA</text>
+    <text x="20" y="332" font-size="10" fill="rgba(237,230,218,0.7)">Milan, 2026 · 4 of 5 stops</text>
+  </g>
+
+  <text x="22" y="510" font-size="10" fill="#8A847C" letter-spacing="1.5">CHOOSE YOUR FILTER</text>
+
+  <g transform="translate(22,524)">
+    <rect width="76" height="76" rx="14" fill="rgba(229,185,72,0.18)" stroke="#E5B948" stroke-width="2"/>
+    <ellipse cx="38" cy="36" rx="20" ry="8" fill="none" stroke="#E5B948" stroke-width="1.5"/>
+    <circle cx="38" cy="33" r="2" fill="#E5B948"/>
+    <text x="38" y="68" font-size="9" fill="#E5B948" text-anchor="middle">Madonnina</text>
+  </g>
+
+  <g transform="translate(106,524)">
+    <rect width="76" height="76" rx="14" fill="#1F1B19" stroke="rgba(237,230,218,0.15)"/>
+    <path d="M18 50 L26 30 L34 50 Z M30 56 L38 25 L46 56 Z M42 50 L50 30 L58 50 Z" fill="#EDE6DA" opacity="0.5"/>
+    <text x="38" y="68" font-size="9" fill="rgba(237,230,218,0.7)" text-anchor="middle">Spires</text>
+  </g>
+
+  <g transform="translate(190,524)">
+    <rect width="76" height="76" rx="14" fill="#1F1B19" stroke="rgba(237,230,218,0.15)"/>
+    <ellipse cx="38" cy="34" rx="14" ry="18" fill="rgba(237,230,218,0.4)"/>
+    <path d="M24 24 Q38 18 52 24 L48 18 Q38 14 28 18 Z" fill="rgba(237,230,218,0.5)"/>
+    <text x="38" y="68" font-size="9" fill="rgba(237,230,218,0.7)" text-anchor="middle">Renaissance</text>
+  </g>
+
+  <g transform="translate(274,524)">
+    <rect width="76" height="76" rx="14" fill="#1F1B19" stroke="rgba(237,230,218,0.15)"/>
+    <path d="M20 30 L56 30 L56 26 L20 26 Z M22 26 L54 26 L54 22 L22 22 Z" fill="#EDE6DA" opacity="0.5"/>
+    <circle cx="32" cy="42" r="3" fill="none" stroke="#EDE6DA" stroke-width="1.2" opacity="0.5"/>
+    <text x="38" y="68" font-size="9" fill="rgba(237,230,218,0.7)" text-anchor="middle">Flâneur</text>
+  </g>
+
+  <g transform="translate(140,624)">
+    <circle cx="50" cy="32" r="34" fill="none" stroke="#E5B948" stroke-width="3"/>
+    <circle cx="50" cy="32" r="26" fill="#E5B948"/>
+  </g>
+
+  <g transform="translate(22,628)">
+    <rect width="62" height="32" rx="16" fill="rgba(237,230,218,0.08)" stroke="rgba(237,230,218,0.15)"/>
+    <text x="31" y="20" font-size="11" fill="#EDE6DA" text-anchor="middle">Skip</text>
+  </g>
+
+  <g transform="translate(296,628)">
+    <rect width="62" height="32" rx="16" fill="rgba(237,230,218,0.08)" stroke="rgba(237,230,218,0.15)"/>
+    <text x="31" y="20" font-size="11" fill="#EDE6DA" text-anchor="middle">Share</text>
+  </g>
+
+  <text x="190" y="700" font-size="9" fill="#8A847C" text-anchor="middle">680 points · 3 badges earned · 28 min</text>
+</svg>

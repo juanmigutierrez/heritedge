@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 720" font-family="-apple-system, system-ui, sans-serif">
+  <rect width="380" height="720" rx="32" fill="#14110F"/>
+  <rect x="8" y="8" width="364" height="704" rx="26" fill="#14110F" stroke="rgba(237,230,218,0.06)"/>
+
+  <text x="22" y="38" font-size="11" fill="#8A847C">9:41</text>
+
+  <g transform="translate(22,60)">
+    <rect width="50" height="3" rx="1.5" fill="#E5B948"/>
+    <rect x="56" width="50" height="3" rx="1.5" fill="#E5B948"/>
+    <rect x="112" width="50" height="3" rx="1.5" fill="#E5B948"/>
+    <rect x="168" width="50" height="3" rx="1.5" fill="#E5B948"/>
+    <rect x="224" width="50" height="3" rx="1.5" fill="#E5B948"/>
+    <rect x="280" width="50" height="3" rx="1.5" fill="rgba(229,185,72,0.7)"/>
+  </g>
+
+  <text x="22" y="92" font-size="10" fill="#8A847C" letter-spacing="1.5">CHAPTER 1 · CLOSING SCENE</text>
+
+  <text x="22" y="125" font-size="11" fill="#E5B948" letter-spacing="1.5">DRAG TO TRAVEL THROUGH TIME</text>
+  <text x="22" y="160" font-size="22" font-weight="500" fill="#EDE6DA" font-family="Georgia, serif">280 years of one square.</text>
+
+  <rect x="22" y="180" width="336" height="290" rx="16" fill="#25201D"/>
+
+  <g transform="translate(36,200)" opacity="0.85">
+    <text x="0" y="14" font-size="10" fill="rgba(229,185,72,0.7)" letter-spacing="1">1744 · BELLOTTO</text>
+    <rect y="22" width="308" height="220" rx="6" fill="rgba(0,0,0,0.4)"/>
+    <g fill="#EDE6DA" opacity="0.55" transform="translate(50,100)">
+      <rect width="60" height="80" rx="2"/>
+      <path d="M0 0 L8 -20 L16 0 Z"/>
+      <path d="M44 0 L52 -20 L60 0 Z"/>
+      <rect x="80" y="20" width="60" height="60"/>
+      <path d="M70 20 L100 -10 L130 20 Z"/>
+      <rect x="160" y="40" width="50" height="40"/>
+      <path d="M155 40 L185 15 L215 40 Z"/>
+    </g>
+    <text x="154" y="200" font-size="9" fill="rgba(237,230,218,0.55)" text-anchor="middle" font-style="italic">historical painting · faded sky</text>
+  </g>
+
+  <g transform="translate(22,490)">
+    <rect width="336" height="2" y="22" rx="1" fill="rgba(237,230,218,0.15)"/>
+    <rect width="280" height="2" y="22" fill="#E5B948"/>
+
+    <g transform="translate(0,12)">
+      <circle r="6" cx="14" cy="11" fill="#E5B948" stroke="#14110F" stroke-width="2"/>
+      <text x="14" y="38" font-size="10" fill="#E5B948" text-anchor="middle" font-weight="500">1744</text>
+    </g>
+    <g transform="translate(78,12)">
+      <circle r="5" cx="14" cy="11" fill="#E5B948"/>
+      <text x="14" y="38" font-size="10" fill="#E5B948" text-anchor="middle">1840</text>
+    </g>
+    <g transform="translate(156,12)">
+      <circle r="5" cx="14" cy="11" fill="#E5B948"/>
+      <text x="14" y="38" font-size="10" fill="#E5B948" text-anchor="middle">1880</text>
+    </g>
+    <g transform="translate(234,12)">
+      <circle r="5" cx="14" cy="11" fill="#E5B948"/>
+      <text x="14" y="38" font-size="10" fill="#E5B948" text-anchor="middle">1945</text>
+    </g>
+    <g transform="translate(308,12)">
+      <circle r="5" cx="14" cy="11" fill="rgba(237,230,218,0.3)"/>
+      <text x="14" y="38" font-size="10" fill="#8A847C" text-anchor="middle">Today</text>
+    </g>
+
+    <g transform="translate(8,4)">
+      <circle r="13" cx="14" cy="20" fill="rgba(229,185,72,0.25)" stroke="#E5B948" stroke-width="2"/>
+      <circle r="3" cx="14" cy="20" fill="#1A1614"/>
+    </g>
+  </g>
+
+  <g transform="translate(22,570)">
+    <rect width="336" height="74" rx="14" fill="rgba(229,185,72,0.1)" stroke-width="0" />
+    <rect width="3" height="74" fill="#E5B948"/>
+    <text x="20" y="26" font-size="11" fill="#E5B948" letter-spacing="1">1744</text>
+    <text x="20" y="48" font-size="12" fill="#EDE6DA" font-family="Georgia, serif">Bellotto paints the piazza still</text>
+    <text x="20" y="64" font-size="12" fill="#EDE6DA" font-family="Georgia, serif">crowded with medieval shops.</text>
+  </g>
+
+  <g transform="translate(248,664)">
+    <rect width="110" height="40" rx="12" fill="#E5B948"/>
+    <text x="55" y="25" font-size="13" font-weight="500" fill="#1A1614" text-anchor="middle">Finish →</text>
+  </g>
+
+  <g transform="translate(22,664)">
+    <rect width="80" height="40" rx="12" fill="#1F1B19" stroke="rgba(237,230,218,0.1)"/>
+    <text x="40" y="25" font-size="13" fill="#EDE6DA" text-anchor="middle">← Back</text>
+  </g>
+</svg>

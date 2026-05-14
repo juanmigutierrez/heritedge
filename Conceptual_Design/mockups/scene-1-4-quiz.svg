@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 720" font-family="sans-serif">
+<rect width="380" height="720" rx="32" fill="#14110F"/>
+<rect x="8" y="8" width="364" height="704" rx="26" fill="#14110F" stroke="rgba(237,230,218,0.06)"/>
+<text x="22" y="38" font-size="11" fill="#8A847C">9:41</text>
+<g transform="translate(22,60)">
+<rect width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="50" width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="100" width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="150" width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="200" width="44" height="3" rx="1.5" fill="rgba(229,185,72,0.7)"/>
+<rect x="250" width="44" height="3" rx="1.5" fill="rgba(237,230,218,0.18)"/>
+<rect x="300" width="44" height="3" rx="1.5" fill="rgba(237,230,218,0.18)"/>
+</g>
+<text x="22" y="92" font-size="10" fill="#8A847C" letter-spacing="1.5">CHAPTER 1 · BIRTH · SCENE 1.4</text>
+<text x="22" y="125" font-size="11" fill="#E5B948" letter-spacing="1.5">QUICK GUESS</text>
+<text x="22" y="170" font-size="20" font-weight="500" fill="#EDE6DA" font-family="Georgia,serif">How many years did the</text>
+<text x="22" y="196" font-size="20" font-weight="500" fill="#EDE6DA" font-family="Georgia,serif">foundation excavations take?</text>
+<g transform="translate(22,225)">
+<rect width="336" height="46" rx="14" fill="#1F1B19" stroke="rgba(237,230,218,0.12)"/>
+<text x="20" y="30" font-size="14" fill="#EDE6DA">2 years</text>
+</g>
+<g transform="translate(22,279)">
+<rect width="336" height="46" rx="14" fill="#1F1B19" stroke="rgba(237,230,218,0.12)"/>
+<text x="20" y="30" font-size="14" fill="#EDE6DA">7 years</text>
+</g>
+<g transform="translate(22,333)">
+<rect width="336" height="46" rx="14" fill="rgba(143,185,135,0.18)" stroke="#8FB987" stroke-width="1.5"/>
+<text x="20" y="30" font-size="14" font-weight="500" fill="#EDE6DA">14 years</text>
+<g transform="translate(310,17)"><circle r="12" fill="#8FB987"/><path d="M-5 0 L-1 4 L6 -4" stroke="#1A1614" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>
+</g>
+<g transform="translate(22,402)">
+<text font-size="12" font-weight="500" fill="#8FB987">Right on the money.</text>
+<text y="24" font-size="11" fill="rgba(237,230,218,0.7)">
+<tspan x="0" dy="0">Fourteen years of digging before the first stone</tspan>
+<tspan x="0" dy="14">could rise above ground. A measure of how</tspan>
+<tspan x="0" dy="14">seriously the city took the project.</tspan>
+</text>
+</g>
+<g transform="translate(22,500)">
+<rect width="336" height="44" rx="12" fill="#E5B948"/>
+<text x="168" y="28" font-size="13" font-weight="500" fill="#1A1614" text-anchor="middle">Continue →</text>
+</g>
+<g transform="translate(280,560)">
+<rect width="78" height="34" rx="17" fill="rgba(31,27,25,0.85)" stroke="rgba(229,185,72,0.45)"/>
+<circle cx="16" cy="17" r="6" fill="#E5B948"/>
+<text x="16" y="21" font-size="9" fill="#1A1614" text-anchor="middle">▶</text>
+<text x="46" y="21" font-size="11" fill="#EDE6DA">Luca</text>
+</g>
+<rect x="60" y="676" width="260" height="22" rx="11" fill="rgba(255,255,255,0.05)" stroke="rgba(237,230,218,0.08)"/>
+<text x="190" y="691" font-size="9" fill="#8A847C" text-anchor="middle">Home · AR · Guide · Hunt</text>
+</svg>

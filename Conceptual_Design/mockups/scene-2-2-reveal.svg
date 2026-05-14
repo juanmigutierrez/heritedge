@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 720" font-family="sans-serif">
+<rect width="380" height="720" rx="32" fill="#14110F"/>
+<rect x="8" y="8" width="364" height="704" rx="26" fill="#14110F" stroke="rgba(237,230,218,0.06)"/>
+<text x="22" y="38" font-size="11" fill="#8A847C">9:41</text>
+<g transform="translate(22,60)">
+<rect width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="50" width="44" height="3" rx="1.5" fill="#E5B948"/>
+<rect x="100" width="44" height="3" rx="1.5" fill="rgba(229,185,72,0.7)"/>
+<rect x="150" width="44" height="3" rx="1.5" fill="rgba(237,230,218,0.18)"/>
+<rect x="200" width="44" height="3" rx="1.5" fill="rgba(237,230,218,0.18)"/>
+<rect x="250" width="44" height="3" rx="1.5" fill="rgba(237,230,218,0.18)"/>
+<rect x="300" width="44" height="3" rx="1.5" fill="rgba(237,230,218,0.18)"/>
+</g>
+<text x="22" y="92" font-size="10" fill="#8A847C" letter-spacing="1.5">CHAPTER 2 · CROWN · SCENE 2.2</text>
+<text x="22" y="125" font-size="11" fill="#E5B948" letter-spacing="1.5">DID HE REALLY?</text>
+<text x="22" y="165" font-size="22" font-weight="500" fill="#EDE6DA" font-family="Georgia,serif">Did Leonardo really work</text>
+<text x="22" y="193" font-size="22" font-weight="500" fill="#EDE6DA" font-family="Georgia,serif">on the Duomo?</text>
+<g transform="translate(22,225)">
+<rect width="336" height="220" rx="14" fill="rgba(229,185,72,0.12)" stroke-width="0"/>
+<rect width="3" height="220" fill="#E5B948"/>
+<text x="20" y="32" font-size="11" font-weight="500" fill="#E5B948" letter-spacing="1">YES · 1487–88</text>
+<g transform="translate(20,50)">
+<rect width="100" height="70" rx="6" fill="rgba(229,185,72,0.06)" stroke="rgba(229,185,72,0.4)"/>
+<text x="50" y="32" font-size="8" fill="#E5B948" text-anchor="middle">Codex Atlanticus</text>
+<text x="50" y="44" font-size="8" fill="#E5B948" text-anchor="middle">f. 719 recto</text>
+<text x="50" y="60" font-size="8" fill="#E5B948" text-anchor="middle" font-style="italic">tiburio sketch</text>
+</g>
+<text x="135" y="68" font-size="12" fill="#EDE6DA" font-family="Georgia,serif">
+<tspan x="135" dy="0">He submitted designs</tspan>
+<tspan x="135" dy="16">and a wooden model</tspan>
+<tspan x="135" dy="16">for the tiburio. His</tspan>
+<tspan x="135" dy="16">sketches survive at the</tspan>
+<tspan x="135" dy="16">Biblioteca Ambrosiana,</tspan>
+<tspan x="135" dy="16">right here in Milan.</tspan>
+</text>
+</g>
+<g transform="translate(140,470)">
+<rect width="100" height="32" rx="16" fill="rgba(229,185,72,0.12)" stroke="rgba(229,185,72,0.4)"/>
+<text x="50" y="20" font-size="11" fill="#E5B948" text-anchor="middle">✦ Ask Luca</text>
+</g>
+<g transform="translate(22,560)">
+<rect width="110" height="44" rx="12" fill="#1F1B19" stroke="rgba(237,230,218,0.1)"/>
+<text x="55" y="28" font-size="13" fill="#EDE6DA" text-anchor="middle">← Back</text>
+</g>
+<g transform="translate(248,560)">
+<rect width="110" height="44" rx="12" fill="#E5B948"/>
+<text x="55" y="28" font-size="13" font-weight="500" fill="#1A1614" text-anchor="middle">Next →</text>
+</g>
+<rect x="60" y="676" width="260" height="22" rx="11" fill="rgba(255,255,255,0.05)" stroke="rgba(237,230,218,0.08)"/>
+<text x="190" y="691" font-size="9" fill="#8A847C" text-anchor="middle">Home · AR · Guide · Hunt</text>
+</svg>

@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 720" font-family="-apple-system, system-ui, sans-serif">
+  <rect width="380" height="720" rx="32" fill="#14110F"/>
+  <rect x="8" y="8" width="364" height="704" rx="26" fill="#14110F" stroke="rgba(237,230,218,0.06)"/>
+
+  <text x="22" y="38" font-size="11" fill="#8A847C">9:41</text>
+  <g transform="translate(330,32)">
+    <rect width="34" height="14" rx="7" fill="rgba(237,230,218,0.08)" stroke="rgba(237,230,218,0.15)" stroke-width="0.5"/>
+    <circle cx="9" cy="7" r="3.5" fill="#EDE6DA"/>
+    <text x="16" y="11" font-size="8" fill="#EDE6DA">Dark</text>
+  </g>
+
+  <rect x="22" y="60" width="336" height="252" rx="22" fill="#25201D"/>
+  <rect x="22" y="60" width="336" height="252" rx="22" fill="url(#piazzaGrad)"/>
+  <defs>
+    <linearGradient id="piazzaGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2a18" stop-opacity="0.4"/>
+      <stop offset="0.65" stop-color="#14110F" stop-opacity="0.0"/>
+      <stop offset="1" stop-color="#14110F" stop-opacity="0.78"/>
+    </linearGradient>
+  </defs>
+
+  <g fill="#EDE6DA" opacity="0.65" transform="translate(60,180)">
+    <path d="M0 80 L0 60 L8 50 L8 30 L14 20 L14 6 L20 0 L26 6 L26 20 L32 30 L32 50 L40 60 L40 80 Z"/>
+    <path d="M50 80 L50 50 L58 40 L58 20 L66 12 L74 20 L74 40 L82 50 L82 80 Z"/>
+    <rect x="100" y="40" width="120" height="40" rx="2"/>
+    <rect x="105" y="20" width="110" height="22" rx="1" fill="#EDE6DA" opacity="0.7"/>
+    <path d="M236 80 L236 50 L244 40 L244 20 L252 12 L260 20 L260 40 L268 50 L268 80 Z"/>
+  </g>
+
+  <text x="42" y="260" font-size="10" fill="#E5B948" letter-spacing="2">PIAZZA DEL DUOMO · MILANO</text>
+  <text x="42" y="290" font-size="28" font-weight="500" fill="#FFFFFF" font-family="Georgia, serif">Six centuries,</text>
+  <text x="42" y="304" font-size="11" fill="rgba(255,255,255,0.85)">A 42-minute walk through Milan's heart.</text>
+
+  <rect x="22" y="332" width="162" height="42" rx="12" fill="#E5B948"/>
+  <text x="103" y="358" font-size="13" font-weight="500" fill="#1A1614" text-anchor="middle">Start the tour →</text>
+  <rect x="196" y="332" width="162" height="42" rx="12" fill="none" stroke="rgba(237,230,218,0.18)"/>
+  <text x="277" y="358" font-size="13" font-weight="500" fill="#EDE6DA" text-anchor="middle">○ Open AR</text>
+
+  <line x1="22" y1="400" x2="358" y2="400" stroke="rgba(237,230,218,0.1)" stroke-width="0.5"/>
+  <line x1="22" y1="470" x2="358" y2="470" stroke="rgba(237,230,218,0.1)" stroke-width="0.5"/>
+  <line x1="134" y1="400" x2="134" y2="470" stroke="rgba(237,230,218,0.1)" stroke-width="0.5"/>
+  <line x1="246" y1="400" x2="246" y2="470" stroke="rgba(237,230,218,0.1)" stroke-width="0.5"/>
+
+  <text x="32" y="420" font-size="9" fill="#8A847C" letter-spacing="1">STOPS</text>
+  <text x="32" y="442" font-size="22" font-weight="500" fill="#EDE6DA" font-family="Georgia, serif">14</text>
+  <text x="32" y="458" font-size="9" fill="#8A847C">along the route</text>
+
+  <text x="144" y="420" font-size="9" fill="#8A847C" letter-spacing="1">LANGUAGES</text>
+  <text x="144" y="442" font-size="22" font-weight="500" fill="#EDE6DA" font-family="Georgia, serif">6</text>
+  <text x="144" y="458" font-size="9" fill="#8A847C">EN · IT · FR · ES · DE · ZH</text>
+
+  <text x="256" y="420" font-size="9" fill="#8A847C" letter-spacing="1">BEST TIME</text>
+  <text x="256" y="442" font-size="22" font-weight="500" fill="#E5B948" font-family="Georgia, serif">Now</text>
+  <text x="256" y="458" font-size="9" fill="#8A847C">quiet · soft light</text>
+
+  <text x="22" y="510" font-size="9" fill="#8A847C" letter-spacing="1.5">ICONIC LANDMARKS</text>
+  <text x="22" y="532" font-size="18" font-weight="500" fill="#EDE6DA" font-family="Georgia, serif">Three buildings, one square.</text>
+
+  <g transform="translate(22,550)">
+    <rect width="106" height="120" rx="14" fill="#25201D"/>
+    <text x="10" y="100" font-size="11" font-weight="500" fill="#EDE6DA">Duomo</text>
+    <text x="10" y="113" font-size="8" fill="rgba(237,230,218,0.7)">135 spires</text>
+  </g>
+  <g transform="translate(137,550)">
+    <rect width="106" height="120" rx="14" fill="#25201D"/>
+    <text x="10" y="100" font-size="11" font-weight="500" fill="#EDE6DA">Galleria</text>
+    <text x="10" y="113" font-size="8" fill="rgba(237,230,218,0.7)">Iron &amp; glass</text>
+  </g>
+  <g transform="translate(252,550)">
+    <rect width="106" height="120" rx="14" fill="#25201D"/>
+    <text x="10" y="100" font-size="11" font-weight="500" fill="#EDE6DA">Palazzo</text>
+    <text x="10" y="113" font-size="8" fill="rgba(237,230,218,0.7)">Royal halls</text>
+  </g>
+
+  <rect x="60" y="688" width="260" height="22" rx="11" fill="rgba(255,255,255,0.05)" stroke="rgba(237,230,218,0.08)"/>
+  <text x="190" y="703" font-size="9" fill="#8A847C" text-anchor="middle">Home  ·  AR  ·  Guide  ·  Hunt</text>
+</svg>
