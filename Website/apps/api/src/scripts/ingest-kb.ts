@@ -28,13 +28,13 @@ const __dirname = path.dirname(__filename);
 interface KnowledgeBase {
   version: string;
   updatedAt: string;
-  domain: {
+  domain?: {
     id: string;
     name: string;
     description: string;
     source: { label: string; url?: string };
   };
-  entities: Array<{
+  entities?: Array<{
     id: string;
     name: string;
     type: string;
@@ -45,14 +45,15 @@ interface KnowledgeBase {
   }>;
   facts: Array<{
     id: string;
-    entityId: string;
+    entityId?: string;
+    landmark?: string;
     period: string;
     title: string;
     body: string;
-    tags: string[];
+    tags?: string[];
     relatedEntityIds?: string[];
     relationType?: string;
-    source: { label: string; url?: string };
+    source?: { label?: string; url?: string };
   }>;
 }
 
@@ -92,8 +93,8 @@ async function ingestKnowledgeBase() {
   const kb: KnowledgeBase = JSON.parse(kbRaw);
 
   console.log(`📖 Loaded knowledge base v${kb.version}`);
-  console.log(`   Domain: ${kb.domain.name}`);
-  console.log(`   Entities: ${kb.entities.length}`);
+  console.log(`   Domain: ${kb.domain?.name ?? "Unknown"}`);
+  console.log(`   Entities: ${kb.entities?.length ?? 0}`);
   console.log(`   Facts: ${kb.facts.length}\n`);
 
   // ─── Prepare documents for Chroma ─────────────────────────────────────────
@@ -101,20 +102,26 @@ async function ingestKnowledgeBase() {
   const metadatas: Array<Record<string, string>> = [];
   const ids: string[] = [];
 
+  const entitiesById = new Map(
+    (kb.entities ?? []).map((entity) => [entity.id, entity.name])
+  );
+
   for (const fact of kb.facts) {
+    const entityId = fact.entityId ?? fact.landmark ?? "unknown";
+    const entityName = entitiesById.get(entityId) ?? entityId;
+
     // Document text: fact title + body (this is what gets embedded)
     const documentText = `${fact.title}. ${fact.body}`;
 
     // Metadata: for filtering and source attribution
     const metadata: Record<string, string> = {
       id: fact.id,
-      entity_id: fact.entityId,
-      entity_name:
-        kb.entities.find((e) => e.id === fact.entityId)?.name || fact.entityId,
+      entity_id: entityId,
+      entity_name: entityName,
       period: fact.period,
-      tags: fact.tags.join(","),
-      source_label: fact.source.label,
-      ...(fact.source.url && { source_url: fact.source.url }),
+      tags: (fact.tags ?? []).join(","),
+      source_label: fact.source?.label ?? "Unknown source",
+      ...(fact.source?.url && { source_url: fact.source.url }),
       ...(fact.relatedEntityIds && {
         related_entity_ids: fact.relatedEntityIds.join(","),
       }),
@@ -146,7 +153,7 @@ async function ingestKnowledgeBase() {
   const collection = await chromaClient.getOrCreateCollection({
     name: collectionName,
     metadata: {
-      description: kb.domain.description,
+      description: kb.domain?.description ?? "Heritage knowledge base",
       version: kb.version,
       updatedAt: kb.updatedAt,
     },

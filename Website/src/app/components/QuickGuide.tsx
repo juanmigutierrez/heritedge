@@ -14,7 +14,7 @@ import { eraScenes } from "./quick-guide/scenes";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type TimePeriod = "foundations" | "visconti" | "sforza" | "habsburg";
+type TimePeriod = "birth" | "crown" | "modern";
 type SuggestedTopic = "architecture" | "history" | "events" | "statues";
 
 interface ChatMessage {
@@ -45,50 +45,40 @@ const timelineData: Record<TimePeriod, {
   id: TimePeriod;
   title: string;
   years: string;
-  era: string;            // a short narrative tag — "the awakening", etc.
+  era: string;
   pullQuote: string;
   content: string;
   highlights: string[];
   source: { label: string; url?: string };
 }> = {
-  foundations: {
-    id: "foundations",
-    title: "Foundations",
-    years: "1386–1400",
+  birth: {
+    id: "birth",
+    title: "Birth",
+    years: "1386 – 1500s",
     era: "the first stone",
     pullQuote: "A city dared to begin a cathedral that would outlive every hand that touched it.",
-    content: "The first stone was laid in 1386. Archbishop Antonio da Saluzzo initiated the project, choosing Gothic style to rival Europe's greatest cathedrals.",
-    highlights: ["First stone, 1386", "Gothic style chosen", "Deep foundation excavations", "Designed by Simone da Orsenigo"],
+    content: "The cathedral begins as a state project: Visconti money, Gothic ambition, and a marble supply that still flows six centuries later.",
+    highlights: ["First stone, 1386", "Gothic ambition", "Candoglia marble", "Milan's medieval market"],
     source: { label: "Veneranda Fabbrica del Duomo (official)", url: "https://www.duomomilano.it" },
   },
-  visconti: {
-    id: "visconti",
-    title: "Visconti Era",
-    years: "1386–1450",
-    era: "the awakening",
-    pullQuote: "Every spire became a statement. Every statue, a question answered in stone.",
-    content: "Duke Gian Galeazzo Visconti turned the Duomo into a symbol of Milanese ambition — commissioning 3,400+ statues and inviting Europe's finest architects.",
-    highlights: ["Funded by the Visconti dynasty", "3,400+ statues commissioned", "International architects invited", "Largest Gothic cathedral in Italy"],
-    source: { label: "Archivio Storico Civico di Milano", url: "https://www.comune.milano.it" },
-  },
-  sforza: {
-    id: "sforza",
-    title: "Sforza Rule",
-    years: "1450–1535",
-    era: "the renaissance",
-    pullQuote: "Leonardo sketched the dome's heart. The Gothic listened, and answered in marble.",
-    content: "Leonardo da Vinci himself contributed designs for the tiburio. Spires rose, and Renaissance ideas blended beautifully with Gothic bones.",
-    highlights: ["Leonardo da Vinci's involvement", "Tiburio construction begins", "Spires take shape", "Renaissance meets Gothic"],
-    source: { label: "Archivio Storico Civico di Milano", url: "https://www.comune.milano.it" },
-  },
-  habsburg: {
-    id: "habsburg",
-    title: "Habsburg Period",
-    years: "1535–1700s",
+  crown: {
+    id: "crown",
+    title: "Crown",
+    years: "1500s – 1860",
     era: "the crowning",
-    pullQuote: "On the highest spire, the Madonnina has been watching Milan for two and a half centuries.",
-    content: "All 135 spires were completed and the Madonnina — Milan's golden guardian — was placed atop the central spire in 1774, watching over the city ever since.",
-    highlights: ["135 spires completed", "Imperial coronations held", "Baroque elements added", "Madonnina placed, 1774"],
+    pullQuote: "Leonardo sketched the dome's heart. The Gothic listened, and answered in marble.",
+    content: "Renaissance hands and imperial power shape the Duomo. The Madonnina rises, and Napoleon orders the facade finished for his coronation.",
+    highlights: ["Leonardo's tiburio", "Madonnina placed, 1774", "Napoleon's facade", "Palazzo Reale rebuilt"],
+    source: { label: "Archivio Storico Civico di Milano", url: "https://www.comune.milano.it" },
+  },
+  modern: {
+    id: "modern",
+    title: "Modern",
+    years: "1860 – today",
+    era: "the living room",
+    pullQuote: "Italy found a stage. The Galleria opened. The square became a city's living room.",
+    content: "Italy unifies, the Galleria opens, and the 20th century leaves scars and celebrations on the square — from bombings to Liberation Day.",
+    highlights: ["Galleria opens, 1865–77", "Mengoni's fall, 1877", "Bombing, 1943", "Liberation, 1945"],
     source: { label: "Archivio Storico Civico di Milano", url: "https://www.comune.milano.it" },
   },
 };
@@ -294,7 +284,7 @@ function QuickReplies({ onSelect }: { onSelect: (t: string) => void }) {
 
 // ─── Building blocks ──────────────────────────────────────────────────────────
 
-const timelinePeriods: TimePeriod[] = ["foundations", "visconti", "sforza", "habsburg"];
+const timelinePeriods: TimePeriod[] = ["birth", "crown", "modern"];
 
 function TopicCard({ topic, onSelect, delay }: {
   topic: typeof topicSuggestions[number];
@@ -390,9 +380,10 @@ function ChatMessage({ msg, onExpand, onHearMore, isSpeaking }: {
 export function QuickGuide() {
   const navigate = useNavigate();
 
-  const [selectedEra, setSelectedEra]         = useState<TimePeriod>("foundations");
+  const [selectedEra, setSelectedEra]         = useState<TimePeriod>("birth");
   const [showChat, setShowChat]               = useState(false);
   const [storyOpen, setStoryOpen]             = useState(false);
+  const [storyIndex, setStoryIndex]           = useState(0);
   const [chatMessages, setChatMessages]       = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage]       = useState("");
   const [isListening, setIsListening]         = useState(false);
@@ -412,10 +403,9 @@ export function QuickGuide() {
     try {
       const kb: any = knowledgeBase;
       const mapping: Record<TimePeriod, string> = {
-        foundations: "duomo-1386-foundation",
-        visconti: "visconti-era-overview",
-        sforza: "sforza-rule-overview",
-        habsburg: "habsburg-period-overview",
+        birth: "duomo-1386-foundation",
+        crown: "duomo-madonnina-1774",
+        modern: "galleria-mengoni-1865",
       };
       const factId = mapping[selectedEra];
       return kb.facts.find((f: any) => f.id === factId) ?? null;
@@ -441,6 +431,10 @@ export function QuickGuide() {
     if (listeningState === "IDLE" && isListening) setIsListening(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listeningState, transcript]);
+
+  useEffect(() => {
+    setStoryIndex(0);
+  }, [selectedEra]);
 
   const speakWithState = useCallback((text: string) => {
     setIsSpeaking(true);
@@ -584,7 +578,7 @@ export function QuickGuide() {
           </button>
           <div className="flex-1 min-w-0">
             <p className="text-caption">Heritage Quick Guide</p>
-            <p className="text-xs text-muted-foreground -mt-0.5">A six-century journey, told in four chapters</p>
+            <p className="text-xs text-muted-foreground -mt-0.5">A six-century journey, told in three chapters</p>
           </div>
         </div>
       </div>
@@ -766,7 +760,7 @@ export function QuickGuide() {
                   }}
                 >
                   <Sparkles className="w-3 h-3" />
-                  <span>Six centuries · four chapters</span>
+                  <span>Six centuries · three chapters</span>
                 </div>
 
                 <h1 className="hero-title text-white" style={{ fontSize: "clamp(2rem, 6vw, 2.75rem)", lineHeight: 1.05 }}>
@@ -1018,6 +1012,8 @@ export function QuickGuide() {
             chapterIndex={eraIndex}
             totalChapters={timelinePeriods.length}
             scenes={eraScenes[selectedEra]}
+            initialIndex={storyIndex}
+            onIndexChange={setStoryIndex}
             onClose={() => setStoryOpen(false)}
             onComplete={() => {
               const next = timelinePeriods[eraIndex + 1];
@@ -1027,10 +1023,11 @@ export function QuickGuide() {
                 setStoryOpen(false);
               }
             }}
-            onAskLuca={() => {
+            onAskLuca={(prompt, returnIndex) => {
+              if (typeof returnIndex === "number") setStoryIndex(returnIndex);
               setStoryOpen(false);
               setShowChat(true);
-              handleSendMessageText(`Tell me more about the ${era.title} era.`);
+              if (prompt) setInputMessage(prompt);
             }}
           />
         )}
