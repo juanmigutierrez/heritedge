@@ -383,6 +383,7 @@ export function QuickGuide() {
   const [selectedEra, setSelectedEra]         = useState<TimePeriod>("birth");
   const [showChat, setShowChat]               = useState(false);
   const [storyOpen, setStoryOpen]             = useState(false);
+  const [storyIndex, setStoryIndex]           = useState(0);
   const [chatMessages, setChatMessages]       = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage]       = useState("");
   const [isListening, setIsListening]         = useState(false);
@@ -462,6 +463,10 @@ export function QuickGuide() {
     if (listeningState === "IDLE" && isListening) setIsListening(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listeningState, transcript]);
+
+  useEffect(() => {
+    setStoryIndex(0);
+  }, [selectedEra]);
 
   const speakWithState = useCallback((text: string) => {
     setIsSpeaking(true);
@@ -614,7 +619,7 @@ export function QuickGuide() {
           </button>
           <div className="flex-1 min-w-0">
             <p className="text-caption">Heritage Quick Guide</p>
-            <p className="text-xs text-muted-foreground -mt-0.5">A six-century journey, told in four chapters</p>
+            <p className="text-xs text-muted-foreground -mt-0.5">A six-century journey, told in three chapters</p>
           </div>
         </div>
       </div>
@@ -796,7 +801,7 @@ export function QuickGuide() {
                   }}
                 >
                   <Sparkles className="w-3 h-3" />
-                  <span>Six centuries · four chapters</span>
+                  <span>Six centuries · three chapters</span>
                 </div>
 
                 <h1 className="hero-title text-white" style={{ fontSize: "clamp(2rem, 6vw, 2.75rem)", lineHeight: 1.05 }}>
@@ -1090,6 +1095,8 @@ export function QuickGuide() {
             chapterIndex={eraIndex}
             totalChapters={timelinePeriods.length}
             scenes={eraScenes[selectedEra]}
+            initialIndex={storyIndex}
+            onIndexChange={setStoryIndex}
             onClose={() => setStoryOpen(false)}
             onComplete={() => {
               const next = timelinePeriods[eraIndex + 1];
@@ -1099,10 +1106,11 @@ export function QuickGuide() {
                 setStoryOpen(false);
               }
             }}
-            onAskLuca={(question) => {
+            onAskLuca={(prompt, returnIndex) => {
+              if (typeof returnIndex === "number") setStoryIndex(returnIndex);
               setStoryOpen(false);
               setShowChat(true);
-              handleSendMessageText(question ?? `Tell me more about the ${era.title} era.`);
+              if (prompt) setInputMessage(prompt);
             }}
           />
         )}

@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, ArrowRight, ArrowLeft, Quote, Check, Sparkles } from "lucide-react";
-import type { Scene, IllustrationId } from "./scenes";
+import type { Scene, IllustrationId, TimelineFrame } from "./scenes";
 import { Illustration } from "./illustrations";
-import { TimelineSlider } from "./TimelineSlider";
-
+import { TimelineSlider } from "../ui/TimelineSlider";
 
 interface StoryViewProps {
   chapterTitle: string;
@@ -12,17 +11,11 @@ interface StoryViewProps {
   chapterIndex: number;
   totalChapters: number;
   scenes: Scene[];
+  initialIndex?: number;
+  onIndexChange?: (index: number) => void;
   onClose: () => void;
   onComplete: () => void;
-  onAskLuca?: (question?: string) => void;
-}
-
-// Returns the contextual chat question for a scene, if it defines one.
-function getSceneChatQuestion(scene: Scene): string | undefined {
-  if (scene.kind === "quote" || scene.kind === "narrative" || scene.kind === "reveal") {
-    return scene.chatQuestion;
-  }
-  return undefined;
+  onAskLuca?: (prompt?: string, returnIndex?: number) => void;
 }
 
 export function StoryView({
@@ -31,19 +24,25 @@ export function StoryView({
   chapterIndex,
   totalChapters,
   scenes,
+  initialIndex = 0,
+  onIndexChange,
   onClose,
   onComplete,
   onAskLuca,
 }: StoryViewProps) {
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(initialIndex);
   const scene = scenes[index];
   const isLast = index === scenes.length - 1;
   const isFirst = index === 0;
 
   // Reset to scene 0 whenever the underlying scenes array changes (chapter switch).
   useEffect(() => {
-    setIndex(0);
-  }, [scenes]);
+    setIndex(initialIndex);
+  }, [scenes, initialIndex]);
+
+  useEffect(() => {
+    onIndexChange?.(index);
+  }, [index, onIndexChange]);
 
   const next = useCallback(() => {
     if (isLast) {
@@ -77,8 +76,8 @@ export function StoryView({
     };
   }, []);
 
-  // Empty chapter (e.g. Modern before Task 2 ships its scenes) — show a
-  // friendly "coming soon" panel instead of crashing on scenes[0].
+  // Empty chapter — show a friendly "coming soon" panel instead of crashing
+  // on scenes[0]. All three chapters ship scenes today, but the guard stays.
   if (scenes.length === 0) {
     return (
       <motion.div
@@ -169,24 +168,7 @@ export function StoryView({
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
             className="w-full max-w-md mx-auto"
           >
-            <SceneContent scene={scene} onAdvance={next} />
-            {onAskLuca && getSceneChatQuestion(scene) && (
-              <div className="mt-6 flex justify-center">
-                <button
-                  onClick={() => onAskLuca(getSceneChatQuestion(scene))}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium active:scale-[0.98] transition-all"
-                  style={{
-                    background: "color-mix(in srgb, var(--accent) 14%, transparent)",
-                    border: "1px solid color-mix(in srgb, var(--accent) 40%, transparent)",
-                    color: "var(--accent-strong)",
-                  }}
-                  aria-label="Ask Luca more about this scene"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Ask Luca more →
-                </button>
-              </div>
-            )}
+            <SceneContent scene={scene} onAdvance={next} onAskLuca={onAskLuca} index={index} />
           </motion.div>
         </AnimatePresence>
       </main>
@@ -203,6 +185,17 @@ export function StoryView({
           <span className="hidden sm:inline">Back</span>
         </button>
 
+        {onAskLuca && scene?.kind !== "hero" && getSceneAskLucaPrompt(scene) && (
+          <button
+            onClick={() => onAskLuca(getSceneAskLucaPrompt(scene), index)}
+            className="hidden sm:inline-flex h-11 px-4 rounded-xl border border-border text-foreground bg-card text-sm items-center gap-2 hover:bg-secondary active:scale-[0.98] transition-all"
+            aria-label="Ask Luca about this scene"
+          >
+            <Sparkles className="w-4 h-4" style={{ color: "var(--accent-strong)" }} />
+            Ask Luca
+          </button>
+        )}
+
         <div className="flex-1" />
 
         <button
@@ -211,9 +204,7 @@ export function StoryView({
           className="h-11 px-5 rounded-xl text-sm font-medium flex items-center gap-2 active:scale-[0.98] transition-all"
           style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
         >
-          {scene.kind === "closing" && scene.ctaLabel
-            ? scene.ctaLabel
-            : isLast ? "Finish chapter" : "Next"}
+          {isLast ? "Finish chapter" : "Next"}
           <ArrowRight className="w-4 h-4" />
         </button>
       </nav>
@@ -221,14 +212,30 @@ export function StoryView({
   );
 }
 
+// Returns the contextual chat prompt for a scene, if it defines one.
+function getSceneAskLucaPrompt(scene: Scene | undefined): string | undefined {
+  if (!scene) return undefined;
+  return "askLucaPrompt" in scene ? scene.askLucaPrompt : undefined;
+}
+
 // ─── Scene dispatcher ─────────────────────────────────────────────────────────
 
-function SceneContent({ scene, onAdvance }: { scene: Scene; onAdvance: () => void }) {
+function SceneContent({
+  scene,
+  onAdvance,
+  onAskLuca,
+  index,
+}: {
+  scene: Scene;
+  onAdvance: () => void;
+  onAskLuca?: (prompt?: string, returnIndex?: number) => void;
+  index: number;
+}) {
   switch (scene.kind) {
     case "hero":
       return <SceneHero subtitle={scene.subtitle} cta={scene.cta} onAdvance={onAdvance} />;
     case "quote":
-      return <SceneQuote text={scene.text} />;
+      return <SceneQuote text={scene.text} askLucaPrompt={scene.askLucaPrompt} onAskLuca={onAskLuca} index={index} />;
     case "narrative":
       return (
         <SceneNarrative
@@ -238,6 +245,9 @@ function SceneContent({ scene, onAdvance }: { scene: Scene; onAdvance: () => voi
           image={scene.image}
           imageAlt={scene.imageAlt}
           imageCaption={scene.imageCaption}
+          askLucaPrompt={scene.askLucaPrompt}
+          onAskLuca={onAskLuca}
+          index={index}
         />
       );
     case "reveal":
@@ -249,6 +259,9 @@ function SceneContent({ scene, onAdvance }: { scene: Scene; onAdvance: () => voi
           answer={scene.answer}
           image={scene.image}
           imageAlt={scene.imageAlt}
+          askLucaPrompt={scene.askLucaPrompt}
+          onAskLuca={onAskLuca}
+          index={index}
         />
       );
     case "quiz":
@@ -270,10 +283,6 @@ function SceneContent({ scene, onAdvance }: { scene: Scene; onAdvance: () => voi
           caption={scene.caption}
         />
       );
-    case "closing":
-      return <SceneClosing heading={scene.heading} body={scene.body} />;
-    case "cultural":
-      return <SceneCultural eyebrow={scene.eyebrow} heading={scene.heading} body={scene.body} />;
     case "matchGame":
       return (
         <SceneMatchGame
@@ -284,12 +293,52 @@ function SceneContent({ scene, onAdvance }: { scene: Scene; onAdvance: () => voi
           onAdvance={onAdvance}
         />
       );
+    case "videoEmbed":
+      return (
+        <SceneVideo
+          title={scene.title}
+          src={scene.src}
+          poster={scene.poster}
+          caption={scene.caption}
+          autoAdvance={scene.autoAdvance}
+          onAdvance={onAdvance}
+          askLucaPrompt={scene.askLucaPrompt}
+          onAskLuca={onAskLuca}
+          index={index}
+        />
+      );
     case "timelineSlider":
       return (
         <SceneTimelineSlider
           eyebrow={scene.eyebrow}
           heading={scene.heading}
           frames={scene.frames}
+          askLucaPrompt={scene.askLucaPrompt}
+          onAskLuca={onAskLuca}
+          index={index}
+        />
+      );
+    case "cultural":
+      return (
+        <SceneCultural
+          eyebrow={scene.eyebrow}
+          heading={scene.heading}
+          body={scene.body}
+          image={scene.image}
+          askLucaPrompt={scene.askLucaPrompt}
+          onAskLuca={onAskLuca}
+          index={index}
+        />
+      );
+    case "closing":
+      return (
+        <SceneClosing
+          heading={scene.heading}
+          body={scene.body}
+          cta={scene.cta}
+          askLucaPrompt={scene.askLucaPrompt}
+          onAskLuca={onAskLuca}
+          index={index}
         />
       );
     default:
@@ -297,31 +346,86 @@ function SceneContent({ scene, onAdvance }: { scene: Scene; onAdvance: () => voi
   }
 }
 
-function SceneTimelineSlider({
-  eyebrow,
-  heading,
-  frames,
+// ─── Shared "Ask Luca more →" chip ────────────────────────────────────────────
+
+function AskLucaInline({
+  prompt,
+  onAskLuca,
+  index,
 }: {
-  eyebrow?: string;
-  heading: string;
-  frames: Array<{ year: string; image: string; caption: string }>;
+  prompt?: string;
+  onAskLuca?: (prompt?: string, returnIndex?: number) => void;
+  index: number;
 }) {
+  if (!prompt || !onAskLuca) return null;
   return (
-    <div>
-      {eyebrow && (
-        <p className="text-caption" style={{ color: "var(--accent-strong)" }}>
-          {eyebrow}
-        </p>
-      )}
-      <h2 className="h2 mt-2 mb-5 text-foreground">{heading}</h2>
-      <TimelineSlider frames={frames} />
-    </div>
+    <button
+      onClick={() => onAskLuca(prompt, index)}
+      className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium border transition-all active:scale-[0.98]"
+      style={{
+        background: "color-mix(in srgb, var(--accent) 12%, transparent)",
+        borderColor: "color-mix(in srgb, var(--accent) 40%, transparent)",
+        color: "var(--accent-strong)",
+      }}
+      aria-label="Ask Luca more"
+    >
+      <Sparkles className="w-3 h-3" />
+      Ask Luca more →
+    </button>
   );
 }
 
 // ─── Scene renderers ──────────────────────────────────────────────────────────
 
-function SceneQuote({ text }: { text: string }) {
+function SceneHero({
+  subtitle,
+  cta = "Begin chapter →",
+  onAdvance,
+}: {
+  subtitle: string;
+  cta?: string;
+  onAdvance: () => void;
+}) {
+  return (
+    <div className="text-center flex flex-col items-center gap-6">
+      {/* Gold dot grid */}
+      <div
+        aria-hidden
+        style={{
+          width: 120, height: 120,
+          backgroundImage: "radial-gradient(circle, var(--accent) 1.5px, transparent 1.5px)",
+          backgroundSize: "14px 14px",
+          opacity: 0.35,
+        }}
+      />
+      <p
+        className="font-display text-foreground"
+        style={{ fontSize: "clamp(1.1rem, 3.5vw, 1.4rem)", letterSpacing: "0.01em" }}
+      >
+        {subtitle}
+      </p>
+      <button
+        onClick={onAdvance}
+        className="mt-2 px-7 py-3.5 rounded-2xl text-sm font-semibold active:scale-[0.97] transition-transform"
+        style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+      >
+        {cta}
+      </button>
+    </div>
+  );
+}
+
+function SceneQuote({
+  text,
+  askLucaPrompt,
+  onAskLuca,
+  index,
+}: {
+  text: string;
+  askLucaPrompt?: string;
+  onAskLuca?: (prompt?: string, returnIndex?: number) => void;
+  index: number;
+}) {
   return (
     <figure className="text-center">
       <Quote
@@ -333,8 +437,11 @@ function SceneQuote({ text }: { text: string }) {
         className="font-display italic text-foreground leading-snug"
         style={{ fontSize: "clamp(1.4rem, 4.5vw, 2rem)", letterSpacing: "-0.005em" }}
       >
-        “{text}”
+        "{text}"
       </blockquote>
+      <div className="mt-5 flex justify-center">
+        <AskLucaInline prompt={askLucaPrompt} onAskLuca={onAskLuca} index={index} />
+      </div>
     </figure>
   );
 }
@@ -346,6 +453,9 @@ function SceneNarrative({
   image,
   imageAlt,
   imageCaption,
+  askLucaPrompt,
+  onAskLuca,
+  index,
 }: {
   eyebrow?: string;
   heading: string;
@@ -353,6 +463,9 @@ function SceneNarrative({
   image?: string;
   imageAlt?: string;
   imageCaption?: string;
+  askLucaPrompt?: string;
+  onAskLuca?: (prompt?: string, returnIndex?: number) => void;
+  index: number;
 }) {
   return (
     <div>
@@ -397,6 +510,10 @@ function SceneNarrative({
           {imageCaption}
         </p>
       )}
+
+      <div className="mt-5">
+        <AskLucaInline prompt={askLucaPrompt} onAskLuca={onAskLuca} index={index} />
+      </div>
     </div>
   );
 }
@@ -408,6 +525,9 @@ function SceneReveal({
   answer,
   image,
   imageAlt,
+  askLucaPrompt,
+  onAskLuca,
+  index,
 }: {
   eyebrow?: string;
   question: string;
@@ -415,6 +535,9 @@ function SceneReveal({
   answer: string;
   image?: string;
   imageAlt?: string;
+  askLucaPrompt?: string;
+  onAskLuca?: (prompt?: string, returnIndex?: number) => void;
+  index: number;
 }) {
   const [revealed, setRevealed] = useState(false);
   return (
@@ -475,6 +598,11 @@ function SceneReveal({
           </motion.div>
         )}
       </div>
+      {revealed && (
+        <div className="mt-4">
+          <AskLucaInline prompt={askLucaPrompt} onAskLuca={onAskLuca} index={index} />
+        </div>
+      )}
     </div>
   );
 }
@@ -563,7 +691,7 @@ function SceneQuiz({
             className="text-sm font-medium mb-2"
             style={{ color: isCorrect ? "var(--success)" : "var(--accent-strong)" }}
           >
-            {isCorrect ? "Right on the money." : "Close — but the truth is even better."}
+            {isCorrect ? "Right on the money." : "Close - but the truth is even better."}
           </p>
           {explanation && (
             <p className="text-sm text-muted-foreground leading-relaxed">{explanation}</p>
@@ -614,7 +742,149 @@ function SceneIllustration({
   );
 }
 
-function SceneClosing({ heading, body }: { heading: string; body?: string }) {
+function SceneVideo({
+  title,
+  src,
+  poster,
+  caption,
+  autoAdvance,
+  onAdvance,
+  askLucaPrompt,
+  onAskLuca,
+  index,
+}: {
+  title: string;
+  src?: string;
+  poster?: string;
+  caption?: string;
+  autoAdvance?: boolean;
+  onAdvance: () => void;
+  askLucaPrompt?: string;
+  onAskLuca?: (prompt?: string, returnIndex?: number) => void;
+  index: number;
+}) {
+  useEffect(() => {
+    if (!autoAdvance) return;
+    const el = document.getElementById("scene-video") as HTMLVideoElement | null;
+    if (!el) return;
+    const handleEnd = () => onAdvance();
+    el.addEventListener("ended", handleEnd);
+    return () => el.removeEventListener("ended", handleEnd);
+  }, [autoAdvance, onAdvance]);
+
+  return (
+    <div>
+      <p className="text-caption" style={{ color: "var(--accent-strong)" }}>
+        Archival footage
+      </p>
+      <h2 className="h2 mt-2 text-foreground">{title}</h2>
+      <div className="mt-4 rounded-2xl overflow-hidden border border-border bg-card">
+        <video id="scene-video" src={src} poster={poster} className="w-full h-auto" controls />
+      </div>
+      {caption && (
+        <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+          {caption}
+        </p>
+      )}
+      <div className="mt-4">
+        <AskLucaInline prompt={askLucaPrompt} onAskLuca={onAskLuca} index={index} />
+      </div>
+    </div>
+  );
+}
+
+function SceneTimelineSlider({
+  eyebrow,
+  heading,
+  frames,
+  askLucaPrompt,
+  onAskLuca,
+  index,
+}: {
+  eyebrow?: string;
+  heading: string;
+  frames: TimelineFrame[];
+  askLucaPrompt?: string;
+  onAskLuca?: (prompt?: string, returnIndex?: number) => void;
+  index: number;
+}) {
+  return (
+    <div>
+      {eyebrow && (
+        <p className="text-caption" style={{ color: "var(--accent-strong)" }}>
+          {eyebrow}
+        </p>
+      )}
+      <h2 className="h2 mt-2 mb-5 text-foreground">{heading}</h2>
+      <TimelineSlider frames={frames} />
+      <div className="mt-4">
+        <AskLucaInline prompt={askLucaPrompt} onAskLuca={onAskLuca} index={index} />
+      </div>
+    </div>
+  );
+}
+
+function SceneCultural({
+  eyebrow,
+  heading,
+  body,
+  image,
+  askLucaPrompt,
+  onAskLuca,
+  index,
+}: {
+  eyebrow?: string;
+  heading: string;
+  body: string;
+  image?: string;
+  askLucaPrompt?: string;
+  onAskLuca?: (prompt?: string, returnIndex?: number) => void;
+  index: number;
+}) {
+  return (
+    <div>
+      {eyebrow && (
+        <p className="text-caption" style={{ color: "var(--accent-strong)" }}>
+          {eyebrow}
+        </p>
+      )}
+      <h2 className="h2 mt-2 text-foreground">{heading}</h2>
+      {image && (
+        <div className="mt-4 rounded-2xl overflow-hidden border border-border bg-card">
+          <img src={image} alt={heading} className="w-full h-auto" />
+        </div>
+      )}
+      <div
+        className="mt-5 rounded-2xl p-5"
+        style={{
+          background: "color-mix(in srgb, var(--accent) 8%, transparent)",
+          borderLeft: "3px solid var(--accent)",
+        }}
+      >
+        <p className="text-base text-foreground leading-relaxed italic">{body}</p>
+      </div>
+      <div className="mt-4">
+        <AskLucaInline prompt={askLucaPrompt} onAskLuca={onAskLuca} index={index} />
+      </div>
+    </div>
+  );
+}
+
+function SceneClosing({
+  heading,
+  body,
+  cta,
+  askLucaPrompt,
+  onAskLuca,
+  index,
+}: {
+  heading: string;
+  body?: string;
+  cta?: string;
+  askLucaPrompt?: string;
+  onAskLuca?: (prompt?: string, returnIndex?: number) => void;
+  index: number;
+}) {
   return (
     <div className="text-center">
       <p className="text-caption" style={{ color: "var(--accent-strong)" }}>
@@ -631,71 +901,16 @@ function SceneClosing({ heading, body }: { heading: string; body?: string }) {
           {body}
         </p>
       )}
-    </div>
-  );
-}
-
-function SceneHero({
-  subtitle,
-  cta = "Begin chapter →",
-  onAdvance,
-}: {
-  subtitle: string;
-  cta?: string;
-  onAdvance: () => void;
-}) {
-  return (
-    <div className="text-center flex flex-col items-center gap-6">
-      {/* Gold dot grid */}
-      <div
-        aria-hidden
-        style={{
-          width: 120, height: 120,
-          backgroundImage: "radial-gradient(circle, var(--accent) 1.5px, transparent 1.5px)",
-          backgroundSize: "14px 14px",
-          opacity: 0.35,
-        }}
-      />
-      <p
-        className="font-display text-foreground"
-        style={{ fontSize: "clamp(1.1rem, 3.5vw, 1.4rem)", letterSpacing: "0.01em" }}
-      >
-        {subtitle}
-      </p>
-      <button
-        onClick={onAdvance}
-        className="mt-2 px-7 py-3.5 rounded-2xl text-sm font-semibold active:scale-[0.97] transition-transform"
-        style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
-      >
-        {cta}
-      </button>
-    </div>
-  );
-}
-
-function SceneCultural({
-  eyebrow,
-  heading,
-  body,
-}: {
-  eyebrow: string;
-  heading: string;
-  body: string;
-}) {
-  return (
-    <div>
-      <p className="text-caption" style={{ color: "var(--accent-strong)" }}>
-        {eyebrow}
-      </p>
-      <h2 className="h2 mt-2 text-foreground">{heading}</h2>
-      <div
-        className="mt-5 rounded-2xl p-5"
-        style={{
-          background: "color-mix(in srgb, var(--accent) 8%, transparent)",
-          borderLeft: "3px solid var(--accent)",
-        }}
-      >
-        <p className="text-base text-foreground leading-relaxed italic">{body}</p>
+      {cta && (
+        <div
+          className="mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium"
+          style={{ background: "color-mix(in srgb, var(--accent) 18%, transparent)", color: "var(--accent-strong)" }}
+        >
+          {cta}
+        </div>
+      )}
+      <div className="mt-4 flex justify-center">
+        <AskLucaInline prompt={askLucaPrompt} onAskLuca={onAskLuca} index={index} />
       </div>
     </div>
   );
