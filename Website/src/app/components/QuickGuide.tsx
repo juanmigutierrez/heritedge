@@ -10,11 +10,10 @@ import { useSpeechRecognition } from "@/features/voice/useSpeechRecognition";
 import { sendMessage, speak, stopSpeaking, pauseSpeaking, resumeSpeaking } from "@/services/chatService";
 import knowledgeBase from "@/content/knowledge-base.json";
 import { StoryView } from "./quick-guide/StoryView";
-import { eraScenes } from "./quick-guide/scenes";
+import { eraScenes, type TimePeriod } from "./quick-guide/scenes";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type TimePeriod = "birth" | "crown" | "modern";
 type SuggestedTopic = "architecture" | "history" | "events" | "statues";
 
 interface ChatMessage {
@@ -57,29 +56,29 @@ const timelineData: Record<TimePeriod, {
     years: "1386 – 1500s",
     era: "the first stone",
     pullQuote: "A city dared to begin a cathedral that would outlive every hand that touched it.",
-    content: "The cathedral begins as a state project: Visconti money, Gothic ambition, and a marble supply that still flows six centuries later.",
-    highlights: ["First stone, 1386", "Gothic ambition", "Candoglia marble", "Milan's medieval market"],
-    source: { label: "Veneranda Fabbrica del Duomo (official)", url: "https://www.duomomilano.it" },
+    content: "Archbishop Antonio da Saluzzo lays the first stone in 1386. Duke Gian Galeazzo Visconti turns the Duomo into a state enterprise — Milan's Gothic answer to Cologne and Reims.",
+    highlights: ["First stone, 5 Aug 1386", "Candoglia marble granted in perpetuity", "14 years of foundation excavations", "Fabbrica del Duomo founded 1387"],
+    source: { label: "Veneranda Fabbrica del Duomo", url: "https://www.duomomilano.it" },
   },
   crown: {
     id: "crown",
     title: "Crown",
     years: "1500s – 1860",
-    era: "the crowning",
+    era: "the golden age",
     pullQuote: "Leonardo sketched the dome's heart. The Gothic listened, and answered in marble.",
-    content: "Renaissance hands and imperial power shape the Duomo. The Madonnina rises, and Napoleon orders the facade finished for his coronation.",
-    highlights: ["Leonardo's tiburio", "Madonnina placed, 1774", "Napoleon's facade", "Palazzo Reale rebuilt"],
-    source: { label: "Archivio Storico Civico di Milano", url: "https://www.comune.milano.it" },
+    content: "Renaissance, Habsburg rule, Napoleon. Leonardo submits tiburio designs. The Madonnina rises to 108.5 m. Piermarini rebuilds Palazzo Reale and opens La Scala.",
+    highlights: ["Leonardo's tiburio designs, 1487", "Madonnina placed, 30 Dec 1774", "Napoleon's coronation, 1805", "Palazzo Reale rebuilt by Piermarini"],
+    source: { label: "Veneranda Fabbrica del Duomo", url: "https://www.duomomilano.it" },
   },
   modern: {
     id: "modern",
     title: "Modern",
     years: "1860 – today",
-    era: "the living room",
+    era: "the living city",
     pullQuote: "Italy found a stage. The Galleria opened. The square became a city's living room.",
-    content: "Italy unifies, the Galleria opens, and the 20th century leaves scars and celebrations on the square — from bombings to Liberation Day.",
-    highlights: ["Galleria opens, 1865–77", "Mengoni's fall, 1877", "Bombing, 1943", "Liberation, 1945"],
-    source: { label: "Archivio Storico Civico di Milano", url: "https://www.comune.milano.it" },
+    content: "Italy unifies. Mengoni builds the Galleria. WWII bombs scar Palazzo Reale. Picasso hangs Guernica in the ruins. Today six million visitors a year pass through this square.",
+    highlights: ["Galleria opens 1877", "1943 bombing of Sala delle Cariatidi", "Guernica exhibited here, 1953", "6 million visitors/year today"],
+    source: { label: "Comune di Milano", url: "https://www.comune.milano.it" },
   },
 };
 
@@ -407,9 +406,9 @@ export function QuickGuide() {
     try {
       const kb: any = knowledgeBase;
       const mapping: Record<TimePeriod, string> = {
-        birth: "duomo-1386-foundation",
-        crown: "duomo-madonnina-1774",
-        modern: "galleria-mengoni-1865",
+        birth:   "duomo-1386-foundation",
+        crown:   "duomo-madonnina-1774",
+        modern:  "galleria-mengoni-1865",
       };
       const factId = mapping[selectedEra];
       return kb.facts.find((f: any) => f.id === factId) ?? null;
