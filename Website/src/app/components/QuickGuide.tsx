@@ -14,7 +14,7 @@ import { eraScenes } from "./quick-guide/scenes";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type TimePeriod = "foundations" | "visconti" | "sforza" | "habsburg";
+type TimePeriod = "birth" | "crown" | "modern";
 type SuggestedTopic = "architecture" | "history" | "events" | "statues";
 
 interface ChatMessage {
@@ -45,51 +45,41 @@ const timelineData: Record<TimePeriod, {
   id: TimePeriod;
   title: string;
   years: string;
-  era: string;            // a short narrative tag — "the awakening", etc.
+  era: string;
   pullQuote: string;
   content: string;
   highlights: string[];
   source: { label: string; url?: string };
 }> = {
-  foundations: {
-    id: "foundations",
-    title: "Foundations",
-    years: "1386–1400",
+  birth: {
+    id: "birth",
+    title: "Birth",
+    years: "1386 – 1500s",
     era: "the first stone",
     pullQuote: "A city dared to begin a cathedral that would outlive every hand that touched it.",
-    content: "The first stone was laid in 1386. Archbishop Antonio da Saluzzo initiated the project, choosing Gothic style to rival Europe's greatest cathedrals.",
-    highlights: ["First stone, 1386", "Gothic style chosen", "Deep foundation excavations", "Designed by Simone da Orsenigo"],
-    source: { label: "Veneranda Fabbrica del Duomo (official)", url: "https://www.duomomilano.it" },
+    content: "Archbishop Antonio da Saluzzo lays the first stone in 1386. Duke Gian Galeazzo Visconti turns the Duomo into a state enterprise — Milan's Gothic answer to Cologne and Reims.",
+    highlights: ["First stone, 5 Aug 1386", "Candoglia marble granted in perpetuity", "14 years of foundation excavations", "Fabbrica del Duomo founded 1387"],
+    source: { label: "Veneranda Fabbrica del Duomo", url: "https://www.duomomilano.it" },
   },
-  visconti: {
-    id: "visconti",
-    title: "Visconti Era",
-    years: "1386–1450",
-    era: "the awakening",
-    pullQuote: "Every spire became a statement. Every statue, a question answered in stone.",
-    content: "Duke Gian Galeazzo Visconti turned the Duomo into a symbol of Milanese ambition — commissioning 3,400+ statues and inviting Europe's finest architects.",
-    highlights: ["Funded by the Visconti dynasty", "3,400+ statues commissioned", "International architects invited", "Largest Gothic cathedral in Italy"],
-    source: { label: "Archivio Storico Civico di Milano", url: "https://www.comune.milano.it" },
-  },
-  sforza: {
-    id: "sforza",
-    title: "Sforza Rule",
-    years: "1450–1535",
-    era: "the renaissance",
+  crown: {
+    id: "crown",
+    title: "Crown",
+    years: "1500s – 1860",
+    era: "the golden age",
     pullQuote: "Leonardo sketched the dome's heart. The Gothic listened, and answered in marble.",
-    content: "Leonardo da Vinci himself contributed designs for the tiburio. Spires rose, and Renaissance ideas blended beautifully with Gothic bones.",
-    highlights: ["Leonardo da Vinci's involvement", "Tiburio construction begins", "Spires take shape", "Renaissance meets Gothic"],
-    source: { label: "Archivio Storico Civico di Milano", url: "https://www.comune.milano.it" },
+    content: "Renaissance, Habsburg rule, Napoleon. Leonardo submits tiburio designs. The Madonnina rises to 108.5 m. Piermarini rebuilds Palazzo Reale and opens La Scala.",
+    highlights: ["Leonardo's tiburio designs, 1487", "Madonnina placed, 30 Dec 1774", "Napoleon's coronation, 1805", "Palazzo Reale rebuilt by Piermarini"],
+    source: { label: "Veneranda Fabbrica del Duomo", url: "https://www.duomomilano.it" },
   },
-  habsburg: {
-    id: "habsburg",
-    title: "Habsburg Period",
-    years: "1535–1700s",
-    era: "the crowning",
-    pullQuote: "On the highest spire, the Madonnina has been watching Milan for two and a half centuries.",
-    content: "All 135 spires were completed and the Madonnina — Milan's golden guardian — was placed atop the central spire in 1774, watching over the city ever since.",
-    highlights: ["135 spires completed", "Imperial coronations held", "Baroque elements added", "Madonnina placed, 1774"],
-    source: { label: "Archivio Storico Civico di Milano", url: "https://www.comune.milano.it" },
+  modern: {
+    id: "modern",
+    title: "Modern",
+    years: "1860 – today",
+    era: "the living city",
+    pullQuote: "Italy found a stage. The Galleria opened. The square became a city's living room.",
+    content: "Italy unifies. Mengoni builds the Galleria. WWII bombs scar Palazzo Reale. Picasso hangs Guernica in the ruins. Today six million visitors a year pass through this square.",
+    highlights: ["Galleria opens 1877", "1943 bombing of Sala delle Cariatidi", "Guernica exhibited here, 1953", "6 million visitors/year today"],
+    source: { label: "Comune di Milano", url: "https://www.comune.milano.it" },
   },
 };
 
@@ -294,7 +284,7 @@ function QuickReplies({ onSelect }: { onSelect: (t: string) => void }) {
 
 // ─── Building blocks ──────────────────────────────────────────────────────────
 
-const timelinePeriods: TimePeriod[] = ["foundations", "visconti", "sforza", "habsburg"];
+const timelinePeriods: TimePeriod[] = ["birth", "crown", "modern"];
 
 function TopicCard({ topic, onSelect, delay }: {
   topic: typeof topicSuggestions[number];
@@ -391,7 +381,7 @@ export function QuickGuide() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [selectedEra, setSelectedEra]         = useState<TimePeriod>("foundations");
+  const [selectedEra, setSelectedEra]         = useState<TimePeriod>("birth");
   const [showChat, setShowChat]               = useState(false);
   const [storyOpen, setStoryOpen]             = useState(false);
   const [chatMessages, setChatMessages]       = useState<ChatMessage[]>([]);
@@ -416,10 +406,9 @@ export function QuickGuide() {
     try {
       const kb: any = knowledgeBase;
       const mapping: Record<TimePeriod, string> = {
-        foundations: "duomo-1386-foundation",
-        visconti: "visconti-era-overview",
-        sforza: "sforza-rule-overview",
-        habsburg: "habsburg-period-overview",
+        birth:   "duomo-1386-foundation",
+        crown:   "sforza-rule-overview",
+        modern:  "habsburg-period-overview",
       };
       const factId = mapping[selectedEra];
       return kb.facts.find((f: any) => f.id === factId) ?? null;
@@ -1111,10 +1100,10 @@ export function QuickGuide() {
                 setStoryOpen(false);
               }
             }}
-            onAskLuca={() => {
+            onAskLuca={(question) => {
               setStoryOpen(false);
               setShowChat(true);
-              handleSendMessageText(`Tell me more about the ${era.title} era.`);
+              handleSendMessageText(question ?? `Tell me more about the ${era.title} era.`);
             }}
           />
         )}
