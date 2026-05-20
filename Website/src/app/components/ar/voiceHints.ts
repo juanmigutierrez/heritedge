@@ -1,9 +1,9 @@
 const HINTS: string[] = [
-  "take me to the Duomo medieval",
-  "show me the Galleria postwar",
-  "Palazzo Reale, present day",
+  "take me to the Duomo at birth",
+  "show me the Galleria modern",
+  "Palazzo Reale, crown period",
   "take me to Galleria",
-  "switch to medieval",
+  "switch to birth",
   "show me the map",
 ];
 

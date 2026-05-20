@@ -54,9 +54,9 @@ const ERA_FILTER_PARAMS: Record<EraId, {
   sepia: number; grayscale: number;
   brightness: number; contrast: number; saturation: number;
 }> = {
-  medieval: { sepia: 0.55, grayscale: 0,    brightness: 0.92, contrast: 1.05, saturation: 0.85 },
-  postwar:  { sepia: 0.15, grayscale: 0.70, brightness: 0.95, contrast: 1.08, saturation: 1    },
-  present:  { sepia: 0,    grayscale: 0,    brightness: 1.02, contrast: 1,    saturation: 1.05 },
+  birth:  { sepia: 0.50, grayscale: 0,   brightness: 0.91, contrast: 1.06, saturation: 0.88 },
+  crown:  { sepia: 0.30, grayscale: 0,   brightness: 0.95, contrast: 1.04, saturation: 1.08 },
+  modern: { sepia: 0,    grayscale: 0,   brightness: 1.01, contrast: 1.02, saturation: 0.94 },
 };
 
 // ─── Decorative frame ─────────────────────────────────────────────────────────

@@ -6,14 +6,7 @@ import { useNavigate } from "react-router";
 import { X, Volume2, VolumeOff, ArrowRight, Camera, Play, Pause } from "lucide-react";
 import { type ARHotspot, type ARMedia, type ARBeforeAfter, AR_PERIODS, type ARPeriodId } from "./hotspots";
 import { speak, stopSpeaking } from "@/services/chatService";
-
-// ─── Design tokens ────────────────────────────────────────────────────────────
-
-const SANS   = "'Inter', system-ui, sans-serif";
-const SERIF  = "'Fraunces', 'Cormorant Garamond', Georgia, serif";
-const MONO   = "'JetBrains Mono', monospace";
-const FG     = "#F4F2EC";
-const SUBTLE = "rgba(244,242,236,0.55)";
+import { SANS, SERIF, MONO, FG, SUBTLE } from "./shared";
 
 // ─── Period badge ─────────────────────────────────────────────────────────────
 
