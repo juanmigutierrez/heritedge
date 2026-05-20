@@ -27,8 +27,13 @@ import {
   SERIF,
   SUBTLE,
   VoicePill,
+  VoiceConfirmToast,
+  VoiceAlreadyHereToast,
   haptic,
   matchHotspot,
+  parseVoiceIntent,
+  describeIntent,
+  type VoiceIntent,
 } from "./ar/shared";
 import { pickVoiceHint } from "./ar/voiceHints";
 import { landmarkVT } from "./ar/viewTransition";
@@ -159,6 +164,8 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
 
   const [tab, setTab] = useState<TabId>("story");
   const [pulse, setPulse] = useState(false);
+  const [pendingIntent, setPendingIntent] = useState<(VoiceIntent & { label: string }) | null>(null);
+  const [alreadyHereLabel, setAlreadyHereLabel] = useState<string | null>(null);
   const [hintsOpen, setHintsOpen] = useState(false);
   const [landmarksOpen, setLandmarksOpen] = useState(false);
   const [openHotspotId, setOpenHotspotId] = useState<string | null>(null);
@@ -216,39 +223,44 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
 
   // Voice command parser: landmark / era / hotspot, then forwards transcript to RAG.
   const handleVoiceCommand = (transcript: string) => {
-    const cmd = transcript.toLowerCase();
+    const intent = parseVoiceIntent(transcript);
 
-    let nextLandmark: LandmarkId | null = null;
-    if (/galleria/.test(cmd)) nextLandmark = "galleria";
-    else if (/palazzo/.test(cmd)) nextLandmark = "palazzo";
-    else if (/duomo/.test(cmd)) nextLandmark = "duomo";
+    if (intent.overview) {
+      navigate("/ar-overview", { viewTransition: true });
+      return;
+    }
 
-    let nextEra: EraId | null = null;
-    if (/medieval/.test(cmd)) nextEra = "medieval";
-    else if (/post[-\s]?war|war/.test(cmd)) nextEra = "postwar";
-    else if (/present|now|today/.test(cmd)) nextEra = "present";
+    if (intent.landmark || intent.era) {
+      const targetLandmark = intent.landmark ?? landmarkId;
+      const targetEra      = intent.era      ?? eraId;
+      const isNavigation   = intent.landmark && intent.landmark !== landmarkId;
+      const alreadyHere    = !isNavigation && targetEra === eraId;
 
-    if (nextLandmark && nextLandmark !== landmarkId) {
-      const targetEra = nextEra ?? eraId;
-      navigate(`/ar-artifact/${nextLandmark}?period=${targetEra}`, { viewTransition: true });
-    } else if (nextEra && nextEra !== eraId) {
-      setEra(nextEra);
-    } else {
-      // No navigation change — try to match a hotspot label.
-      const hit = matchHotspot(cmd, hotspots);
-      if (hit) {
-        handleHotspotTap(hit);
-        speak(`${hit.title}. ${hit.body}`);
-      } else {
-        // Fall through to RAG so the user always gets an answer.
-        stopSpeaking();
-        sendMessage(transcript, landmarkId)
-          .then((res) => {
-            const reply = res.answer || res.reply;
-            if (reply) speak(reply);
-          })
-          .catch(() => {/* silent — voice nav alone is acceptable */});
+      if (alreadyHere) {
+        setAlreadyHereLabel(describeIntent({ landmark: targetLandmark, era: targetEra }));
+      } else if (isNavigation) {
+        setPendingIntent({ ...intent, label: describeIntent({ landmark: targetLandmark, era: targetEra }) });
+      } else if (intent.era && intent.era !== eraId) {
+        setPendingIntent({ ...intent, label: describeIntent({ landmark: null, era: intent.era }) });
       }
+      setPulse(true);
+      window.setTimeout(() => setPulse(false), 600);
+      return;
+    }
+
+    // Nothing recognised as navigation — try hotspot label match.
+    const hit = matchHotspot(transcript.toLowerCase(), hotspots);
+    if (hit) {
+      handleHotspotTap(hit);
+      speak(`${hit.title}. ${hit.body}`);
+    } else {
+      stopSpeaking();
+      sendMessage(transcript, landmarkId)
+        .then((res) => {
+          const reply = res.answer || res.reply;
+          if (reply) speak(reply);
+        })
+        .catch(() => {/* silent */});
     }
 
     setPulse(true);
@@ -622,6 +634,35 @@ export function ARArtifactDetail({ density = "rich" }: ARArtifactDetailProps) {
             <style>{`@keyframes sheetUp { from { transform: translateY(20px); opacity: 0; } to { transform: none; opacity: 1; } }`}</style>
           </div>
         </div>
+      )}
+
+      {/* Already-here toast */}
+      {alreadyHereLabel && (
+        <VoiceAlreadyHereToast
+          message={alreadyHereLabel}
+          accent={era.accent}
+          onDismiss={() => setAlreadyHereLabel(null)}
+        />
+      )}
+
+      {/* Voice confirmation toast */}
+      {pendingIntent && (
+        <VoiceConfirmToast
+          message={pendingIntent.label}
+          accent={era.accent}
+          prefix={pendingIntent.landmark ? "Taking you to" : "Switching to"}
+          onCommit={() => {
+            const intent = pendingIntent;
+            setPendingIntent(null);
+            if (intent.landmark) {
+              const targetEra = intent.era ?? eraId;
+              navigate(`/ar-artifact/${intent.landmark}?period=${targetEra}`, { viewTransition: true });
+            } else if (intent.era) {
+              setEra(intent.era);
+            }
+          }}
+          onDismiss={() => setPendingIntent(null)}
+        />
       )}
 
       {/* Bottom row: landmarks · voice — uses the same px-5 / pt-6 / pb-8
