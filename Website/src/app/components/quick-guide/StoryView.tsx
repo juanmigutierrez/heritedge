@@ -1,8 +1,10 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, ArrowRight, ArrowLeft, Quote, Check, Sparkles } from "lucide-react";
 import type { Scene, IllustrationId } from "./scenes";
 import { Illustration } from "./illustrations";
+import { TimelineSlider } from "./TimelineSlider";
+
 
 interface StoryViewProps {
   chapterTitle: string;
@@ -12,7 +14,15 @@ interface StoryViewProps {
   scenes: Scene[];
   onClose: () => void;
   onComplete: () => void;
-  onAskLuca?: () => void;
+  onAskLuca?: (question?: string) => void;
+}
+
+// Returns the contextual chat question for a scene, if it defines one.
+function getSceneChatQuestion(scene: Scene): string | undefined {
+  if (scene.kind === "quote" || scene.kind === "narrative" || scene.kind === "reveal") {
+    return scene.chatQuestion;
+  }
+  return undefined;
 }
 
 export function StoryView({
@@ -128,6 +138,23 @@ export function StoryView({
             className="w-full max-w-md mx-auto"
           >
             <SceneContent scene={scene} onAdvance={next} />
+            {onAskLuca && getSceneChatQuestion(scene) && (
+              <div className="mt-6 flex justify-center">
+                <button
+                  onClick={() => onAskLuca(getSceneChatQuestion(scene))}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium active:scale-[0.98] transition-all"
+                  style={{
+                    background: "color-mix(in srgb, var(--accent) 14%, transparent)",
+                    border: "1px solid color-mix(in srgb, var(--accent) 40%, transparent)",
+                    color: "var(--accent-strong)",
+                  }}
+                  aria-label="Ask Luca more about this scene"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Ask Luca more →
+                </button>
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
       </main>
@@ -143,17 +170,6 @@ export function StoryView({
           <ArrowLeft className="w-4 h-4" />
           <span className="hidden sm:inline">Back</span>
         </button>
-
-        {onAskLuca && (
-          <button
-            onClick={onAskLuca}
-            className="hidden sm:inline-flex h-11 px-4 rounded-xl border border-border text-foreground bg-card text-sm items-center gap-2 hover:bg-secondary active:scale-[0.98] transition-all"
-            aria-label="Ask Luca about this chapter"
-          >
-            <Sparkles className="w-4 h-4" style={{ color: "var(--accent-strong)" }} />
-            Ask Luca
-          </button>
-        )}
 
         <div className="flex-1" />
 
@@ -175,12 +191,32 @@ export function StoryView({
 
 function SceneContent({ scene, onAdvance }: { scene: Scene; onAdvance: () => void }) {
   switch (scene.kind) {
+    case "hero":
+      return <SceneHero subtitle={scene.subtitle} cta={scene.cta} onAdvance={onAdvance} />;
     case "quote":
       return <SceneQuote text={scene.text} />;
     case "narrative":
-      return <SceneNarrative eyebrow={scene.eyebrow} heading={scene.heading} body={scene.body} />;
+      return (
+        <SceneNarrative
+          eyebrow={scene.eyebrow}
+          heading={scene.heading}
+          body={scene.body}
+          image={scene.image}
+          imageAlt={scene.imageAlt}
+          imageCaption={scene.imageCaption}
+        />
+      );
     case "reveal":
-      return <SceneReveal question={scene.question} answer={scene.answer} />;
+      return (
+        <SceneReveal
+          eyebrow={scene.eyebrow}
+          question={scene.question}
+          answerEyebrow={scene.answerEyebrow}
+          answer={scene.answer}
+          image={scene.image}
+          imageAlt={scene.imageAlt}
+        />
+      );
     case "quiz":
       return (
         <SceneQuiz
@@ -202,9 +238,51 @@ function SceneContent({ scene, onAdvance }: { scene: Scene; onAdvance: () => voi
       );
     case "closing":
       return <SceneClosing heading={scene.heading} body={scene.body} />;
+    case "cultural":
+      return <SceneCultural eyebrow={scene.eyebrow} heading={scene.heading} body={scene.body} />;
+    case "matchGame":
+      return (
+        <SceneMatchGame
+          instruction={scene.instruction}
+          pairs={scene.pairs}
+          twist={scene.twist}
+          reveal={scene.reveal}
+          onAdvance={onAdvance}
+        />
+      );
+    case "timelineSlider":
+      return (
+        <SceneTimelineSlider
+          eyebrow={scene.eyebrow}
+          heading={scene.heading}
+          frames={scene.frames}
+        />
+      );
     default:
       return null;
   }
+}
+
+function SceneTimelineSlider({
+  eyebrow,
+  heading,
+  frames,
+}: {
+  eyebrow?: string;
+  heading: string;
+  frames: Array<{ year: string; image: string; caption: string }>;
+}) {
+  return (
+    <div>
+      {eyebrow && (
+        <p className="text-caption" style={{ color: "var(--accent-strong)" }}>
+          {eyebrow}
+        </p>
+      )}
+      <h2 className="h2 mt-2 mb-5 text-foreground">{heading}</h2>
+      <TimelineSlider frames={frames} />
+    </div>
+  );
 }
 
 // ─── Scene renderers ──────────────────────────────────────────────────────────
@@ -231,10 +309,16 @@ function SceneNarrative({
   eyebrow,
   heading,
   body,
+  image,
+  imageAlt,
+  imageCaption,
 }: {
   eyebrow?: string;
   heading: string;
   body: string;
+  image?: string;
+  imageAlt?: string;
+  imageCaption?: string;
 }) {
   return (
     <div>
@@ -244,19 +328,65 @@ function SceneNarrative({
         </p>
       )}
       <h2 className="h2 mt-2 text-foreground">{heading}</h2>
-      <p className="mt-4 text-base sm:text-[17px] text-foreground leading-relaxed">
-        {body}
-      </p>
+
+      {image ? (
+        <div
+          className="mt-5 rounded-2xl p-5 flex gap-4 items-start"
+          style={{
+            background: "color-mix(in srgb, var(--accent) 8%, transparent)",
+            borderLeft: "3px solid var(--accent)",
+          }}
+        >
+          <img
+            src={image}
+            alt={imageAlt ?? ""}
+            className="rounded-lg flex-shrink-0"
+            style={{
+              width: 110,
+              height: 140,
+              objectFit: "cover",
+              objectPosition: "center top",
+              display: "block",
+              background: "#0a0a0a",
+            }}
+          />
+          <p className="text-base text-foreground leading-relaxed italic flex-1">{body}</p>
+        </div>
+      ) : (
+        <p className="mt-4 text-base sm:text-[17px] text-foreground leading-relaxed">
+          {body}
+        </p>
+      )}
+
+      {image && imageCaption && (
+        <p className="mt-3 text-xs text-muted-foreground italic leading-snug">
+          {imageCaption}
+        </p>
+      )}
     </div>
   );
 }
 
-function SceneReveal({ question, answer }: { question: string; answer: string }) {
+function SceneReveal({
+  eyebrow,
+  question,
+  answerEyebrow,
+  answer,
+  image,
+  imageAlt,
+}: {
+  eyebrow?: string;
+  question: string;
+  answerEyebrow?: string;
+  answer: string;
+  image?: string;
+  imageAlt?: string;
+}) {
   const [revealed, setRevealed] = useState(false);
   return (
     <div>
       <p className="text-caption" style={{ color: "var(--accent-strong)" }}>
-        Did you know?
+        {eyebrow ?? "Did you know?"}
       </p>
       <h2 className="h2 mt-2 text-foreground">{question}</h2>
 
@@ -280,7 +410,34 @@ function SceneReveal({ question, answer }: { question: string; answer: string })
               borderLeft: "3px solid var(--accent)",
             }}
           >
-            <p className="text-base text-foreground leading-relaxed">{answer}</p>
+            {answerEyebrow && (
+              <p
+                className="text-caption mb-3"
+                style={{ color: "var(--accent-strong)", letterSpacing: "0.08em" }}
+              >
+                {answerEyebrow}
+              </p>
+            )}
+            {image ? (
+              <div className="flex gap-4 items-start">
+                <img
+                  src={image}
+                  alt={imageAlt ?? ""}
+                  className="rounded-lg flex-shrink-0"
+                  style={{
+                    width: 110,
+                    height: 140,
+                    objectFit: "cover",
+                    display: "block",
+                  }}
+                />
+                <p className="text-sm text-foreground leading-relaxed flex-1">
+                  {answer}
+                </p>
+              </div>
+            ) : (
+              <p className="text-base text-foreground leading-relaxed">{answer}</p>
+            )}
           </motion.div>
         )}
       </div>
@@ -439,6 +596,320 @@ function SceneClosing({ heading, body }: { heading: string; body?: string }) {
         <p className="mt-4 text-base text-muted-foreground leading-relaxed max-w-md mx-auto">
           {body}
         </p>
+      )}
+    </div>
+  );
+}
+
+function SceneHero({
+  subtitle,
+  cta = "Begin chapter →",
+  onAdvance,
+}: {
+  subtitle: string;
+  cta?: string;
+  onAdvance: () => void;
+}) {
+  return (
+    <div className="text-center flex flex-col items-center gap-6">
+      {/* Gold dot grid */}
+      <div
+        aria-hidden
+        style={{
+          width: 120, height: 120,
+          backgroundImage: "radial-gradient(circle, var(--accent) 1.5px, transparent 1.5px)",
+          backgroundSize: "14px 14px",
+          opacity: 0.35,
+        }}
+      />
+      <p
+        className="font-display text-foreground"
+        style={{ fontSize: "clamp(1.1rem, 3.5vw, 1.4rem)", letterSpacing: "0.01em" }}
+      >
+        {subtitle}
+      </p>
+      <button
+        onClick={onAdvance}
+        className="mt-2 px-7 py-3.5 rounded-2xl text-sm font-semibold active:scale-[0.97] transition-transform"
+        style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+      >
+        {cta}
+      </button>
+    </div>
+  );
+}
+
+function SceneCultural({
+  eyebrow,
+  heading,
+  body,
+}: {
+  eyebrow: string;
+  heading: string;
+  body: string;
+}) {
+  return (
+    <div>
+      <p className="text-caption" style={{ color: "var(--accent-strong)" }}>
+        {eyebrow}
+      </p>
+      <h2 className="h2 mt-2 text-foreground">{heading}</h2>
+      <div
+        className="mt-5 rounded-2xl p-5"
+        style={{
+          background: "color-mix(in srgb, var(--accent) 8%, transparent)",
+          borderLeft: "3px solid var(--accent)",
+        }}
+      >
+        <p className="text-base text-foreground leading-relaxed italic">{body}</p>
+      </div>
+    </div>
+  );
+}
+
+function SceneMatchGame({
+  instruction,
+  pairs,
+  twist,
+  reveal,
+  onAdvance,
+}: {
+  instruction: string;
+  pairs: Array<{ left: string; right: string }>;
+  twist?: string;
+  reveal: string;
+  onAdvance: () => void;
+}) {
+  // Bottom-row slots: unique architects only — Piermarini receives two lines.
+  const slots = Array.from(new Set(pairs.map((p) => p.right)));
+
+  const [connections, setConnections] = useState<Record<string, string>>({});
+  const [drag, setDrag] = useState<{ from: string; x: number; y: number } | null>(null);
+  const [bumped, setBumped] = useState<string | null>(null);
+  // Bump tick forces re-render so SVG line endpoints recompute when layout settles.
+  const [bumpTick, setBumpTick] = useState(0);
+
+  const containerRef  = useRef<HTMLDivElement>(null);
+  const buildingRefs  = useRef<Record<string, HTMLDivElement | null>>({});
+  const slotRefs      = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const allConnected = pairs.every((p) => connections[p.left] === p.right);
+
+  // Recompute SVG endpoints on resize / scroll while interactive.
+  useEffect(() => {
+    const onResize = () => setBumpTick((t) => t + 1);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const pointInContainer = (clientX: number, clientY: number) => {
+    const cr = containerRef.current?.getBoundingClientRect();
+    if (!cr) return { x: 0, y: 0 };
+    return { x: clientX - cr.left, y: clientY - cr.top };
+  };
+
+  const center = (el: HTMLElement | null, anchor: "top" | "bottom") => {
+    if (!el || !containerRef.current) return null;
+    const er = el.getBoundingClientRect();
+    const cr = containerRef.current.getBoundingClientRect();
+    return {
+      x: er.left - cr.left + er.width / 2,
+      y: anchor === "top" ? er.top - cr.top : er.bottom - cr.top,
+    };
+  };
+
+  const startDrag = (building: string, clientX: number, clientY: number) => {
+    if (connections[building]) return;
+    const p = pointInContainer(clientX, clientY);
+    setDrag({ from: building, x: p.x, y: p.y });
+  };
+
+  // Document-level pointer handling while a drag is active.
+  useEffect(() => {
+    if (!drag) return;
+
+    const onMove = (e: PointerEvent) => {
+      const p = pointInContainer(e.clientX, e.clientY);
+      setDrag((d) => (d ? { ...d, x: p.x, y: p.y } : null));
+    };
+
+    const onUp = (e: PointerEvent) => {
+      const tgt = document.elementFromPoint(e.clientX, e.clientY);
+      let hit: string | null = null;
+      for (const arch of slots) {
+        const el = slotRefs.current[arch];
+        if (el && (el === tgt || el.contains(tgt as Node))) { hit = arch; break; }
+      }
+      if (hit) {
+        const correct = pairs.find((p) => p.left === drag.from)?.right;
+        if (hit === correct) {
+          setConnections((c) => ({ ...c, [drag.from]: hit! }));
+        } else {
+          setBumped(hit);
+          setTimeout(() => setBumped(null), 400);
+        }
+      }
+      setDrag(null);
+    };
+
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, [drag, pairs, slots]);
+
+  // Force one extra recompute pass after first paint so refs are populated.
+  useEffect(() => { setBumpTick((t) => t + 1); }, []);
+  void bumpTick;
+
+  return (
+    <div>
+      <p className="text-caption" style={{ color: "var(--accent-strong)" }}>
+        Mini-game
+      </p>
+      <h2 className="h2 mt-2 text-foreground">{instruction}</h2>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Drag from a building down to its architect.
+      </p>
+
+      <div
+        ref={containerRef}
+        className="mt-6"
+        style={{ position: "relative", userSelect: "none", touchAction: "none" }}
+      >
+        {/* Buildings row */}
+        <div className="flex gap-2">
+          {pairs.map((p) => {
+            const connected = connections[p.left] !== undefined;
+            return (
+              <div
+                key={p.left}
+                ref={(el) => { buildingRefs.current[p.left] = el; }}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  startDrag(p.left, e.clientX, e.clientY);
+                }}
+                className="flex-1 min-w-0 py-3 px-2 rounded-xl border text-xs font-medium text-center"
+                style={{
+                  borderColor: connected ? "var(--accent)" : "var(--border)",
+                  background: connected
+                    ? "color-mix(in srgb, var(--accent) 14%, transparent)"
+                    : "var(--card)",
+                  color: "var(--foreground)",
+                  cursor: connected ? "default" : "grab",
+                  touchAction: "none",
+                }}
+              >
+                {p.left}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Spacer for SVG lines */}
+        <div style={{ height: 64 }} />
+
+        {/* Architects row */}
+        <div className="flex gap-2">
+          {slots.map((arch) => {
+            const incoming = Object.values(connections).filter((a) => a === arch).length;
+            const filled = incoming > 0;
+            const isMistake = bumped === arch;
+            return (
+              <div
+                key={arch}
+                ref={(el) => { slotRefs.current[arch] = el; }}
+                className="flex-1 min-w-0 py-3 px-2 rounded-xl border text-xs font-medium text-center transition-all"
+                style={{
+                  borderColor: isMistake
+                    ? "var(--destructive)"
+                    : filled
+                    ? "var(--accent)"
+                    : "var(--border)",
+                  background: isMistake
+                    ? "color-mix(in srgb, var(--destructive) 14%, transparent)"
+                    : filled
+                    ? "color-mix(in srgb, var(--accent) 14%, transparent)"
+                    : "var(--card)",
+                  color: "var(--foreground)",
+                  animation: isMistake ? "matchShake 0.35s ease" : undefined,
+                }}
+              >
+                {arch}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* SVG line overlay */}
+        <svg
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            pointerEvents: "none",
+          }}
+        >
+          {/* Completed lines */}
+          {Object.entries(connections).map(([building, arch]) => {
+            const from = center(buildingRefs.current[building], "bottom");
+            const to   = center(slotRefs.current[arch], "top");
+            if (!from || !to) return null;
+            return (
+              <line
+                key={building}
+                x1={from.x} y1={from.y} x2={to.x} y2={to.y}
+                stroke="var(--accent)" strokeWidth={2.5} strokeLinecap="round"
+              />
+            );
+          })}
+          {/* Active drag line */}
+          {drag && (() => {
+            const from = center(buildingRefs.current[drag.from], "bottom");
+            if (!from) return null;
+            return (
+              <line
+                x1={from.x} y1={from.y} x2={drag.x} y2={drag.y}
+                stroke="var(--accent-strong)" strokeWidth={2}
+                strokeDasharray="5 4" strokeLinecap="round"
+              />
+            );
+          })()}
+        </svg>
+
+        <style>{`
+          @keyframes matchShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+          }
+        `}</style>
+      </div>
+
+      {allConnected && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="mt-6"
+        >
+          {twist && (
+            <p className="text-sm font-medium mb-2" style={{ color: "var(--accent-strong)" }}>
+              {twist}
+            </p>
+          )}
+          <p className="text-sm text-muted-foreground leading-relaxed">{reveal}</p>
+          <button
+            onClick={onAdvance}
+            className="mt-5 w-full py-3 rounded-xl text-sm font-medium active:scale-[0.98] transition-all"
+            style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+          >
+            Continue →
+          </button>
+        </motion.div>
       )}
     </div>
   );
