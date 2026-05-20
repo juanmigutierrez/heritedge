@@ -95,9 +95,18 @@ export interface ARPhotoChallenge {
 
 // ─── Hotspot ───────────────────────────────────────────────────────────────────
 
+export type ARLandmarkId = "duomo" | "galleria" | "palazzo";
+
 export interface ARHotspot {
   id: string;
   period: ARPeriodId;
+  /**
+   * Which landmark this hotspot belongs to. Omit for piazza-wide stories
+   * that have no specific building anchor — those won't render in any
+   * landmark detail view until a landmark is assigned.
+   * Use "all" to show in every landmark (e.g. the piazza meta-story).
+   */
+  landmark?: ARLandmarkId | "all";
   /** Short year shown as the badge e.g. "1386". */
   year: string;
   /** Full date for the eyebrow line e.g. "5 August 1386". Optional. */
@@ -130,6 +139,7 @@ const BIRTH: ARHotspot[] = [
   {
     id: "ar-birth-first-stone",
     period: "birth",
+    landmark: "duomo",
     year: "1386",
     eyebrow: "5 August 1386",
     compassHeading: 0,
@@ -144,6 +154,7 @@ const BIRTH: ARHotspot[] = [
   {
     id: "ar-birth-plague-refuge",
     period: "birth",
+    landmark: "duomo",
     year: "1402",
     eyebrow: "Milan, 1402",
     compassHeading: 340,
@@ -157,6 +168,7 @@ const BIRTH: ARHotspot[] = [
   {
     id: "ar-birth-leonardo",
     period: "birth",
+    landmark: "duomo",
     year: "1487",
     eyebrow: "1487 – 1488",
     compassHeading: 90,
@@ -171,6 +183,7 @@ const BIRTH: ARHotspot[] = [
   {
     id: "ar-birth-piazza-mercanti",
     period: "birth",
+    landmark: "galleria",
     year: "1400s",
     eyebrow: "Milan, c. 1400s",
     compassHeading: 290,
@@ -183,6 +196,7 @@ const BIRTH: ARHotspot[] = [
   {
     id: "ar-birth-bells",
     period: "birth",
+    landmark: "duomo",
     year: "1400s",
     eyebrow: "Milan, c. 1400s",
     compassHeading: 10,
@@ -196,6 +210,7 @@ const BIRTH: ARHotspot[] = [
   {
     id: "ar-birth-fabbrica",
     period: "birth",
+    landmark: "duomo",
     year: "1387",
     eyebrow: "Founded 1387",
     compassHeading: 170,
@@ -216,6 +231,7 @@ const CROWN: ARHotspot[] = [
   {
     id: "ar-crown-plague-borromeo",
     period: "crown",
+    landmark: "duomo",
     year: "1576",
     eyebrow: "Autumn 1576",
     compassHeading: 180,
@@ -229,6 +245,7 @@ const CROWN: ARHotspot[] = [
   {
     id: "ar-crown-madonnina",
     period: "crown",
+    landmark: "duomo",
     year: "1774",
     eyebrow: "30 December 1774",
     compassHeading: 0,
@@ -257,6 +274,7 @@ const CROWN: ARHotspot[] = [
   {
     id: "ar-crown-napoleon",
     period: "crown",
+    landmark: "duomo",
     year: "1805",
     eyebrow: "26 May 1805",
     compassHeading: 90,
@@ -270,6 +288,7 @@ const CROWN: ARHotspot[] = [
   {
     id: "ar-crown-risotto",
     period: "crown",
+    landmark: "duomo",
     year: "1574",
     eyebrow: "A wedding in 1574",
     compassHeading: 350,
@@ -282,6 +301,7 @@ const CROWN: ARHotspot[] = [
   {
     id: "ar-crown-caffe-illuminismo",
     period: "crown",
+    // piazza-wide — no landmark anchor, intentionally untagged
     year: "1764",
     eyebrow: "Milan, 1764",
     compassHeading: 45,
@@ -294,6 +314,7 @@ const CROWN: ARHotspot[] = [
   {
     id: "ar-crown-salon",
     period: "crown",
+    // piazza-wide — no landmark anchor, intentionally untagged
     year: "1834",
     eyebrow: "Milan, 1834",
     compassHeading: 80,
@@ -306,6 +327,7 @@ const CROWN: ARHotspot[] = [
   {
     id: "ar-crown-carriage",
     period: "crown",
+    // piazza-wide — no landmark anchor, intentionally untagged
     year: "1700s",
     eyebrow: "Milan, c. 1700s",
     compassHeading: 135,
@@ -329,6 +351,7 @@ const MODERN: ARHotspot[] = [
   {
     id: "ar-modern-mengoni",
     period: "modern",
+    landmark: "galleria",
     year: "1877",
     eyebrow: "30 December 1877",
     compassHeading: 315,
@@ -343,6 +366,7 @@ const MODERN: ARHotspot[] = [
   {
     id: "ar-modern-bull-mosaic",
     period: "modern",
+    landmark: "galleria",
     year: "1877",
     eyebrow: "Galleria Vittorio Emanuele II, 1877",
     compassHeading: 320,
@@ -362,6 +386,7 @@ const MODERN: ARHotspot[] = [
   {
     id: "ar-modern-campari",
     period: "modern",
+    landmark: "galleria",
     year: "1867",
     eyebrow: "Opened 1867",
     compassHeading: 280,
@@ -375,6 +400,7 @@ const MODERN: ARHotspot[] = [
   {
     id: "ar-modern-bava-beccaris",
     period: "modern",
+    landmark: "duomo",
     year: "1898",
     eyebrow: "6 – 9 May 1898",
     compassHeading: 200,
@@ -388,6 +414,7 @@ const MODERN: ARHotspot[] = [
   {
     id: "ar-modern-bombs",
     period: "modern",
+    landmark: "palazzo",
     year: "1943",
     eyebrow: "15 August 1943",
     compassHeading: 90,
@@ -419,6 +446,7 @@ const MODERN: ARHotspot[] = [
   {
     id: "ar-modern-liberation",
     period: "modern",
+    landmark: "duomo",
     year: "1945",
     eyebrow: "25 April 1945",
     compassHeading: 0,
@@ -439,6 +467,7 @@ const MODERN: ARHotspot[] = [
   {
     id: "ar-modern-guernica",
     period: "modern",
+    landmark: "palazzo",
     year: "1953",
     eyebrow: "Milan, 1953",
     compassHeading: 85,
@@ -458,6 +487,7 @@ const MODERN: ARHotspot[] = [
   {
     id: "ar-modern-piazza-fontana",
     period: "modern",
+    // piazza-wide — no landmark anchor, intentionally untagged
     year: "1969",
     eyebrow: "12 December 1969",
     compassHeading: 60,
@@ -471,6 +501,7 @@ const MODERN: ARHotspot[] = [
   {
     id: "ar-modern-pride",
     period: "modern",
+    landmark: "duomo",
     year: "1994",
     eyebrow: "Milan, 1994",
     compassHeading: 200,
@@ -483,6 +514,7 @@ const MODERN: ARHotspot[] = [
   {
     id: "ar-modern-restoration",
     period: "modern",
+    landmark: "duomo",
     year: "2026",
     eyebrow: "Ongoing today",
     compassHeading: 0,
@@ -502,6 +534,7 @@ const MODERN: ARHotspot[] = [
   {
     id: "ar-modern-height-rule",
     period: "modern",
+    landmark: "duomo",
     year: "2026",
     eyebrow: "An unwritten law",
     compassHeading: 5,
@@ -526,6 +559,7 @@ const MODERN: ARHotspot[] = [
   {
     id: "ar-modern-piazza",
     period: "modern",
+    landmark: "all",
     year: "2026",
     eyebrow: "Italy's most photographed square",
     compassHeading: 180,
@@ -556,5 +590,15 @@ export const ALL_AR_HOTSPOTS: ARHotspot[] = [...BIRTH, ...CROWN, ...MODERN];
 
 export const getARHotspots = (period: ARPeriodId): ARHotspot[] =>
   AR_HOTSPOTS[period];
+
+/** Returns hotspots for a given period that belong to a specific landmark,
+ *  including any tagged "all". Untagged hotspots are excluded. */
+export const getARHotspotsForLandmark = (
+  period: ARPeriodId,
+  landmark: ARLandmarkId,
+): ARHotspot[] =>
+  AR_HOTSPOTS[period].filter(
+    (h) => h.landmark === landmark || h.landmark === "all",
+  );
 
 export const getARPeriod = (id: ARPeriodId): ARPeriod => AR_PERIODS[id];

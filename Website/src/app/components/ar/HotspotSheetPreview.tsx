@@ -5,9 +5,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { HotspotSheet } from "./HotspotSheet";
 import { ALL_AR_HOTSPOTS, type ARHotspot } from "./hotspots";
-
-const SANS = "'Inter', system-ui, sans-serif";
-const MONO = "'JetBrains Mono', monospace";
+import { SANS, MONO } from "./shared";
 
 const SAMPLE_IDS = [
   "ar-birth-first-stone",    // birth, text-only

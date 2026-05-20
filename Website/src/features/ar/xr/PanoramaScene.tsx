@@ -10,11 +10,17 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Sky, Html } from "@react-three/drei";
 import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Compass, Camera, CameraOff } from "lucide-react";
+import { X, Compass, Camera, CameraOff, ImageDown } from "lucide-react";
 import * as THREE from "three";
 
 import { ERAS, getEra, listLandmarks, type EraId, type LandmarkId } from "@/content/landmarks";
-import { EraScrub, FG, MONO, SERIF, VoicePill } from "@/app/components/ar/shared";
+import {
+  EraScrub, FG, MONO, SERIF, VoicePill,
+  parseVoiceIntent, describeIntent, VoiceConfirmToast, VoiceAlreadyHereToast,
+  type VoiceIntent,
+} from "@/app/components/ar/shared";
+import { CenteringArrow } from "@/app/components/ar/CenteringArrow";
+import { captureARSnapshot, shareOrDownloadSnapshot, type SnapshotMeta, type SnapshotLandmark } from "@/services/captureARSnapshot";
 import { pickVoiceHint } from "@/app/components/ar/voiceHints";
 import { landmarkVT } from "@/app/components/ar/viewTransition";
 import { sendMessage, speak, stopSpeaking } from "@/services/chatService";
@@ -44,17 +50,20 @@ interface EraRender {
 // past era *feels* like time travel even though the camera always shows present
 // day. Kept small so the scene stays recognizable; tune to taste per era.
 const ERA_CAMERA_FILTER: Record<EraId, string> = {
-  medieval:
-    "sepia(0.55) hue-rotate(-12deg) saturate(0.85) brightness(0.92) contrast(1.05)",
-  postwar:
-    "grayscale(0.7) sepia(0.15) contrast(1.08) brightness(0.95)",
-  present:
-    "saturate(1.05) brightness(1.02)",
+  // Birth — warm terracotta/amber; the world looks sunbaked and ancient
+  birth:
+    "sepia(0.50) saturate(0.88) brightness(0.91) contrast(1.06)",
+  // Crown — richer golden warmth; slightly more saturated than Birth
+  crown:
+    "sepia(0.30) hue-rotate(10deg) saturate(1.08) brightness(0.95) contrast(1.04)",
+  // Modern — cool blue-grey tint; present day feels crisp and neutral
+  modern:
+    "saturate(0.94) brightness(1.01) contrast(1.02)",
 };
 
 const ERA_RENDER: Record<EraId, EraRender> = {
-  medieval: {
-    description: "Construction of the Gothic cathedral spans five centuries",
+  birth: {
+    description: "Gothic marble rises stone by stone — a cathedral built across five centuries",
     skyProps: {
       sunPosition: [0.3, 0.06, -1],
       turbidity: 14,
@@ -67,22 +76,22 @@ const ERA_RENDER: Record<EraId, EraRender> = {
     ambientColor: "#d49060",
     ambientIntensity: 0.55,
   },
-  postwar: {
-    description: "Post-WWII Milan restores and rebuilds the piazza",
+  crown: {
+    description: "Sforza dukes, Spanish governors, Napoleon — power writes itself into stone",
     skyProps: {
-      sunPosition: [1, 0.25, 0],
-      turbidity: 20,
-      rayleigh: 0.6,
-      mieCoefficient: 0.04,
-      mieDirectionalG: 0.7,
+      sunPosition: [0.8, 0.18, -0.5],
+      turbidity: 10,
+      rayleigh: 3,
+      mieCoefficient: 0.008,
+      mieDirectionalG: 0.78,
     },
-    fogColor: "#9a9a9a",
-    groundColor: "#5a5a5a",
-    ambientColor: "#b0b0b0",
-    ambientIntensity: 0.35,
+    fogColor: "#b8924a",
+    groundColor: "#5a4020",
+    ambientColor: "#e0a860",
+    ambientIntensity: 0.65,
   },
-  present: {
-    description: "Busy cultural hub — tourists, pigeons, and living history",
+  modern: {
+    description: "Fashion weeks, liberation crowds, and 15 million visitors a year",
     skyProps: {
       sunPosition: [1, 0.65, 0],
       turbidity: 4,
@@ -127,7 +136,7 @@ const VIEW_STORAGE_KEY = "heritedge:view"; // last camera yaw/pitch as JSON
 const ERA_STORAGE_KEY  = "heritedge:era";  // last selected era id
 
 const isEraId = (v: string | null): v is EraId =>
-  v === "medieval" || v === "postwar" || v === "present";
+  v === "birth" || v === "crown" || v === "modern";
 
 
 // ─── Camera controllers ───────────────────────────────────────────────────────
@@ -590,9 +599,9 @@ export function PanoramaScene() {
   // Restore the last era the user picked this session so back-navigating
   // from a detail page doesn't reset to "present".
   const [era,     setEra]     = useState<EraId>(() => {
-    if (typeof window === "undefined" || !window.sessionStorage) return "present";
+    if (typeof window === "undefined" || !window.sessionStorage) return "modern";
     const raw = window.sessionStorage.getItem(ERA_STORAGE_KEY);
-    return isEraId(raw) ? raw : "present";
+    return isEraId(raw) ? raw : "modern";
   });
   const [gyro,    setGyro]    = useState(false);
   const [canGyro, setCanGyro] = useState(false);
@@ -635,7 +644,57 @@ export function PanoramaScene() {
   // When unavailable / denied, the panorama backdrop stays as the visual fallback.
   const [cameraMode, setCameraMode] = useState(false);
   const camera = useCameraStream(cameraMode);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const videoRef  = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [capturing, setCapturing] = useState(false);
+
+  const handleCapture = useCallback(async () => {
+    const video  = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || capturing) return;
+    setCapturing(true);
+    try {
+      // Project each landmark's 3D position to normalised screen coords using
+      // the same YXZ-Euler convention LookAround applies every frame.
+      const view = lookHandleRef.current?.getView() ?? { yaw: 0, pitch: 0 };
+      // Canvas fov:90 is vertical FOV in Three.js. Derive horizontal from aspect.
+      const aspect = window.innerWidth / window.innerHeight;
+      const FOV_V = Math.PI / 2; // 90° vertical — matches fov:90 on the Canvas
+      const FOV_H = 2 * Math.atan(Math.tan(FOV_V / 2) * aspect);
+
+      const visibleLandmarks: SnapshotLandmark[] = LANDMARKS.flatMap(lm => {
+        const [lx, ly, lz] = lm.pos;
+        // Inverse of Euler(pitch, yaw, 0, 'YXZ') — same order Three.js uses.
+        // Step 1: inverse yaw — rotate around world Y by -yaw
+        const cosY = Math.cos(-view.yaw), sinY = Math.sin(-view.yaw);
+        const cx =  lx * cosY + lz * sinY;
+        const cy =  ly;
+        const cz = -lx * sinY + lz * cosY;
+        // Step 2: inverse pitch — rotate around local X by -pitch
+        const cosP = Math.cos(-view.pitch), sinP = Math.sin(-view.pitch);
+        const cy2 = cy * cosP - cz * sinP;
+        const cz2 = cy * sinP + cz * cosP;
+        // Three.js camera forward is -Z; cz2 >= 0 means behind the camera
+        if (cz2 >= 0) return [];
+        const screenX = 0.5 + (cx  / -cz2) / (2 * Math.tan(FOV_H / 2));
+        const screenY = 0.5 - (cy2 / -cz2) / (2 * Math.tan(FOV_V / 2));
+        if (screenX < 0.05 || screenX > 0.95 || screenY < 0.1 || screenY > 0.9) return [];
+        return [{ emoji: lm.emoji, shortName: lm.shortName, screenX, screenY }];
+      });
+
+      const meta: SnapshotMeta = {
+        eraLabel:       era_.label,
+        eraYear:        era_.year,
+        eraAccent:      era_.accent,
+        eraDescription: ERA_RENDER[era].description,
+        landmarks:      visibleLandmarks,
+      };
+      const blobUrl = await captureARSnapshot(video, canvas, era, meta);
+      if (blobUrl) await shareOrDownloadSnapshot(blobUrl, era);
+    } finally {
+      setTimeout(() => setCapturing(false), 400);
+    }
+  }, [era, era_, capturing]);
 
   // Detect support upfront so the toggle doesn't appear on browsers that
   // can't grant camera access (insecure context, very old browsers).
@@ -729,41 +788,45 @@ export function PanoramaScene() {
     navigate(`/ar-artifact/${id}?period=${era}`, { viewTransition: true });
   }, [navigate, era, persistView]);
 
-  // Voice — landmark / era recognition, then RAG fallback. Mirrors the
-  // detail view's behavior so the same phrases work on both screens.
+  // Voice — intent parsing with confirmation toast before acting.
   const voiceHint = useMemo(() => pickVoiceHint(), []);
+  const [pendingIntent, setPendingIntent] = useState<(VoiceIntent & { label: string }) | null>(null);
+  const [alreadyHereLabel, setAlreadyHereLabel] = useState<string | null>(null);
+
+  const commitIntent = useCallback((intent: VoiceIntent) => {
+    setPendingIntent(null);
+    if (intent.landmark) {
+      const targetEra = intent.era ?? era;
+      if (intent.era) window.sessionStorage?.setItem(ERA_STORAGE_KEY, intent.era);
+      persistView();
+      navigate(`/ar-artifact/${intent.landmark}?period=${targetEra}`, { viewTransition: true });
+    } else if (intent.era) {
+      switchEra(intent.era);
+    }
+  }, [era, switchEra, persistView, navigate]);
 
   const handleVoiceCommand = useCallback((transcript: string) => {
-    const cmd = transcript.toLowerCase();
+    const intent = parseVoiceIntent(transcript);
 
-    let nextLandmark: LandmarkId | null = null;
-    if (/galleria/.test(cmd)) nextLandmark = "galleria";
-    else if (/palazzo/.test(cmd)) nextLandmark = "palazzo";
-    else if (/duomo/.test(cmd)) nextLandmark = "duomo";
+    if (intent.overview) return; // already on the map — nothing to do.
 
-    let nextEra: EraId | null = null;
-    if (/medieval/.test(cmd)) nextEra = "medieval";
-    else if (/post[-\s]?war|war/.test(cmd)) nextEra = "postwar";
-    else if (/present|now|today/.test(cmd)) nextEra = "present";
-
-    if (nextEra && nextEra !== era) switchEra(nextEra);
-
-    if (nextLandmark) {
-      // On no-gyro experiences, "Duomo" pans the camera toward the sphere.
-      // With gyro, the user is in physical control of orientation, so a
-      // landmark utterance jumps straight into its detail view instead.
-      if (showLandmarkChips) {
-        const lm = LANDMARKS.find(l => l.id === nextLandmark)!;
-        handleSnapToLandmark(lm.pos);
-      } else {
-        goToLandmarkDetail(nextLandmark);
+    if (intent.landmark || intent.era) {
+      if (intent.landmark) {
+        setPendingIntent({ ...intent, label: describeIntent(intent) });
+        return;
+      }
+      // Era-only — already on this era or switching.
+      if (intent.era) {
+        if (intent.era === era) {
+          setAlreadyHereLabel(describeIntent({ landmark: null, era: intent.era }));
+        } else {
+          setPendingIntent({ ...intent, label: describeIntent({ landmark: null, era: intent.era }) });
+        }
       }
       return;
     }
 
-    if (nextEra) return; // era-only command, handled above.
-
-    // Nothing recognized — ask the RAG so the user always gets an answer.
+    // Nothing recognised — fall back to RAG.
     stopSpeaking();
     sendMessage(transcript, "duomo")
       .then((res) => {
@@ -771,7 +834,7 @@ export function PanoramaScene() {
         if (reply) speak(reply);
       })
       .catch(() => { /* silent — voice nav alone is acceptable */ });
-  }, [era, switchEra, showLandmarkChips, goToLandmarkDetail]);
+  }, [era, switchEra, commitIntent]);
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-black touch-none select-none">
@@ -795,14 +858,10 @@ export function PanoramaScene() {
       <Canvas
         camera={{ fov: 90, position: [0, 0, 0.001] }}
         style={{ background: cameraMode && camera.status === "live" ? "transparent" : "#000" }}
-        gl={{ alpha: true, powerPreference: "high-performance" }}
+        gl={{ alpha: true, powerPreference: "high-performance", preserveDrawingBuffer: true }}
         className="relative z-10"
         onCreated={({ gl }) => {
-          // Mark context loss as recoverable so the browser doesn't blacklist
-          // the page if the GPU genuinely fails. The "Context Lost" console
-          // message that fires during navigation away is benign — it's
-          // Three.js logging the disposal of the old context; the new mount
-          // gets a fresh one. Three logs unconditionally; we don't suppress.
+          canvasRef.current = gl.domElement;
           gl.domElement.addEventListener("webglcontextlost", (e) => {
             e.preventDefault();
           });
@@ -843,6 +902,21 @@ export function PanoramaScene() {
         )}
       </AnimatePresence>
 
+      {/* ── Capture flash ────────────────────────────────────────────────────
+           Brief white flash gives tactile feedback that a snapshot was taken,
+           same convention as native camera apps. */}
+      <AnimatePresence>
+        {capturing && (
+          <motion.div
+            initial={{ opacity: 0.7 }}
+            animate={{ opacity: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35 }}
+            className="absolute inset-0 bg-white z-30 pointer-events-none"
+          />
+        )}
+      </AnimatePresence>
+
       {/* ── Top HUD ──────────────────────────────────────────────────────────
           Layout:
             Row 1 (controls bar): X on left · controls on right.
@@ -862,7 +936,22 @@ export function PanoramaScene() {
           </button>
 
           <div className="flex items-center gap-2">
-            {/* Camera-passthrough toggle — opt-in enhancement when supported. */}
+            {/* Snapshot — leftmost, only when camera feed is live. */}
+            {cameraMode && camera.status === "live" && (
+              <button
+                onClick={handleCapture}
+                disabled={capturing}
+                title="Save memory"
+                aria-label="Save memory photo"
+                className={`w-10 h-10 backdrop-blur-sm rounded-full flex items-center justify-center text-white transition-all ${
+                  capturing ? "bg-white/30 scale-95" : "bg-black/50 active:scale-95"
+                }`}
+              >
+                <ImageDown className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Camera-passthrough toggle */}
             {cameraSupported && (
               <button
                 onClick={toggleCamera}
@@ -894,6 +983,8 @@ export function PanoramaScene() {
             ) : (
               <div className="w-10" />
             )}
+
+            <CenteringArrow onPress={() => lookHandleRef.current?.lookAt(0, 0)} />
           </div>
         </div>
 
@@ -975,7 +1066,7 @@ export function PanoramaScene() {
           <EraScrub value={era} onChange={switchEra} accent={era_.accent} />
         </div>
 
-        {/* Bottom action row — mirrors ARArtifactDetail: landmarks · voice. */}
+        {/* Bottom action row — landmarks · voice. */}
         <div className="mx-auto w-full max-w-md mt-3 flex items-center gap-2">
           <button
             onClick={() => setLandmarksOpen(true)}
@@ -1017,6 +1108,26 @@ export function PanoramaScene() {
       {/* ── Landmarks sheet ─────────────────────────────────────────────────
           Same affordance as ARArtifactDetail; tapping a landmark navigates
           straight into its detail view. */}
+      {/* ── Already-here toast ──────────────────────────────────────────────── */}
+      {alreadyHereLabel && (
+        <VoiceAlreadyHereToast
+          message={alreadyHereLabel}
+          accent={era_.accent}
+          onDismiss={() => setAlreadyHereLabel(null)}
+        />
+      )}
+
+      {/* ── Voice confirmation toast ────────────────────────────────────────── */}
+      {pendingIntent && (
+        <VoiceConfirmToast
+          message={pendingIntent.label}
+          accent={era_.accent}
+          prefix={pendingIntent.landmark ? "Taking you to" : "Switching to"}
+          onCommit={() => commitIntent(pendingIntent)}
+          onDismiss={() => setPendingIntent(null)}
+        />
+      )}
+
       {landmarksOpen && (
         <div
           className="absolute inset-0 z-40 flex items-end"
