@@ -9,15 +9,18 @@ import { ALL_AR_HOTSPOTS, type ARHotspot } from "./hotspots";
 const SANS = "'Inter', system-ui, sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 
-const SAMPLES = [
-  ALL_AR_HOTSPOTS.find((h) => h.id === "ar-birth-first-stone")!,    // birth, text-only
-  ALL_AR_HOTSPOTS.find((h) => h.id === "ar-crown-madonnina")!,      // crown, audio
-  ALL_AR_HOTSPOTS.find((h) => h.id === "ar-modern-liberation")!,    // modern, youtube
-  ALL_AR_HOTSPOTS.find((h) => h.id === "ar-modern-guernica")!,      // modern, image
-  ALL_AR_HOTSPOTS.find((h) => h.id === "ar-modern-bombs")!,         // modern, youtube + before/after
-  ALL_AR_HOTSPOTS.find((h) => h.id === "ar-modern-bull-mosaic")!,   // modern, photo challenge
-  ALL_AR_HOTSPOTS.find((h) => h.id === "ar-modern-height-rule")!,   // modern, no photo challenge
+const SAMPLE_IDS = [
+  "ar-birth-first-stone",    // birth, text-only
+  "ar-crown-madonnina",      // crown, audio
+  "ar-modern-liberation",    // modern, youtube
+  "ar-modern-guernica",      // modern, image
+  "ar-modern-bombs",         // modern, youtube + before/after
+  "ar-modern-bull-mosaic",   // modern, photo challenge
+  "ar-modern-height-rule",   // modern, no photo challenge
 ];
+const SAMPLES = SAMPLE_IDS
+  .map((id) => ALL_AR_HOTSPOTS.find((h) => h.id === id))
+  .filter((h): h is ARHotspot => h !== undefined);
 
 export function HotspotSheetPreview() {
   const navigate = useNavigate();

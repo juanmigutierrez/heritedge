@@ -105,6 +105,7 @@ function queuePhrases(phrases: string[], gen: number): void {
 export const speak = (text: string, onEnd?: () => void): void => {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
   _isPaused = false; _phrases = splitPhrases(text); _phraseIdx = 0; _lastOnEnd = onEnd;
+  if (_phrases.length === 0) { onEnd?.(); return; }
   const gen = ++_generation;
   window.speechSynthesis.cancel();
   queuePhrases(_phrases, gen);
@@ -129,6 +130,7 @@ export const pauseSpeaking = (): void => {
 };
 
 export const resumeSpeaking = (): void => {
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
   if (!_isPaused || !_phrases.length) return;
   _isPaused = false;
   const gen = ++_generation;
