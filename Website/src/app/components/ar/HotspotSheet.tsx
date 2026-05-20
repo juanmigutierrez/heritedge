@@ -42,6 +42,7 @@ function YouTubeBlock({ media }: { media: ARMedia }) {
         <iframe
           key={muted ? "m" : "u"}
           src={`https://www.youtube.com/embed/${media.src}?autoplay=0&mute=${muted ? 1 : 0}&rel=0&modestbranding=1`}
+          title={media.caption ?? "Video"}
           style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
@@ -294,6 +295,16 @@ export function HotspotSheet({ hotspot, onClose, onPhotoChallenge }: HotspotShee
     return () => { stopSpeaking(); setIsSpeaking(false); };
   }, [hotspot?.id]);
 
+  // Sync with global luca-speech bus so the pill Stop also updates this button.
+  useEffect(() => {
+    const handle = (e: Event) => {
+      const { type } = (e as CustomEvent<{ type: string }>).detail;
+      if (type === "end") setIsSpeaking(false);
+    };
+    window.addEventListener("luca-speech", handle);
+    return () => window.removeEventListener("luca-speech", handle);
+  }, []);
+
   const handleHearIt = () => {
     if (isSpeaking) {
       stopSpeaking(); setIsSpeaking(false);
@@ -331,7 +342,7 @@ export function HotspotSheet({ hotspot, onClose, onPhotoChallenge }: HotspotShee
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "100%",
-          background: "#1a1612",
+          background: period.tintPanel,
           borderTopLeftRadius: 20, borderTopRightRadius: 20,
           padding: "12px 16px 28px",
           maxHeight: "72vh", overflowY: "auto",
@@ -455,6 +466,7 @@ export function HotspotSheet({ hotspot, onClose, onPhotoChallenge }: HotspotShee
           {hotspot.photoChallenge && onPhotoChallenge && (
             <button
               onClick={onPhotoChallenge}
+              aria-label={`Photo challenge${pts ? `, +${pts} points` : ""}`}
               style={{
                 flex: 1,
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 5,

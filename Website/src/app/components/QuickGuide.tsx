@@ -459,7 +459,7 @@ export function QuickGuide() {
     askFiredRef.current = true;
     setShowChat(true);
     setSearchParams({}, { replace: true });
-    setTimeout(() => handleSendMessageText(decodeURIComponent(ask)), 300);
+    setTimeout(() => handleSendMessageText(ask), 300);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 

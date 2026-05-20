@@ -20,7 +20,7 @@ export const router = createBrowserRouter([
       { path: "/treasure-hunt", element: <TreasureHunt /> },
       { path: "/quiz", element: <QuizFeedback /> },
       { path: "/summary", element: <Summary /> },
-      { path: "/ar-hotspot-preview", element: <HotspotSheetPreview /> },
+      ...(import.meta.env.DEV ? [{ path: "/ar-hotspot-preview", element: <HotspotSheetPreview /> }] : []),
     ],
   },
 ]);
