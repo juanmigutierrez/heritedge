@@ -7,6 +7,7 @@ import { ARArtifactDetail } from "./components/ARArtifactDetail";
 import { TreasureHunt } from "./components/TreasureHunt";
 import { QuizFeedback } from "./components/QuizFeedback";
 import { Summary } from "./components/Summary";
+import { HotspotSheetPreview } from "./components/ar/HotspotSheetPreview";
 
 export const router = createBrowserRouter([
   {
@@ -19,6 +20,7 @@ export const router = createBrowserRouter([
       { path: "/treasure-hunt", element: <TreasureHunt /> },
       { path: "/quiz", element: <QuizFeedback /> },
       { path: "/summary", element: <Summary /> },
+      ...(import.meta.env.DEV ? [{ path: "/ar-hotspot-preview", element: <HotspotSheetPreview /> }] : []),
     ],
   },
 ]);
