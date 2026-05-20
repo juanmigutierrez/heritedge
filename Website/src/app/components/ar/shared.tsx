@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { Mic, Play } from "lucide-react";
 import {
   ERAS,
+  getEra,
   type Era,
   type EraId,
   type Hotspot,
+  type LandmarkId,
 } from "@/content/landmarks";
 import { useSpeechRecognition } from "@/features/voice/useSpeechRecognition";
 import { speak, stopSpeaking } from "@/services/chatService";
@@ -23,6 +25,175 @@ export const haptic = (pattern: number | number[] = 18) => {
     navigator.vibrate(pattern);
   }
 };
+
+// ─── Voice intent parser ──────────────────────────────────────────────────────
+
+export interface VoiceIntent {
+  landmark: LandmarkId | null;
+  era: EraId | null;
+  overview?: boolean;
+}
+
+const LANDMARK_PATTERNS: Array<{ id: LandmarkId; pattern: RegExp }> = [
+  { id: "galleria", pattern: /galleria|vittorio|emanuele/i },
+  { id: "palazzo",  pattern: /palazzo|reale|royal\s+palace/i },
+  { id: "duomo",    pattern: /duomo|cathedral|cattedrale/i },
+];
+
+const ERA_PATTERNS: Array<{ id: EraId; pattern: RegExp }> = [
+  // "medieval" is frequently misheared by speech engines as "mid evil", "medival", "mediaeval".
+  // "past" / "old" / "ancient" are natural synonyms users reach for.
+  { id: "medieval", pattern: /medieval|media?eval|medi[ae]val|mid[-\s]*evil|middle\s*age|gothic|antico|ancient|old|\bpast\b/i },
+  { id: "postwar",  pattern: /post[-\s]?war|guerra|\bwar\b|1940|1950|dopoguerra/i },
+  { id: "present",  pattern: /present|\bnow\b|today|modern|current|oggi|attuale/i },
+];
+
+// Matches any phrase that contains "map" or "overview" as a standalone word.
+// Landmark/era patterns are checked first, so "galleria map" would still
+// resolve as a landmark — but in practice no landmark or era word overlaps
+// with "map" or "overview", making the simple word-boundary check safe.
+const OVERVIEW_PATTERN = /\b(map|overview)\b/i;
+
+/**
+ * Parse a free-form voice transcript into a navigation intent.
+ * `overview: true` means "go back to the AR map". Landmark/era patterns
+ * are checked first so "take me back to medieval" resolves as era, not overview.
+ */
+export function parseVoiceIntent(transcript: string): VoiceIntent {
+  const landmark = LANDMARK_PATTERNS.find(({ pattern }) => pattern.test(transcript))?.id ?? null;
+  const era      = ERA_PATTERNS.find(({ pattern }) => pattern.test(transcript))?.id ?? null;
+  // Only check for overview if nothing more specific was recognised.
+  if (!landmark && !era && OVERVIEW_PATTERN.test(transcript)) {
+    return { landmark: null, era: null, overview: true };
+  }
+  return { landmark, era };
+}
+
+/** Human-readable label for a recognised intent (used in confirm toast). */
+export function describeIntent(intent: VoiceIntent): string {
+  const lmLabel = intent.landmark
+    ? ({ duomo: "Duomo", galleria: "Galleria", palazzo: "Palazzo" } as const)[intent.landmark]
+    : null;
+  const eraLabel = intent.era ? getEra(intent.era)?.label ?? null : null;
+  if (lmLabel && eraLabel) return `${lmLabel} · ${eraLabel}`;
+  if (lmLabel) return lmLabel;
+  if (eraLabel) return eraLabel;
+  return "";
+}
+
+// ─── Voice confirmation toast ─────────────────────────────────────────────────
+
+interface VoiceConfirmToastProps {
+  /** Short description of what was understood — landmark, era, or both. */
+  message: string;
+  accent: string;
+  /** Prefix shown before the message. Defaults to "Taking you to". */
+  prefix?: string;
+  /** Called after the hold delay so the caller can navigate/act. */
+  onCommit: () => void;
+  /** Called if user taps the ✕ before commit fires. */
+  onDismiss: () => void;
+}
+
+/** 1.4 s auto-committing toast — shows what the voice command understood. */
+export function VoiceConfirmToast({ message, accent, prefix = "Taking you to", onCommit, onDismiss }: VoiceConfirmToastProps) {
+  // Stable ref so the timeout is set exactly once on mount regardless of
+  // how many times the parent re-renders and passes a new onCommit arrow.
+  const onCommitRef = useRef(onCommit);
+  onCommitRef.current = onCommit;
+
+  useEffect(() => {
+    const t = window.setTimeout(() => onCommitRef.current(), 1400);
+    return () => window.clearTimeout(t);
+  }, []); // empty deps — intentional: fires once on mount, never resets
+
+  return (
+    <div
+      style={{
+        position: "absolute", bottom: 140, left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 50,
+        display: "inline-flex", alignItems: "center", gap: 10,
+        padding: "10px 14px 10px 16px", borderRadius: 999,
+        background: "rgba(10,10,12,0.88)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        border: `1px solid ${accent}55`,
+        boxShadow: `0 6px 24px rgba(0,0,0,0.5), 0 0 0 1px ${accent}22 inset`,
+        whiteSpace: "nowrap",
+        animation: "vcToastIn 0.22s cubic-bezier(0.34,1.56,0.64,1)",
+      }}
+    >
+      <span
+        style={{
+          width: 7, height: 7, borderRadius: "50%",
+          background: accent, flexShrink: 0,
+          boxShadow: `0 0 8px ${accent}`,
+        }}
+      />
+      <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.1em", color: FG }}>
+        {prefix}{" "}
+        <span style={{ color: accent, fontWeight: 700 }}>{message}</span>
+      </span>
+      <button
+        onClick={onDismiss}
+        aria-label="Cancel"
+        style={{
+          background: "none", border: "none", cursor: "pointer",
+          color: "rgba(244,242,236,0.45)", fontSize: 15, lineHeight: 1,
+          padding: "0 0 0 4px", flexShrink: 0,
+        }}
+      >
+        ×
+      </button>
+      <style>{`@keyframes vcToastIn { from { opacity:0; transform:translateX(-50%) scale(0.88); } to { opacity:1; transform:translateX(-50%) scale(1); } }`}</style>
+    </div>
+  );
+}
+
+// ─── Already-here toast ───────────────────────────────────────────────────────
+
+interface VoiceAlreadyHereToastProps {
+  message: string;
+  accent: string;
+  onDismiss: () => void;
+}
+
+/** Informational-only toast — auto-dismisses after 2 s, no commit action. */
+export function VoiceAlreadyHereToast({ message, accent, onDismiss }: VoiceAlreadyHereToastProps) {
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
+
+  useEffect(() => {
+    const t = window.setTimeout(() => onDismissRef.current(), 2000);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  return (
+    <div
+      style={{
+        position: "absolute", bottom: 140, left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 50,
+        display: "inline-flex", alignItems: "center", gap: 8,
+        padding: "10px 16px", borderRadius: 999,
+        background: "rgba(10,10,12,0.82)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        border: "1px solid rgba(255,255,255,0.14)",
+        boxShadow: "0 4px 18px rgba(0,0,0,0.4)",
+        whiteSpace: "nowrap",
+        animation: "vcToastIn 0.22s cubic-bezier(0.34,1.56,0.64,1)",
+      }}
+    >
+      <span style={{ fontSize: 13, lineHeight: 1 }}>📍</span>
+      <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.1em", color: "rgba(244,242,236,0.7)" }}>
+        Already here ·{" "}
+        <span style={{ color: accent, fontWeight: 600 }}>{message}</span>
+      </span>
+    </div>
+  );
+}
 
 // ─── Era badge (pill shown in the top bar) ────────────────────────────────────
 

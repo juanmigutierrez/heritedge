@@ -1,10 +1,10 @@
 const HINTS: string[] = [
-  "show me the Duomo medieval",
-  "take me to the Galleria",
-  "Palazzo Reale postwar",
-  "Duomo present day",
-  "show me medieval Milan",
-  "jump to Galleria postwar",
+  "take me to the Duomo medieval",
+  "show me the Galleria postwar",
+  "Palazzo Reale, present day",
+  "take me to Galleria",
+  "switch to medieval",
+  "show me the map",
 ];
 
 /** Pick one approved hint. Random per call — call once on mount per screen. */
