@@ -41,11 +41,12 @@ const LANDMARK_PATTERNS: Array<{ id: LandmarkId; pattern: RegExp }> = [
 ];
 
 const ERA_PATTERNS: Array<{ id: EraId; pattern: RegExp }> = [
-  // "medieval" is frequently misheared by speech engines as "mid evil", "medival", "mediaeval".
-  // "past" / "old" / "ancient" are natural synonyms users reach for.
-  { id: "medieval", pattern: /medieval|media?eval|medi[ae]val|mid[-\s]*evil|middle\s*age|gothic|antico|ancient|old|\bpast\b/i },
-  { id: "postwar",  pattern: /post[-\s]?war|guerra|\bwar\b|1940|1950|dopoguerra/i },
-  { id: "present",  pattern: /present|\bnow\b|today|modern|current|oggi|attuale/i },
+  // Birth: founding era. "medieval"/"mid evil" are common speech-engine mishearings.
+  { id: "birth",  pattern: /\bbirth\b|founding|origin|gothic|medieval|media?eval|medi[ae]val|mid[-\s]*evil|middle\s*age|ancient|antico|\bpast\b|1386/i },
+  // Crown: renaissance through Napoleonic. "napoleon" and "renaissance" are strong signals.
+  { id: "crown",  pattern: /\bcrown\b|renaissance|baroque|napoleon|enlightenment|habsburg|duchy|1500|1600|1700|1800|rinascimento/i },
+  // Modern: 1860 to today. "modern"/"now"/"today" map here; no collision with "gothic" etc.
+  { id: "modern", pattern: /\bmodern\b|\bnow\b|today|present|current|liberation|oggi|attuale|1900|1943|1945/i },
 ];
 
 // Matches any phrase that contains "map" or "overview" as a standalone word.
@@ -409,16 +410,10 @@ export function VoicePill({ era, onCommand, hint }: VoicePillProps) {
       flex: 1, minWidth: 0, height: 46,
       background: listening ? `${era.accent}18` : "rgba(255,255,255,0.05)",
       border: `1px solid ${listening ? era.accent : "rgba(255,255,255,0.1)"}`,
-      borderRadius: 23, padding: "0 14px 0 5px",
+      borderRadius: 23, padding: "0 5px 0 14px",
       display: "flex", alignItems: "center", gap: 10,
       transition: "all 0.2s",
     }}>
-      <MicButton
-        listening={listening}
-        onToggle={() => (listening ? stopListening() : startListening())}
-        bg={listening ? era.accent : FG}
-        color={listening ? "#0a0a0a" : era.tintBg}
-      />
       <div style={{ flex: 1, minWidth: 0 }}>
         {listening ? (
           <div key="listening" style={{ fontSize: 13, fontFamily: SERIF, fontStyle: "italic", color: era.accent, animation: "vpFade 0.35s ease-out" }}>
@@ -431,6 +426,12 @@ export function VoicePill({ era, onCommand, hint }: VoicePillProps) {
         )}
       </div>
       <VoiceWave active={listening} color={era.accent} />
+      <MicButton
+        listening={listening}
+        onToggle={() => (listening ? stopListening() : startListening())}
+        bg={listening ? era.accent : FG}
+        color={listening ? "#0a0a0a" : era.tintBg}
+      />
       <style>{`@keyframes vpFade { from { opacity: 0; } to { opacity: 1; } }`}</style>
     </div>
   );

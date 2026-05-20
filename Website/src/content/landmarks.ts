@@ -53,7 +53,7 @@ export interface Source {
  *
  * `id` must be globally stable: it's the key used to track which hotspots
  * the user has already explored (see useVisitedHotspots). Convention:
- *   "<landmark>-<feature>-<era>"  e.g. "duomo-spires-medieval"
+ *   "<landmark>-<feature>-<era>"  e.g. "duomo-spires-birth"
  */
 export interface Hotspot {
   id: string;
@@ -112,31 +112,31 @@ export interface EraContent {
 
 export const ERAS: Era[] = [
   {
-    id: "medieval",
-    label: "Medieval",
-    year: "1386",
+    id: "birth",
+    label: "Birth",
+    year: "1386–1500s",
     accent: "#D9A77A",
     tintBg: "#1A1612",
     tintPanel: "#221C16",
-    grad: "linear-gradient(160deg, #6b6e5e 0%, #3d4036 55%, #1f211c 100%)",
+    grad: "linear-gradient(160deg, #6b5e47 0%, #3d3020 55%, #1f1810 100%)",
   },
   {
-    id: "postwar",
-    label: "Post-war",
-    year: "1945",
-    accent: "#9CB3BE",
+    id: "crown",
+    label: "Crown",
+    year: "1500s–1860",
+    accent: "#E8A84A",
+    tintBg: "#1A1508",
+    tintPanel: "#1E1A12",
+    grad: "linear-gradient(150deg, #7d6830 0%, #4a3c18 55%, #1c1608 100%)",
+  },
+  {
+    id: "modern",
+    label: "Modern",
+    year: "1860–today",
+    accent: "#A8B8C4",
     tintBg: "#0F1316",
-    tintPanel: "#171C20",
-    grad: "linear-gradient(150deg, #7d7b76 0%, #4a4844 55%, #1c1b18 100%)",
-  },
-  {
-    id: "present",
-    label: "Present",
-    year: "2026",
-    accent: "#E8C77A",
-    tintBg: "#0B0B0E",
-    tintPanel: "#16161B",
-    grad: "linear-gradient(160deg, #6c8aa6 0%, #2f4860 55%, #0f1a26 100%)",
+    tintPanel: "#141A1F",
+    grad: "linear-gradient(160deg, #4a6070 0%, #263040 55%, #0f1620 100%)",
   },
 ];
 
@@ -159,64 +159,64 @@ const LANDMARK_META: Record<LandmarkId, LandmarkMeta> = {
     kicker: "Milan's gothic heart",
     emoji: "⛪",
     images: {
-      medieval:
+      birth:
         "https://images.unsplash.com/photo-1611165967659-c382c59011bf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpZXZhbCUyMGNhdGhlZHJhbCUyMGdvdGhpYyUyMGFyY2hpdGVjdHVyZXxlbnwxfHx8fDE3NzQ3MjI5Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      postwar:
+      crown:
         "https://images.unsplash.com/photo-1712118849585-cecd77a4a738?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoaXN0b3JpYyUyMGl0YWxpYW4lMjBidWlsZGluZyUyMHJlc3RvcmF0aW9ufGVufDF8fHx8MTc3NDcyMjkzN3ww&ixlib=rb-4.1.0&q=80&w=1080",
-      present:
+      modern:
         "https://images.unsplash.com/photo-1688674966559-fe9f9d661c80?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkdW9tbyUyMG1pbGFubyUyMGNhdGhlZHJhbCUyMGV4dGVyaW9yfGVufDF8fHx8MTc3NDcyMjkzNnww&ixlib=rb-4.1.0&q=80&w=1080",
     },
     hotspots: {
-      medieval: [
-        { id: "duomo-foundation-medieval", x: 50, y: 78, label: "Foundation",
+      birth: [
+        { id: "duomo-foundation-birth", x: 50, y: 78, label: "Foundation",
           title: "First stone laid, 1386",
           body: "Archbishop Antonio da Saluzzo blesses the foundation. Construction will continue for nearly six centuries.",
           source: FABBRICA },
-        { id: "duomo-marble-medieval", x: 30, y: 60, label: "Candoglia marble",
+        { id: "duomo-marble-birth", x: 30, y: 60, label: "Candoglia marble",
           title: "Pink-veined marble",
           body: "Quarried at Lake Maggiore and floated in by canal, the Candoglia marble gives the cathedral its distinctive blush tone.",
           source: FABBRICA },
-        { id: "duomo-spires-medieval", x: 40, y: 28, label: "Early spires",
+        { id: "duomo-spires-birth", x: 40, y: 28, label: "Early spires",
           title: "Spires take shape",
           body: "The first gothic spires rise. The full set of 135 won't be completed until the 19th century.",
           source: FABBRICA },
-        { id: "duomo-portal-medieval", x: 60, y: 65, label: "Central portal",
+        { id: "duomo-portal-birth", x: 60, y: 65, label: "Central portal",
           title: "The bronze doors",
           body: "Massive bronze doors carved with biblical scenes mark the cathedral's main entrance, even in the unfinished medieval phase.",
           source: FABBRICA },
       ],
-      postwar: [
-        { id: "duomo-roof-postwar", x: 50, y: 22, label: "Bombed roof",
+      crown: [
+        { id: "duomo-roof-crown", x: 50, y: 22, label: "Bombed roof",
           title: "August 1943",
           body: "Allied raids strike the cathedral roof. The main structure survives but tiles, lead sheathing, and statues need years of repair.",
           source: ARCHIVIO },
-        { id: "duomo-windows-postwar", x: 35, y: 50, label: "Shattered glass",
+        { id: "duomo-windows-crown", x: 35, y: 50, label: "Shattered glass",
           title: "Stained glass lost",
           body: "Centuries-old stained glass windows shatter in the bombings. Restoration teams recover and re-lead what they can.",
           source: ARCHIVIO },
-        { id: "duomo-scaffold-postwar", x: 65, y: 55, label: "Restoration scaffolds",
+        { id: "duomo-scaffold-crown", x: 65, y: 55, label: "Restoration scaffolds",
           title: "Postwar scaffolds",
           body: "Scaffolding climbs the facade through the late 1940s and 1950s as the Veneranda Fabbrica re-cuts marble blocks by hand.",
           source: FABBRICA },
-        { id: "duomo-liberation-postwar", x: 50, y: 80, label: "1945 liberation",
+        { id: "duomo-liberation-crown", x: 50, y: 80, label: "1945 liberation",
           title: "A symbolic stage",
           body: "Piazza Duomo becomes a public stage for Milan's 1945 liberation. The cathedral, scarred but standing, frames the moment.",
           source: ARCHIVIO },
       ],
-      present: [
-        { id: "duomo-madonnina-present", x: 50, y: 12, label: "Madonnina",
+      modern: [
+        { id: "duomo-madonnina-modern", x: 50, y: 12, label: "Madonnina",
           title: "The gilded Madonnina",
           body: "Placed at the spire's tip in 1774, the gilded statue is Milan's spiritual high point — long held by tradition that no building should rise above it.",
           source: FABBRICA },
-        { id: "duomo-laser-present", x: 30, y: 50, label: "Laser cleaning",
+        { id: "duomo-laser-modern", x: 30, y: 50, label: "Laser cleaning",
           title: "Laser-cleaned marble",
           body: "Conservators use laser pulses to lift centuries of grime without abrading the stone underneath.",
           source: FABBRICA },
-        { id: "duomo-3d-scan-present", x: 70, y: 60, label: "3D scanning",
+        { id: "duomo-3d-scan-modern", x: 70, y: 60, label: "3D scanning",
           title: "Digital twin",
           body: "Every spire and statue is being 3D-scanned to support restoration and preserve the geometry digitally.",
           source: FABBRICA },
-        { id: "duomo-statues-present", x: 50, y: 30, label: "3,400 statues",
+        { id: "duomo-statues-modern", x: 50, y: 30, label: "3,400 statues",
           title: "More statues than any building",
           body: "Over 3,400 statues populate the spires, parapets, and niches — more than any other building in the world.",
           source: FABBRICA },
@@ -241,56 +241,56 @@ const LANDMARK_META: Record<LandmarkId, LandmarkMeta> = {
     kicker: "Milan's living room",
     emoji: "🏛️",
     images: {
-      medieval:
+      birth:
         "https://images.unsplash.com/photo-1611165967659-c382c59011bf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpZXZhbCUyMGNhdGhlZHJhbCUyMGdvdGhpYyUyMGFyY2hpdGVjdHVyZXxlbnwxfHx8fDE3NzQ3MjI5Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      postwar:
+      crown:
         "https://images.unsplash.com/photo-1712118849585-cecd77a4a738?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoaXN0b3JpYyUyMGl0YWxpYW4lMjBidWlsZGluZyUyMHJlc3RvcmF0aW9ufGVufDF8fHx8MTc3NDcyMjkzN3ww&ixlib=rb-4.1.0&q=80&w=1080",
-      present:
+      modern:
         "https://images.unsplash.com/photo-1671232847170-b31a815afcf1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnYWxsZXJpYSUyMHZpdHRvcmlvJTIwZW1hbnVlbGUlMjBtaWxhbm98ZW58MXx8fHwxNzc0NzIyOTM2fDA&ixlib=rb-4.1.0&q=80&w=1080",
     },
     hotspots: {
-      medieval: [
-        { id: "galleria-lanes-medieval", x: 40, y: 50, label: "Medieval lanes",
+      birth: [
+        { id: "galleria-lanes-birth", x: 40, y: 50, label: "Medieval lanes",
           title: "Tangle of lanes",
           body: "Where the arcade now stands ran a warren of medieval houses, small chapels, and alleys.",
           source: ARCHIVIO },
-        { id: "galleria-market-medieval", x: 60, y: 60, label: "Market square",
+        { id: "galleria-market-birth", x: 60, y: 60, label: "Market square",
           title: "A small market square",
           body: "A modest market square sat near the cathedral, a noisy foothold for merchants and pilgrims.",
           source: ARCHIVIO },
-        { id: "galleria-chapel-medieval", x: 30, y: 35, label: "Lost chapels",
+        { id: "galleria-chapel-birth", x: 30, y: 35, label: "Lost chapels",
           title: "Chapels swept away",
           body: "Several medieval chapels — including parts of San Tecla — once stood on this footprint before being cleared for the 19th-century arcade.",
           source: ARCHIVIO },
       ],
-      postwar: [
-        { id: "galleria-glass-postwar", x: 50, y: 22, label: "Rebuilt glass",
+      crown: [
+        { id: "galleria-glass-crown", x: 50, y: 22, label: "Rebuilt glass",
           title: "Glass roof, restored",
           body: "1943 raids shatter the original glass dome. Restorers rebuild it bolt-for-bolt from Mengoni's 1877 plans.",
           source: COMUNE },
-        { id: "galleria-mosaic-postwar", x: 60, y: 70, label: "Mosaic floor",
+        { id: "galleria-mosaic-crown", x: 60, y: 70, label: "Mosaic floor",
           title: "Mosaic floor repairs",
           body: "Damaged sections of the marble-mosaic floor are pieced back together using tesserae salvaged from the rubble.",
           source: COMUNE },
-        { id: "galleria-cafes-postwar", x: 30, y: 60, label: "Cafés return",
+        { id: "galleria-cafes-crown", x: 30, y: 60, label: "Cafés return",
           title: "Cafés reopen",
           body: "Through the 1950s the arcade quickly becomes a symbol of Italian style — couture, cafés, and the postwar economic boom.",
           source: COMUNE },
       ],
-      present: [
-        { id: "galleria-bull-present", x: 55, y: 75, label: "Turin's bull",
+      modern: [
+        { id: "galleria-bull-modern", x: 55, y: 75, label: "Turin's bull",
           title: "The lucky heel-spin",
           body: "Tradition says spinning your heel on the testicles of Turin's bull mosaic brings good luck.",
           source: COMUNE },
-        { id: "galleria-dome-present", x: 50, y: 22, label: "Iron dome",
+        { id: "galleria-dome-modern", x: 50, y: 22, label: "Iron dome",
           title: "Iron and glass dome",
           body: "Mengoni's wrought-iron dome was a marvel of 19th-century engineering — one of the tallest of its kind when it was built.",
           source: COMUNE },
-        { id: "galleria-couture-present", x: 30, y: 55, label: "Couture houses",
+        { id: "galleria-couture-modern", x: 30, y: 55, label: "Couture houses",
           title: "Milan's living room",
           body: "Prada, Versace, and Louis Vuitton line the arcade today, alongside the historic Camparino bar.",
           source: COMUNE },
-        { id: "galleria-mengoni-present", x: 70, y: 50, label: "Mengoni's plaque",
+        { id: "galleria-mengoni-modern", x: 70, y: 50, label: "Mengoni's plaque",
           title: "Architect's tragedy",
           body: "Giuseppe Mengoni fell to his death from the arcade days before its 1877 inauguration — a small plaque marks the spot.",
           source: COMUNE },
@@ -314,56 +314,56 @@ const LANDMARK_META: Record<LandmarkId, LandmarkMeta> = {
     kicker: "Seat of power, now of art",
     emoji: "🏰",
     images: {
-      medieval:
+      birth:
         "https://images.unsplash.com/photo-1611165967659-c382c59011bf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpZXZhbCUyMGNhdGhlZHJhbCUyMGdvdGhpYyUyMGFyY2hpdGVjdHVyZXxlbnwxfHx8fDE3NzQ3MjI5Mzd8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      postwar:
+      crown:
         "https://images.unsplash.com/photo-1712118849585-cecd77a4a738?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoaXN0b3JpYyUyMGl0YWxpYW4lMjBidWlsZGluZyUyMHJlc3RvcmF0aW9ufGVufDF8fHx8MTc3NDcyMjkzN3ww&ixlib=rb-4.1.0&q=80&w=1080",
-      present:
+      modern:
         "https://images.unsplash.com/photo-1620030537215-9ef4d9c0d3ab?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYWxhenpvJTIwcmVhbGUlMjBtaWxhbm8lMjBhcmNoaXRlY3R1cmV8ZW58MXx8fHwxNzc0NzIyOTM2fDA&ixlib=rb-4.1.0&q=80&w=1080",
     },
     hotspots: {
-      medieval: [
-        { id: "palazzo-broletto-medieval", x: 50, y: 55, label: "Broletto Vecchio",
+      birth: [
+        { id: "palazzo-broletto-birth", x: 50, y: 55, label: "Broletto Vecchio",
           title: "The old town hall",
           body: "Milan's medieval council met here as the Broletto Vecchio — argument and decree under a fortified roof.",
           source: ARCHIVIO },
-        { id: "palazzo-tower-medieval", x: 30, y: 35, label: "Defensive tower",
+        { id: "palazzo-tower-birth", x: 30, y: 35, label: "Defensive tower",
           title: "A fortified seat",
           body: "Defensive walls and a square tower marked it out as a seat of power in the unsettled 12th-century city.",
           source: ARCHIVIO },
-        { id: "palazzo-visconti-medieval", x: 70, y: 60, label: "Visconti rule",
+        { id: "palazzo-visconti-birth", x: 70, y: 60, label: "Visconti rule",
           title: "Visconti expansion",
           body: "Under the Visconti family the building expanded into a palace fit for the Duchy of Milan.",
           source: ARCHIVIO },
       ],
-      postwar: [
-        { id: "palazzo-cariatidi-postwar", x: 45, y: 55, label: "Sala delle Cariatidi",
+      crown: [
+        { id: "palazzo-cariatidi-crown", x: 45, y: 55, label: "Sala delle Cariatidi",
           title: "Caryatids in ruin",
           body: "The grand Hall of Caryatids was gutted by the 1943 raids. After debate, planners chose to leave its scars unrestored as a memorial.",
           source: ARCHIVIO },
-        { id: "palazzo-facade-postwar", x: 60, y: 35, label: "Damaged facade",
+        { id: "palazzo-facade-crown", x: 60, y: 35, label: "Damaged facade",
           title: "Cracked neoclassical front",
           body: "Bombs split the neoclassical facade. Reconstruction stabilized it without smoothing over every wound.",
           source: ARCHIVIO },
-        { id: "palazzo-rebuild-postwar", x: 30, y: 70, label: "Cultural rebirth",
+        { id: "palazzo-rebuild-crown", x: 30, y: 70, label: "Cultural rebirth",
           title: "Repurposed for the public",
           body: "1950s rebuilding turned much of the palace into exhibition space — a peace-time mission for a building once used for war planning.",
           source: COMUNE },
       ],
-      present: [
-        { id: "palazzo-exhibitions-present", x: 50, y: 50, label: "Exhibitions",
+      modern: [
+        { id: "palazzo-exhibitions-modern", x: 50, y: 50, label: "Exhibitions",
           title: "World-touring shows",
           body: "Today Palazzo Reale hosts world-class art exhibitions year-round in the restored ducal halls.",
           source: COMUNE },
-        { id: "palazzo-cariatidi-present", x: 35, y: 60, label: "Memorial hall",
+        { id: "palazzo-cariatidi-modern", x: 35, y: 60, label: "Memorial hall",
           title: "Hall of Caryatids — preserved",
           body: "The unrestored Hall of Caryatids remains as a public memorial to the cost of the war.",
           source: COMUNE },
-        { id: "palazzo-facade-present", x: 70, y: 30, label: "Neoclassical facade",
+        { id: "palazzo-facade-modern", x: 70, y: 30, label: "Neoclassical facade",
           title: "Piermarini's design",
           body: "The Piermarini-designed neoclassical facade adjacent to the Duomo defines the palace's modern look.",
           source: COMUNE },
-        { id: "palazzo-museum-present", x: 50, y: 78, label: "Cultural hub",
+        { id: "palazzo-museum-modern", x: 50, y: 78, label: "Cultural hub",
           title: "Premier art venue",
           body: "Now one of Milan's premier art venues, integrated into the cultural life of Piazza del Duomo.",
           source: COMUNE },
@@ -387,19 +387,19 @@ const LANDMARK_META: Record<LandmarkId, LandmarkMeta> = {
 
 const ERA_BLURBS: Partial<Record<LandmarkId, Partial<Record<EraId, EraContent>>>> = {
   duomo: {
-    medieval: { headline: "First stone laid", blurb: "1386 — the Archbishop blesses the foundation. Pink Candoglia marble starts arriving by canal." },
-    postwar:  { headline: "Wounded by bombs", blurb: "Allied raids in 1943 cracked the roof and shattered windows. Restoration would take decades." },
-    present:  { headline: "Laser-cleaned marble", blurb: "Today's restoration uses laser cleaning and 3D scanning to preserve every gothic detail." },
+    birth:  { headline: "First stone laid", blurb: "1386 — the Archbishop blesses the foundation. Pink Candoglia marble starts arriving by canal." },
+    crown:  { headline: "Napoleon's cathedral", blurb: "Napoleon was crowned King of Italy inside these walls in 1805. He funded the long-stalled façade." },
+    modern: { headline: "Laser-cleaned marble", blurb: "Today's restoration uses laser cleaning and 3D scanning to preserve every gothic detail." },
   },
   galleria: {
-    medieval: { headline: "Tangle of lanes", blurb: "A warren of medieval houses, small chapels, and a tiny market square stood here." },
-    postwar:  { headline: "Glass roof rebuilt", blurb: "1943 shattered the original glass. Restored true to Mengoni's 1877 design — bolt for bolt." },
-    present:  { headline: "Milan's living room", blurb: "Couture houses, mosaics, and the famous heel-spin on the Turin bull for luck." },
+    birth:  { headline: "Tangle of lanes", blurb: "A warren of medieval houses, small chapels, and a tiny market square stood here." },
+    crown:  { headline: "A market reborn", blurb: "The piazza's commercial spirit grew as Milan expanded under Habsburg and Napoleonic rule." },
+    modern: { headline: "Milan's living room", blurb: "Couture houses, mosaics, and the famous heel-spin on the Turin bull for luck." },
   },
   palazzo: {
-    medieval: { headline: "The Broletto Vecchio", blurb: "Milan's noisy medieval town hall — democratic argument with a marble floor." },
-    postwar:  { headline: "Caryatids in ruin", blurb: "1943 left scars in the great hall. Kept unrestored as a memorial to the war." },
-    present:  { headline: "Museum & exhibitions", blurb: "Hosts world-touring art shows year-round in the restored ducal halls." },
+    birth:  { headline: "The Broletto Vecchio", blurb: "Milan's noisy medieval town hall — democratic argument with a marble floor." },
+    crown:  { headline: "Ducal seat", blurb: "Rebuilt as a royal palace under Spanish and then Austrian rule — frescoes, ballrooms, ceremony." },
+    modern: { headline: "Caryatids in ruin", blurb: "1943 left scars in the great hall. Kept unrestored as a memorial to the war." },
   },
 };
 

@@ -50,17 +50,20 @@ interface EraRender {
 // past era *feels* like time travel even though the camera always shows present
 // day. Kept small so the scene stays recognizable; tune to taste per era.
 const ERA_CAMERA_FILTER: Record<EraId, string> = {
-  medieval:
-    "sepia(0.55) hue-rotate(-12deg) saturate(0.85) brightness(0.92) contrast(1.05)",
-  postwar:
-    "grayscale(0.7) sepia(0.15) contrast(1.08) brightness(0.95)",
-  present:
-    "saturate(1.05) brightness(1.02)",
+  // Birth — warm terracotta/amber; the world looks sunbaked and ancient
+  birth:
+    "sepia(0.50) saturate(0.88) brightness(0.91) contrast(1.06)",
+  // Crown — richer golden warmth; slightly more saturated than Birth
+  crown:
+    "sepia(0.30) hue-rotate(10deg) saturate(1.08) brightness(0.95) contrast(1.04)",
+  // Modern — cool blue-grey tint; present day feels crisp and neutral
+  modern:
+    "saturate(0.94) brightness(1.01) contrast(1.02)",
 };
 
 const ERA_RENDER: Record<EraId, EraRender> = {
-  medieval: {
-    description: "Construction of the Gothic cathedral spans five centuries",
+  birth: {
+    description: "Gothic marble rises stone by stone — a cathedral built across five centuries",
     skyProps: {
       sunPosition: [0.3, 0.06, -1],
       turbidity: 14,
@@ -73,22 +76,22 @@ const ERA_RENDER: Record<EraId, EraRender> = {
     ambientColor: "#d49060",
     ambientIntensity: 0.55,
   },
-  postwar: {
-    description: "Post-WWII Milan restores and rebuilds the piazza",
+  crown: {
+    description: "Sforza dukes, Spanish governors, Napoleon — power writes itself into stone",
     skyProps: {
-      sunPosition: [1, 0.25, 0],
-      turbidity: 20,
-      rayleigh: 0.6,
-      mieCoefficient: 0.04,
-      mieDirectionalG: 0.7,
+      sunPosition: [0.8, 0.18, -0.5],
+      turbidity: 10,
+      rayleigh: 3,
+      mieCoefficient: 0.008,
+      mieDirectionalG: 0.78,
     },
-    fogColor: "#9a9a9a",
-    groundColor: "#5a5a5a",
-    ambientColor: "#b0b0b0",
-    ambientIntensity: 0.35,
+    fogColor: "#b8924a",
+    groundColor: "#5a4020",
+    ambientColor: "#e0a860",
+    ambientIntensity: 0.65,
   },
-  present: {
-    description: "Busy cultural hub — tourists, pigeons, and living history",
+  modern: {
+    description: "Fashion weeks, liberation crowds, and 15 million visitors a year",
     skyProps: {
       sunPosition: [1, 0.65, 0],
       turbidity: 4,
@@ -133,7 +136,7 @@ const VIEW_STORAGE_KEY = "heritedge:view"; // last camera yaw/pitch as JSON
 const ERA_STORAGE_KEY  = "heritedge:era";  // last selected era id
 
 const isEraId = (v: string | null): v is EraId =>
-  v === "medieval" || v === "postwar" || v === "present";
+  v === "birth" || v === "crown" || v === "modern";
 
 
 // ─── Camera controllers ───────────────────────────────────────────────────────
@@ -596,9 +599,9 @@ export function PanoramaScene() {
   // Restore the last era the user picked this session so back-navigating
   // from a detail page doesn't reset to "present".
   const [era,     setEra]     = useState<EraId>(() => {
-    if (typeof window === "undefined" || !window.sessionStorage) return "present";
+    if (typeof window === "undefined" || !window.sessionStorage) return "modern";
     const raw = window.sessionStorage.getItem(ERA_STORAGE_KEY);
-    return isEraId(raw) ? raw : "present";
+    return isEraId(raw) ? raw : "modern";
   });
   const [gyro,    setGyro]    = useState(false);
   const [canGyro, setCanGyro] = useState(false);
@@ -1063,7 +1066,7 @@ export function PanoramaScene() {
           <EraScrub value={era} onChange={switchEra} accent={era_.accent} />
         </div>
 
-        {/* Bottom action row — mirrors ARArtifactDetail: landmarks · voice. */}
+        {/* Bottom action row — landmarks · voice. */}
         <div className="mx-auto w-full max-w-md mt-3 flex items-center gap-2">
           <button
             onClick={() => setLandmarksOpen(true)}

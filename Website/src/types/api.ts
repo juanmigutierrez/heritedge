@@ -1,7 +1,7 @@
 // Shared FE/BE contracts. Owner: P6. Proposers: P1 (chat), P2 (voice).
 // ⚠️ Change these only via PR with a heads-up in standup — everyone depends on them.
 
-export type Period = "medieval" | "postwar" | "present";
+export type Period = "birth" | "crown" | "modern";
 
 export type Landmark = "duomo" | "galleria" | "palazzo";
 
