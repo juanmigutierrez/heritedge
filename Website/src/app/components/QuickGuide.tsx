@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowLeft, MessageCircle, Volume2, Send, Sparkles,
@@ -7,7 +7,7 @@ import {
   Pause, Play, X, ChevronDown, ChevronUp, Quote,
 } from "lucide-react";
 import { useSpeechRecognition } from "@/features/voice/useSpeechRecognition";
-import { sendMessage, speak, stopSpeaking } from "@/services/chatService";
+import { sendMessage, speak, stopSpeaking, pauseSpeaking, resumeSpeaking } from "@/services/chatService";
 import knowledgeBase from "@/content/knowledge-base.json";
 import { StoryView } from "./quick-guide/StoryView";
 import { eraScenes } from "./quick-guide/scenes";
@@ -389,6 +389,7 @@ function ChatMessage({ msg, onExpand, onHearMore, isSpeaking }: {
 
 export function QuickGuide() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [selectedEra, setSelectedEra]         = useState<TimePeriod>("foundations");
   const [showChat, setShowChat]               = useState(false);
@@ -399,10 +400,13 @@ export function QuickGuide() {
   const [isLoadingResponse, setIsLoadingResponse] = useState(false);
   const [isSpeaking, setIsSpeaking]           = useState(false);
   const [isPaused, setIsPaused]               = useState(false);
+  const [speakingEra, setSpeakingEra]         = useState<TimePeriod | null>(null);
+  const [showAudioUnlock, setShowAudioUnlock] = useState(false);
   const [showQuickReplies, setShowQuickReplies] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastAIIdRef    = useRef<string>("");
+  const askFiredRef    = useRef(false);
   const msgsRef        = useRef<ChatMessage[]>([]);
   msgsRef.current      = chatMessages;
 
@@ -430,6 +434,35 @@ export function QuickGuide() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, isLoadingResponse, showQuickReplies]);
 
+  // Sync local speaking state with the global luca-speech bus so pill controls
+  // (pause/stop) stay in sync with this component's UI.
+  useEffect(() => {
+    const handle = (e: Event) => {
+      const detail = (e as CustomEvent<string>).detail;
+      if (detail === "start" || detail === "resume") {
+        setIsSpeaking(true); setIsPaused(false);
+      } else if (detail === "pause") {
+        setIsPaused(true); setIsSpeaking(false);
+      } else if (detail === "end") {
+        setIsSpeaking(false); setIsPaused(false); setSpeakingEra(null);
+      }
+    };
+    window.addEventListener("luca-speech", handle);
+    return () => window.removeEventListener("luca-speech", handle);
+  }, []);
+
+  // Handle ?ask=<question> deep-link — open chat pre-filled.
+  useEffect(() => {
+    if (askFiredRef.current) return;
+    const ask = searchParams.get("ask");
+    if (!ask) return;
+    askFiredRef.current = true;
+    setShowChat(true);
+    setSearchParams({}, { replace: true });
+    setTimeout(() => handleSendMessageText(decodeURIComponent(ask)), 300);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   useEffect(() => {
     if (listeningState === "DONE" && transcript) {
       setIsListening(false);
@@ -448,24 +481,13 @@ export function QuickGuide() {
     speak(text, () => { setIsSpeaking(false); setIsPaused(false); });
   }, []);
 
-  const handlePause = () => {
-    if (window.speechSynthesis?.speaking && !window.speechSynthesis?.paused) {
-      window.speechSynthesis.pause();
-      setIsPaused(true); setIsSpeaking(false);
-    }
-  };
+  const handlePause = () => { pauseSpeaking(); };
 
-  const handleResume = () => {
-    if (window.speechSynthesis?.paused) {
-      window.speechSynthesis.resume();
-      setIsPaused(false); setIsSpeaking(true);
-    }
-  };
+  const handleResume = () => { resumeSpeaking(); };
 
   const handleCancelSpeech = useCallback(() => {
     stopSpeaking();
-    window.speechSynthesis?.cancel();
-    setIsSpeaking(false); setIsPaused(false);
+    setIsSpeaking(false); setIsPaused(false); setSpeakingEra(null);
   }, []);
 
   const handleExpand = useCallback((id: string) => {
@@ -560,8 +582,28 @@ export function QuickGuide() {
   };
 
   const handleVoiceGuide = () => {
-    const era = timelineData[selectedEra];
-    speakWithState(`${era.title}, ${era.years}. ${era.content}`);
+    const currentEra = selectedEra;
+    setSpeakingEra(currentEra);
+    const eraData = timelineData[currentEra];
+    speakWithState(`${eraData.title}, ${eraData.years}. ${eraData.content}`);
+  };
+
+  const handleBeginChapter = () => {
+    if (!localStorage.getItem("luca-audio-unlocked")) {
+      setShowAudioUnlock(true);
+    } else {
+      setStoryOpen(true);
+    }
+  };
+
+  const handleAudioUnlock = () => {
+    // iOS requires speechSynthesis.speak() in a direct user-gesture handler
+    const u = new SpeechSynthesisUtterance(" ");
+    window.speechSynthesis?.speak(u);
+    window.speechSynthesis?.cancel();
+    localStorage.setItem("luca-audio-unlocked", "1");
+    setShowAudioUnlock(false);
+    setStoryOpen(true);
   };
 
   // Era progression — what number are we on?
@@ -927,7 +969,7 @@ export function QuickGuide() {
 
                 {/* Primary action: enter the story player */}
                 <div className="px-5 sm:px-7 pb-3">
-                  {isSpeaking || isPaused ? (
+                  {(isSpeaking || isPaused) && speakingEra === selectedEra ? (
                     <div className="flex flex-col sm:flex-row gap-3">
                       <button
                         onClick={handleCancelSpeech}
@@ -945,7 +987,7 @@ export function QuickGuide() {
                     </div>
                   ) : (
                     <button
-                      onClick={() => setStoryOpen(true)}
+                      onClick={handleBeginChapter}
                       className="w-full py-3.5 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform text-sm font-medium"
                       style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
                     >
@@ -957,7 +999,7 @@ export function QuickGuide() {
                 </div>
 
                 {/* Secondary actions */}
-                {!(isSpeaking || isPaused) && (
+                {!((isSpeaking || isPaused) && speakingEra === selectedEra) && (
                   <div className="px-5 sm:px-7 pb-6 sm:pb-7 flex flex-col sm:flex-row gap-2 text-sm">
                     <button
                       onClick={handleVoiceGuide}
@@ -1005,6 +1047,48 @@ export function QuickGuide() {
             <p className="mt-10 text-center text-xs text-muted-foreground">
               Curated from the Veneranda Fabbrica del Duomo &amp; Archivio Storico Civico di Milano.
             </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Audio unlock splash — shown on first "Begin chapter" tap */}
+      <AnimatePresence>
+        {showAudioUnlock && (
+          <motion.div
+            key="audio-unlock"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center pb-10 px-6"
+            style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              transition={{ type: "spring", damping: 22, stiffness: 280 }}
+              className="w-full max-w-sm rounded-3xl p-7 text-center"
+              style={{ background: "var(--card)", border: "1px solid var(--border)" }}
+            >
+              <div
+                className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 text-xl font-bold"
+                style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+              >
+                L
+              </div>
+              <h2 className="text-lg font-semibold text-foreground mb-2">Enable Luca's voice</h2>
+              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                Tap below to let Luca narrate your journey. You can pause or stop at any time.
+              </p>
+              <button
+                onClick={handleAudioUnlock}
+                className="w-full py-3.5 rounded-2xl text-sm font-medium active:scale-[0.98] transition-transform"
+                style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+              >
+                <Volume2 className="w-4 h-4 inline mr-2" />
+                Tap to begin
+              </button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
