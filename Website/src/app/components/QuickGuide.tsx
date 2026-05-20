@@ -10,11 +10,10 @@ import { useSpeechRecognition } from "@/features/voice/useSpeechRecognition";
 import { sendMessage, speak, stopSpeaking, pauseSpeaking, resumeSpeaking } from "@/services/chatService";
 import knowledgeBase from "@/content/knowledge-base.json";
 import { StoryView } from "./quick-guide/StoryView";
-import { eraScenes } from "./quick-guide/scenes";
+import { eraScenes, type TimePeriod } from "./quick-guide/scenes";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type TimePeriod = "birth" | "crown" | "modern";
 type SuggestedTopic = "architecture" | "history" | "events" | "statues";
 
 interface ChatMessage {
@@ -407,8 +406,8 @@ export function QuickGuide() {
       const kb: any = knowledgeBase;
       const mapping: Record<TimePeriod, string> = {
         birth:   "duomo-1386-foundation",
-        crown:   "sforza-rule-overview",
-        modern:  "habsburg-period-overview",
+        crown:   "duomo-madonnina-1774",
+        modern:  "galleria-mengoni-1865",
       };
       const factId = mapping[selectedEra];
       return kb.facts.find((f: any) => f.id === factId) ?? null;

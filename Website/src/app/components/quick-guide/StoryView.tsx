@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X, ArrowRight, ArrowLeft, Quote, Check, Sparkles } from "lucide-react";
 import type { Scene, IllustrationId } from "./scenes";
@@ -76,6 +76,38 @@ export function StoryView({
       document.body.style.overflow = prevOverflow;
     };
   }, []);
+
+  // Empty chapter (e.g. Modern before Task 2 ships its scenes) — show a
+  // friendly "coming soon" panel instead of crashing on scenes[0].
+  if (scenes.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-center px-6 text-center"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${chapterTitle} not yet available`}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-4 right-4 w-9 h-9 rounded-full bg-secondary text-foreground hover:bg-muted flex items-center justify-center active:scale-95 transition-all"
+        >
+          <X className="w-4 h-4" />
+        </button>
+        <p className="text-caption mb-3" style={{ color: "var(--accent-strong)" }}>
+          Chapter {chapterIndex + 1} of {totalChapters}
+        </p>
+        <h2 className="h2 text-foreground mb-3">{chapterTitle} · Coming soon.</h2>
+        <p className="text-sm text-muted-foreground max-w-md leading-relaxed">
+          The scenes for this chapter are still being written. Check back in the next build.
+        </p>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -179,7 +211,9 @@ export function StoryView({
           className="h-11 px-5 rounded-xl text-sm font-medium flex items-center gap-2 active:scale-[0.98] transition-all"
           style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
         >
-          {isLast ? "Finish chapter" : "Next"}
+          {scene.kind === "closing" && scene.ctaLabel
+            ? scene.ctaLabel
+            : isLast ? "Finish chapter" : "Next"}
           <ArrowRight className="w-4 h-4" />
         </button>
       </nav>
@@ -681,7 +715,11 @@ function SceneMatchGame({
   onAdvance: () => void;
 }) {
   // Bottom-row slots: unique architects only — Piermarini receives two lines.
-  const slots = Array.from(new Set(pairs.map((p) => p.right)));
+  // Memoized so it's stable across renders (used in a useEffect dep array).
+  const slots = useMemo<string[]>(
+    () => Array.from(new Set(pairs.map((p) => p.right))),
+    [pairs]
+  );
 
   const [connections, setConnections] = useState<Record<string, string>>({});
   const [drag, setDrag] = useState<{ from: string; x: number; y: number } | null>(null);
@@ -692,10 +730,16 @@ function SceneMatchGame({
   const containerRef  = useRef<HTMLDivElement>(null);
   const buildingRefs  = useRef<Record<string, HTMLDivElement | null>>({});
   const slotRefs      = useRef<Record<string, HTMLDivElement | null>>({});
+  const bumpTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear the wrong-slot shake timeout on unmount so we don't setState late.
+  useEffect(() => () => {
+    if (bumpTimeoutRef.current) clearTimeout(bumpTimeoutRef.current);
+  }, []);
 
   const allConnected = pairs.every((p) => connections[p.left] === p.right);
 
-  // Recompute SVG endpoints on resize / scroll while interactive.
+  // Recompute SVG endpoints on window resize while interactive.
   useEffect(() => {
     const onResize = () => setBumpTick((t) => t + 1);
     window.addEventListener("resize", onResize);
@@ -746,7 +790,8 @@ function SceneMatchGame({
           setConnections((c) => ({ ...c, [drag.from]: hit! }));
         } else {
           setBumped(hit);
-          setTimeout(() => setBumped(null), 400);
+          if (bumpTimeoutRef.current) clearTimeout(bumpTimeoutRef.current);
+          bumpTimeoutRef.current = setTimeout(() => setBumped(null), 400);
         }
       }
       setDrag(null);
