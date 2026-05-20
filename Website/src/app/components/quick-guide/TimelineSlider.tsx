@@ -23,11 +23,15 @@ export function TimelineSlider({ frames }: TimelineSliderProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
 
-  const maxPos = frames.length - 1;
-  const idx = Math.min(Math.floor(pos), maxPos - 1);
-  const blend = Math.max(0, Math.min(1, pos - idx));
-  const nextIdx = Math.min(idx + 1, maxPos);
-  const activeFrame = blend < 0.5 ? frames[idx] : frames[nextIdx];
+  // Defensive clamps so the math below stays valid even with 0 or 1 frame.
+  // The early returns at the bottom of this function handle the actual UI.
+  const maxPos  = Math.max(1, frames.length - 1);
+  const idx     = Math.max(0, Math.min(Math.floor(pos), Math.max(0, frames.length - 2)));
+  const blend   = Math.max(0, Math.min(1, pos - idx));
+  const nextIdx = Math.min(idx + 1, Math.max(0, frames.length - 1));
+  const activeFrame = frames.length > 0
+    ? (blend < 0.5 ? frames[idx] : frames[nextIdx])
+    : undefined;
 
   const setFromClientX = useCallback((clientX: number) => {
     const rect = trackRef.current?.getBoundingClientRect();
@@ -95,6 +99,46 @@ export function TimelineSlider({ frames }: TimelineSliderProps) {
   };
 
   const handlePct = (pos / maxPos) * 100;
+
+  // Empty frames — nothing to render.
+  if (frames.length === 0 || !activeFrame) return null;
+
+  // Single frame — render it statically, no slider needed.
+  if (frames.length === 1) {
+    return (
+      <div>
+        <div
+          style={{
+            position: "relative",
+            borderRadius: 12,
+            overflow: "hidden",
+            aspectRatio: "16 / 10",
+            background: "#0a0a0a",
+          }}
+        >
+          <img
+            src={activeFrame.image}
+            alt={activeFrame.year}
+            style={{
+              position: "absolute", inset: 0, width: "100%", height: "100%",
+              objectFit: "cover",
+            }}
+          />
+        </div>
+        <div
+          className="mt-5 rounded-2xl p-5"
+          style={{
+            background: "color-mix(in srgb, var(--accent) 8%, transparent)",
+            borderLeft: "3px solid var(--accent)",
+          }}
+        >
+          <p className="text-base text-foreground leading-relaxed italic">
+            {activeFrame.caption}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
