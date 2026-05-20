@@ -1,7 +1,7 @@
 // Scene data for the tap-through story player.
-// Each era has 6–7 scenes that move the user through the chapter at their own pace.
+// Each chapter uses the unified period vocabulary: Birth, Crown, Modern.
 
-export type TimePeriod = "foundations" | "visconti" | "sforza" | "habsburg";
+export type TimePeriod = "birth" | "crown" | "modern";
 
 export type IllustrationId =
   | "foundation-dig"
@@ -9,170 +9,234 @@ export type IllustrationId =
   | "leonardo-tiburio"
   | "madonnina-heights";
 
+export interface TimelineFrame {
+  year: string;
+  yearShort?: string;
+  image: string;
+  caption: string;
+}
+
 export type Scene =
-  | { kind: "quote"; text: string }
-  | { kind: "narrative"; eyebrow?: string; heading: string; body: string }
-  | { kind: "reveal"; question: string; answer: string }
-  | { kind: "quiz"; question: string; options: string[]; correctIndex: number; explanation?: string }
-  | { kind: "illustration"; id: IllustrationId; eyebrow?: string; heading?: string; caption?: string }
-  | { kind: "closing"; heading: string; body?: string };
+  | { kind: "hero"; title: string; subtitle: string; image?: string; askLucaPrompt?: string }
+  | { kind: "quote"; text: string; askLucaPrompt?: string }
+  | { kind: "narrative"; eyebrow?: string; heading: string; body: string; image?: string; askLucaPrompt?: string }
+  | { kind: "reveal"; question: string; answer: string; askLucaPrompt?: string }
+  | { kind: "quiz"; question: string; options: string[]; correctIndex: number; explanation?: string; askLucaPrompt?: string }
+  | { kind: "illustration"; id: IllustrationId; eyebrow?: string; heading?: string; caption?: string; askLucaPrompt?: string }
+  | { kind: "videoEmbed"; title: string; src?: string; poster?: string; caption?: string; autoAdvance?: boolean; askLucaPrompt?: string }
+  | { kind: "timelineSlider"; title: string; frames: TimelineFrame[]; askLucaPrompt?: string }
+  | { kind: "cultural"; eyebrow?: string; heading: string; body: string; image?: string; askLucaPrompt?: string }
+  | { kind: "closing"; heading: string; body?: string; cta?: string; askLucaPrompt?: string };
 
 export const eraScenes: Record<TimePeriod, Scene[]> = {
-  foundations: [
+  birth: [
+    {
+      kind: "hero",
+      title: "Birth",
+      subtitle: "1386 - 1500s · Chapter 1 of 3",
+      image: "/assets/placeholder.jpg",
+    },
     {
       kind: "quote",
       text: "A city dared to begin a cathedral that would outlive every hand that touched it.",
     },
     {
       kind: "narrative",
-      eyebrow: "1386",
-      heading: "A bold beginning.",
-      body: "Milan was a city of ambition. Archbishop Antonio da Saluzzo wanted a cathedral to rival Cologne and Reims — and the political timing was perfect.",
+      eyebrow: "5 August 1386",
+      heading: "The first stone.",
+      body: "Archbishop Antonio da Saluzzo lays the first stone. Duke Gian Galeazzo Visconti adopts the cathedral as a state enterprise.",
+      askLucaPrompt: "Tell me more about the first stone in 1386.",
     },
     {
-      kind: "narrative",
-      eyebrow: "The choice",
-      heading: "Gothic — a foreign style.",
-      body: "Lombards normally built in Romanesque. Choosing Gothic was a statement to the rest of Europe: Milan belongs at the table.",
+      kind: "reveal",
+      question: "Where does the cathedral's marble come from?",
+      answer: "Candoglia, Piedmont. The Fabbrica still receives marble from the same quarries granted in 1387.",
+      askLucaPrompt: "Tell me more about Candoglia marble and AUF.",
     },
     {
-      kind: "illustration",
-      id: "foundation-dig",
-      eyebrow: "Tap to dig",
-      heading: "Below the cathedral.",
-      caption: "Tap each layer to see what the foundation crews uncovered. The deeper they went, the older the city's memory got.",
-    },
-    {
-      kind: "quiz",
-      question: "How many years did the foundation excavations take?",
-      options: ["2 years", "7 years", "14 years"],
-      correctIndex: 2,
-      explanation:
-        "Fourteen years of digging before the first stone could rise above ground. A measure of how seriously the city took the project.",
-    },
-    {
-      kind: "narrative",
-      eyebrow: "The architect",
-      heading: "Simone da Orsenigo.",
-      body: "He sketched the floor plan that all six centuries of construction would follow. Almost nothing about it would change.",
+      kind: "timelineSlider",
+      title: "Piazza del Duomo across 280 years",
+      frames: [
+        {
+          year: "1744",
+          image: "/assets/placeholder.jpg",
+          caption: "Bellotto paints the piazza still crowded with medieval shops.",
+        },
+        {
+          year: "1840",
+          image: "/assets/placeholder.jpg",
+          caption: "Romantic-era painters arrive. The shops are still there.",
+        },
+        {
+          year: "1880",
+          image: "/assets/placeholder.jpg",
+          caption: "The first photographs. The clearing has begun.",
+        },
+        {
+          year: "1945",
+          image: "/assets/placeholder.jpg",
+          caption: "Liberation Day. The square fills with the first free crowd in years.",
+        },
+        {
+          year: "Today",
+          image: "/assets/placeholder.jpg",
+          caption: "Pedestrian. Cleared. Six million visitors a year.",
+        },
+      ],
+      askLucaPrompt: "Tell me more about how the piazza changed over time.",
     },
     {
       kind: "closing",
       heading: "But this was only the beginning.",
-      body: "The Visconti dynasty was about to step in — and turn ambition into spectacle.",
+      body: "The Visconti gave the cathedral marble. The Sforza would give it Leonardo.",
+      cta: "Begin Chapter 2 - Crown →",
+    },
+    {
+      kind: "cultural",
+      eyebrow: "Cultural beat",
+      heading: "A day in 1450.",
+      body: "Imagine being a stonemason on the Fabbrica payroll. You wake before dawn to the matins bell and work the rising apse until vesper.",
+      image: "/assets/placeholder.jpg",
+      askLucaPrompt: "Tell me more about daily life in Milan in 1450.",
     },
   ],
 
-  visconti: [
+  crown: [
     {
-      kind: "quote",
-      text: "Every spire became a statement. Every statue, a question answered in stone.",
+      kind: "hero",
+      title: "Crown",
+      subtitle: "1500s - 1860 · Chapter 2 of 3",
+      image: "/assets/placeholder.jpg",
     },
-    {
-      kind: "narrative",
-      eyebrow: "The patron",
-      heading: "Gian Galeazzo Visconti.",
-      body: "Duke of Milan. He saw the Duomo as the city's calling card to Europe — and was willing to pay for it.",
-    },
-    {
-      kind: "illustration",
-      id: "duomo-spires",
-      eyebrow: "Tap a spire",
-      heading: "A skyline of saints.",
-      caption: "Each spire holds a different story. Tap one to discover its secret. Find all five hidden histories.",
-    },
-    {
-      kind: "reveal",
-      question: "How many statues line the cathedral?",
-      answer:
-        "More than 3,400 — saints, biblical figures, animals, gargoyles, even Visconti family members. The largest sculptural ensemble of any Gothic cathedral in Italy.",
-    },
-    {
-      kind: "narrative",
-      eyebrow: "The team",
-      heading: "An international project.",
-      body: "Visconti invited architects from France, Germany, and beyond. The Duomo became a place where European Gothic met Lombard pride.",
-    },
-    {
-      kind: "closing",
-      heading: "Then the Sforza arrived.",
-      body: "And with them, Renaissance ideas — including a curious sketch from a man named Leonardo.",
-    },
-  ],
-
-  sforza: [
     {
       kind: "quote",
       text: "Leonardo sketched the dome's heart. The Gothic listened, and answered in marble.",
     },
     {
-      kind: "narrative",
-      eyebrow: "1450",
-      heading: "A new dynasty.",
-      body: "The Sforza family took control of Milan. The Renaissance was sweeping through Europe, and the Duomo was about to feel its breath.",
-    },
-    {
-      kind: "illustration",
-      id: "leonardo-tiburio",
-      eyebrow: "Leonardo's design",
-      heading: "Anatomy of a dome.",
-      caption: "Leonardo's tiburio sketch from 1487. Tap each part to see what it does — and how Renaissance proportions were sneaking into a Gothic cathedral.",
-    },
-    {
       kind: "reveal",
       question: "Did Leonardo da Vinci really work on the Duomo?",
-      answer:
-        "Yes. He submitted designs for the tiburio — the central dome over the crossing — in 1487. His sketches still exist in the Codex Atlanticus.",
+      answer: "Yes. In 1487-88 he submitted designs for the tiburio and a wooden model for the crossing.",
+      askLucaPrompt: "Tell me more about Leonardo's tiburio designs.",
     },
     {
       kind: "narrative",
-      eyebrow: "The blend",
-      heading: "Gothic bones, Renaissance proportions.",
-      body: "Spires kept rising in the medieval style, while interior chapels and details borrowed Renaissance harmony. The result: a building unlike any other in Italy.",
+      eyebrow: "30 December 1774",
+      heading: "Milan's golden guardian.",
+      body: "A gilded copper statue of the Virgin Mary is placed atop the central spire at 108.5 m above the ground.",
+      askLucaPrompt: "Tell me more about the Madonnina and its height rule.",
+    },
+    {
+      kind: "timelineSlider",
+      title: "The Duomo facade across four phases",
+      frames: [
+        {
+          year: "1521",
+          image: "/assets/placeholder.jpg",
+          caption: "Cesariano's elevation drawing sets the dream.",
+        },
+        {
+          year: "1790",
+          image: "/assets/placeholder.jpg",
+          caption: "Brick still shows. The facade is unfinished.",
+        },
+        {
+          year: "1813",
+          image: "/assets/placeholder.jpg",
+          caption: "Napoleon orders completion for his coronation.",
+        },
+        {
+          year: "Today",
+          image: "/assets/placeholder.jpg",
+          caption: "The marble face is complete and restored.",
+        },
+      ],
+      askLucaPrompt: "Tell me more about the Duomo facade and Napoleon's role.",
     },
     {
       kind: "closing",
-      heading: "And then the Habsburgs.",
-      body: "Empire would crown what the Renaissance had perfected.",
+      heading: "Then the modern world arrived.",
+      body: "Italy unified. A glass arcade rose. And one summer night in 1943, the bombs of war wrote one more chapter.",
+      cta: "Begin Chapter 3 - Modern →",
+    },
+    {
+      kind: "cultural",
+      eyebrow: "Cultural beat",
+      heading: "The saffron wedding.",
+      body: "1574. A glass-painter adds saffron to rice at his daughter's wedding. The dish becomes Milan's signature.",
+      image: "/assets/placeholder.jpg",
+      askLucaPrompt: "Tell me more about the origin of risotto alla milanese.",
     },
   ],
 
-  habsburg: [
+  modern: [
+    {
+      kind: "hero",
+      title: "Modern",
+      subtitle: "1860 - today · Chapter 3 of 3",
+      image: "/assets/placeholder.jpg",
+    },
     {
       kind: "quote",
-      text: "On the highest spire, the Madonnina has been watching Milan for two and a half centuries.",
+      text: "Italy found a stage. The Galleria opened. The square became a city's living room.",
     },
     {
       kind: "narrative",
-      eyebrow: "1535–1700s",
-      heading: "Imperial Milan.",
-      body: "Spanish then Austrian rule. Emperors held coronations inside the Duomo. The cathedral became Europe's stage as much as Milan's church.",
+      eyebrow: "7 March 1865",
+      heading: "Mengoni wins.",
+      body: "King Vittorio Emanuele II lays the first stone of an iron-and-glass arcade between the Duomo and La Scala. Giuseppe Mengoni wins the national competition.",
+      image: "/src/assets/History/mengoni-plans.jpg",
+      askLucaPrompt: "Tell me more about Giuseppe Mengoni and the Galleria's design.",
     },
     {
-      kind: "narrative",
-      eyebrow: "1774",
-      heading: "The Madonnina rises.",
-      body: "A four-meter gilded statue of the Virgin Mary was placed atop the central spire. Milan's golden guardian.",
+      kind: "reveal",
+      question: "Did the architect see his arcade open?",
+      answer: "Two days before the inauguration, on 30 December 1877, Mengoni fell from the scaffolding of the triumphal arch and died on the spot. The cause was never resolved.",
+      askLucaPrompt: "Tell me more about Mengoni's fall in 1877.",
     },
     {
-      kind: "illustration",
-      id: "madonnina-heights",
-      eyebrow: "Tap a tower",
-      heading: "How tall is she, really?",
-      caption: "For two centuries, no Milanese building was allowed to rise above her. Even modern towers honor her with a small replica on top.",
+      kind: "videoEmbed",
+      title: "25 April 1945 · Milan liberated",
+      src: "/src/assets/History/liberation.mp4",
+      poster: "/assets/placeholder.jpg",
+      caption: "Three years earlier the square was empty under air-raid sirens. Today, this is the first crowd to fill it freely.",
+      autoAdvance: true,
+      askLucaPrompt: "Tell me more about Liberation Day in Milan.",
     },
     {
-      kind: "quiz",
-      question: "How high above the ground does the Madonnina stand?",
-      options: ["87 metres", "108 metres", "142 metres"],
-      correctIndex: 1,
-      explanation:
-        "108.5 metres — for over a century, no building in Milan was allowed to rise higher than her. Even today, modern towers pay symbolic respect with a small replica on top.",
+      kind: "timelineSlider",
+      title: "Sala delle Cariatidi - three states",
+      frames: [
+        {
+          year: "1900",
+          image: "/src/assets/History/brogi-cariatidi-1900.jpg",
+          caption: "Brogi's photograph shows the intact hall.",
+        },
+        {
+          year: "1944",
+          image: "/src/assets/History/cariatidi-1944.jpg",
+          caption: "After the 1943 bombing, the hall is blackened.",
+        },
+        {
+          year: "Today",
+          image: "/src/assets/History/cariatidi-today.jpg",
+          caption: "Deliberately scarred and never fully restored.",
+        },
+      ],
+      askLucaPrompt: "Tell me more about the Sala delle Cariatidi and the 1943 bombing.",
     },
     {
       kind: "closing",
       heading: "And here we are.",
-      body: "Six centuries condensed into one square. The Madonnina is still watching. Step outside and look up.",
+      body: "Six centuries condensed into one square. The Madonnina is still watching. Now look around.",
+      cta: "Continue to AR Experience →",
+    },
+    {
+      kind: "cultural",
+      eyebrow: "Cultural beat",
+      heading: "A 1960s aperitivo.",
+      body: "1960. The economic miracle peaks. You step into Bar Campari, order a Negroni sbagliato, and talk about the new Pirelli Tower.",
+      image: "/src/assets/History/golden-eagle-1960s.jpg",
+      askLucaPrompt: "Tell me more about aperitivo culture in the Galleria.",
     },
   ],
 };
