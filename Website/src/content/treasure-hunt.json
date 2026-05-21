@@ -1,100 +1,272 @@
 {
-  "version": "0.3.0",
-  "updatedAt": "2026-05-03",
-  "_consumer": "src/app/components/TreasureHunt.tsx (P5) — drop the hardcoded `challenges` array and import this file. Schema mirrors the Challenge interface defined in that component.",
+  "version": "1.0.0",
+  "updatedAt": "2026-05-21",
+  "_consumer": "src/app/components/TreasureHunt.tsx — challenges drive the in-context hunt. Schema mirrors the HuntChallenge interface. Content aligned to Conceptual_Design/Experience-Spec.md (TREASURE HUNT section).",
   "challenges": [
     {
       "id": "1",
       "landmark": "duomo",
-      "title": "The Golden Lady on Top",
-      "description": "At the very top of the Duomo's tallest spire stands the golden symbol of Milan. Go outside, look up, and capture her.",
-      "type": "photo",
-      "photoPrompt": "Take a photo of La Madonnina — the golden statue on top of the Duomo's tallest spire. Point your camera upward at the central spire.",
+      "title": "When the First Stone Was Laid",
+      "description": "Standing in front of the Duomo, you are looking at six centuries of construction. Tell us when it all began.",
+      "type": "question",
+      "question": "In what year did construction of the Duomo begin?",
+      "expectedAnswer": "1386",
+      "acceptedAnswers": [
+        "1386",
+        "1386 ad",
+        "in 1386",
+        "year 1386",
+        "thirteen eighty-six"
+      ],
       "feedback": {
-        "correct": "Well done! La Madonnina stands 108.5 m above Piazza Duomo. Placed in 1774, she is gilded copper and stands 4.16 m tall. A Milanese tradition says no building in Milan may exceed her height — a rule respected until 1958 when the first skyscrapers rose.",
-        "incorrect": "The statue is called La Madonnina (the little Madonna). Try again — stand in the piazza and look up at the tallest central spire."
+        "correct": "Correct — 1386, under Archbishop Antonio da Saluzzo. Construction continued for nearly six centuries, spanning Milan's evolution from medieval commune to modern metropolis.",
+        "incorrect": "Not quite. The first stone was laid in 1386, and the cathedral took almost 600 years to finish."
       },
-      "arHint": "Point your camera at the top of the Duomo's central facade and look for the glowing spire marker.",
+      "arHint": "Stand facing the cathedral's main facade — the stonework you see spans the Birth, Crown, and Modern periods.",
       "markerImage": "/markers/duomo-facade.jpg",
       "location": "Duomo di Milano — central facade",
-      "period": "present",
-      "relatedFactIds": ["duomo-madonnina-1774", "duomo-1386-foundation"],
-      "points": 100
+      "period": "Birth",
+      "relatedFactIds": [
+        "duomo-1386-foundation"
+      ],
+      "points": 80
     },
     {
       "id": "2",
-      "landmark": "galleria",
-      "title": "The Floor That Brings Luck",
-      "description": "Hidden in the Galleria's mosaic floor is a tradition that tourists travel from all over the world to perform.",
-      "type": "photo",
-      "photoPrompt": "Find the mosaic bull emblem on the Galleria floor and take a photo of it. Tip: look near the centre of the octagonal crossing.",
+      "landmark": "duomo",
+      "title": "The Glass-Painter's Happy Accident",
+      "description": "Near the Duomo's north door, an audio clue plays the sound of a 16th-century glass-painter at work. Listen, then answer.",
+      "type": "question",
+      "question": "What did a Belgian glass-painter accidentally invent at this cathedral in 1574?",
+      "expectedAnswer": "Risotto alla milanese",
+      "acceptedAnswers": [
+        "risotto alla milanese",
+        "risotto",
+        "saffron risotto",
+        "risotto milanese",
+        "milanese risotto",
+        "risotto alla milanese (saffron risotto)"
+      ],
       "feedback": {
-        "correct": "Well spotted! The bull is the emblem of Turin. Spinning on its heel three times is said to bring good luck — the mosaic is worn down from centuries of heel-spins.",
-        "incorrect": "The mosaic bull represents Turin, one of the four Italian cities whose crests decorate the floor. The other three are Milan, Florence, and Rome. Head to the centre of the octagonal crossing and look down."
+        "correct": "Exactly — risotto alla milanese. Legend says a Flemish glass-painter working on the Duomo's windows loved saffron so much that in 1574 his assistant tinted a wedding feast's rice golden as a joke. The saffron risotto stuck.",
+        "incorrect": "It's risotto alla milanese — Milan's golden saffron rice. The story goes that a glass-painter's love of saffron pigment turned a 1574 wedding feast's rice bright yellow."
       },
-      "arHint": "Enter AR view and look for a highlighted circle at the centre of the octagonal crossing — the bull mosaic will be outlined.",
-      "markerImage": "/markers/galleria-crossing.jpg",
-      "location": "Galleria Vittorio Emanuele II — central octagon",
-      "period": "present",
-      "relatedFactIds": ["galleria-mosaic-floor", "galleria-mengoni-1865"],
-      "points": 120
+      "arHint": "Face the Duomo's north door and tap the glowing audio marker to hear the glass-painter's workshop.",
+      "markerImage": "/markers/duomo-facade.jpg",
+      "location": "Duomo di Milano — north door",
+      "period": "Crown",
+      "relatedFactIds": [],
+      "points": 80
     },
     {
       "id": "3",
-      "landmark": "palazzo",
-      "title": "The Ballroom That Was Never Rebuilt",
-      "description": "Inside Palazzo Reale there is a room that was bombed in 1943 and deliberately left in ruins as a war memorial. Find it.",
+      "landmark": "duomo",
+      "title": "The Golden Lady on Top",
+      "description": "At the very top of the Duomo's tallest spire stands the golden symbol of Milan. Go outside, look up, and capture her.",
       "type": "photo",
-      "photoPrompt": "Enter Palazzo Reale and find the Sala delle Cariatidi — the bombed ballroom left unrestored since 1943. Take a photo of the room.",
+      "photoPrompt": "Point your camera up at the central spire and capture La Madonnina.",
+      "verifierSubject": "Gilded statue of the Virgin Mary on top of a Gothic spire",
       "feedback": {
-        "correct": "Exactly! The Sala delle Cariatidi was the royal ballroom, destroyed by fire after the 1943 bombing and deliberately left unrestored as a permanent war memorial. Today Palazzo Reale is one of Italy's most visited exhibition venues, with over 600,000 visitors a year.",
-        "incorrect": "The room is called the Sala delle Cariatidi. Ask staff at the entrance for directions — it is one of the most striking spaces in the building."
+        "correct": "Well done! La Madonnina stands 108.5 m above Piazza del Duomo. Placed in 1774, she is gilded copper and 4.16 m tall. By tradition no building in Milan rose above her — a rule respected until the skyscrapers of the 1950s.",
+        "incorrect": "The statue is called La Madonnina. Stand in the piazza and point your camera up at the tallest central spire."
       },
-      "arHint": "Stand facing the Palazzo and activate AR — the facade will reveal layers showing its transformation across Medieval, Neoclassical, and present-day phases.",
-      "markerImage": "/markers/palazzo-reale-facade.jpg",
-      "location": "Palazzo Reale — main facade on Piazza del Duomo",
-      "period": "present",
-      "relatedFactIds": ["palazzo-reale-history", "palazzo-reale-postwar-restoration"],
+      "arHint": "Point your camera at the top of the Duomo's central facade and look for the glowing spire marker.",
+      "markerImage": "/markers/duomo-facade.jpg",
+      "location": "Duomo di Milano — central spire",
+      "period": "Crown",
+      "relatedFactIds": [
+        "duomo-madonnina-1774"
+      ],
       "points": 100
     },
     {
       "id": "4",
       "landmark": "duomo",
-      "title": "When the First Stone Was Laid",
-      "description": "Standing in front of the Duomo, you are looking at six centuries of construction. Tell us when it began.",
+      "title": "How High She Stands",
+      "description": "You have seen La Madonnina crowning the cathedral. Now — exactly how far above the square does she stand?",
       "type": "question",
-      "question": "In what year did construction of the Duomo di Milano begin?",
-      "expectedAnswer": "1386",
-      "acceptedAnswers": ["1386", "thirteen eighty-six", "1386 ad", "in 1386", "year 1386"],
+      "question": "How high above the ground does the Madonnina stand?",
+      "expectedAnswer": "108.5 m",
+      "acceptedAnswers": [
+        "108.5 m",
+        "108.5",
+        "108.5 metres",
+        "108.5 meters",
+        "108.5m",
+        "108",
+        "108 m",
+        "108 metres",
+        "about 108 metres"
+      ],
       "feedback": {
-        "correct": "Correct — 1386, under Archbishop Antonio da Saluzzo. Construction continued for nearly six centuries, spanning Milan's evolution from medieval commune to modern metropolis.",
-        "incorrect": "Not quite. The first stone was laid in 1386. The building took almost 600 years to finish."
+        "correct": "Right — 108.5 metres. The gilded Madonnina has crowned the Duomo's tallest spire since 1774, and for almost two centuries no Milanese building was allowed to rise higher.",
+        "incorrect": "She stands 108.5 metres above Piazza del Duomo (108 is close enough). For nearly 200 years that was the unofficial height limit for the whole city."
       },
-      "arHint": "Stand facing the cathedral's main facade — the layers you see span medieval, renaissance, and 19th-century work.",
+      "arHint": "Look up at the central spire — the marker shows how far the statue sits above the piazza.",
       "markerImage": "/markers/duomo-facade.jpg",
-      "location": "Duomo di Milano — central facade",
-      "period": "medieval",
-      "relatedFactIds": ["duomo-1386-foundation"],
-      "points": 80
+      "location": "Duomo di Milano — central spire",
+      "period": "Crown",
+      "relatedFactIds": [
+        "duomo-madonnina-1774"
+      ],
+      "points": 100
     },
     {
       "id": "5",
-      "landmark": "galleria",
-      "title": "The Architect of the Arcade",
-      "description": "The Galleria's iron-and-glass roof was a marvel of its century. Who designed it?",
+      "landmark": "palazzo",
+      "title": "The Architect of the Court",
+      "description": "One neoclassical architect gave Milan both its royal palace facade and its great opera house. Name him.",
       "type": "question",
-      "question": "Who is the architect that designed the Galleria Vittorio Emanuele II?",
-      "expectedAnswer": "Giuseppe Mengoni",
-      "acceptedAnswers": ["mengoni", "giuseppe mengoni", "mengoni giuseppe", "g. mengoni"],
+      "question": "Which architect designed both Palazzo Reale and La Scala?",
+      "expectedAnswer": "Giuseppe Piermarini",
+      "acceptedAnswers": [
+        "giuseppe piermarini",
+        "piermarini",
+        "g. piermarini",
+        "piermarini giuseppe"
+      ],
       "feedback": {
-        "correct": "Right — Giuseppe Mengoni. He designed it between 1865 and 1877; it is one of the world's oldest shopping arcades and forms the northern edge of Piazza del Duomo.",
-        "incorrect": "The architect was Giuseppe Mengoni. He worked on the Galleria from 1865 until its completion in 1877."
+        "correct": "Correct — Giuseppe Piermarini. The Habsburg court architect rebuilt Palazzo Reale in 1773–78 and designed the Teatro alla Scala, opened in 1778, shaping neoclassical Milan.",
+        "incorrect": "The architect was Giuseppe Piermarini. He rebuilt Palazzo Reale (1773–78) and designed La Scala (1778) for Milan's Habsburg court."
       },
-      "arHint": "Look up at the iron-and-glass dome — Mengoni's signature is the way the four arms meet at this octagon.",
+      "arHint": "Stand facing Palazzo Reale — Piermarini's calm neoclassical front faces the piazza.",
+      "markerImage": "/markers/palazzo-reale-facade.jpg",
+      "location": "Palazzo Reale — main facade on Piazza del Duomo",
+      "period": "Crown",
+      "relatedFactIds": [
+        "palazzo-reale-history"
+      ],
+      "points": 80
+    },
+    {
+      "id": "6",
+      "landmark": "galleria",
+      "title": "The Floor That Brings Luck",
+      "description": "Hidden in the Galleria's mosaic floor is a tradition that visitors travel from all over the world to perform.",
+      "type": "photo",
+      "photoPrompt": "Find the bull mosaic in the Galleria floor and photograph it.",
+      "verifierSubject": "Floor mosaic of a bull with crossed flag at centre of a Galleria floor",
+      "feedback": {
+        "correct": "Well spotted! The bull is the emblem of Turin, one of four city crests in the floor. Spinning on its heel three times is said to bring good luck — the mosaic is worn hollow from centuries of heel-spins.",
+        "incorrect": "Look at the centre of the octagonal crossing — the bull mosaic sits among the crests of Milan, Turin, Florence and Rome."
+      },
+      "arHint": "Enter AR view and look for the highlighted circle at the centre of the octagonal crossing.",
       "markerImage": "/markers/galleria-crossing.jpg",
       "location": "Galleria Vittorio Emanuele II — central octagon",
-      "period": "present",
-      "relatedFactIds": ["galleria-mengoni-1865"],
+      "period": "Modern",
+      "relatedFactIds": [
+        "galleria-mosaic-floor"
+      ],
+      "points": 120
+    },
+    {
+      "id": "7",
+      "landmark": "galleria",
+      "title": "The Architect and His Arcade",
+      "description": "The Galleria's designer never saw it fully open. His story ends on the scaffolding of his own triumphal arch.",
+      "type": "question",
+      "question": "Who fell from the scaffolding of his own arcade in 1877?",
+      "expectedAnswer": "Giuseppe Mengoni",
+      "acceptedAnswers": [
+        "mengoni",
+        "giuseppe mengoni",
+        "g. mengoni",
+        "mengoni giuseppe"
+      ],
+      "feedback": {
+        "correct": "Correct — Giuseppe Mengoni. On 30 December 1877, two days before the inauguration, he fell from the scaffolding of the triumphal arch facing the Duomo and died on the spot, aged 47.",
+        "incorrect": "It was Giuseppe Mengoni, the Galleria's architect. He fell from the scaffolding of his triumphal arch on 30 December 1877, days before the grand opening."
+      },
+      "arHint": "Look up at the iron-and-glass dome — the four arms of Mengoni's arcade meet above this octagon.",
+      "markerImage": "/markers/galleria-crossing.jpg",
+      "location": "Galleria Vittorio Emanuele II — central octagon",
+      "period": "Modern",
+      "relatedFactIds": [
+        "galleria-mengoni-1865"
+      ],
+      "points": 80
+    },
+    {
+      "id": "8",
+      "landmark": "palazzo",
+      "title": "The Room Left in Ruins",
+      "description": "One hall of Palazzo Reale was wrecked by the 1943 bombing and deliberately never fully restored. Name it.",
+      "type": "question",
+      "question": "What room of Palazzo Reale was destroyed and never fully restored?",
+      "expectedAnswer": "Sala delle Cariatidi",
+      "acceptedAnswers": [
+        "sala delle cariatidi",
+        "cariatidi",
+        "the sala delle cariatidi",
+        "hall of the caryatids",
+        "caryatids hall",
+        "sala delle cariatidi (hall of the caryatids)"
+      ],
+      "feedback": {
+        "correct": "Exactly — the Sala delle Cariatidi. The former royal ballroom was gutted by fire after the August 1943 bombing and deliberately left scarred as a permanent war memorial.",
+        "incorrect": "It's the Sala delle Cariatidi — the royal ballroom, ruined in the 1943 bombing and kept unrestored as a memorial."
+      },
+      "arHint": "Face Palazzo Reale and activate AR — the 1943 layer reveals the bomb damage to the hall.",
+      "markerImage": "/markers/palazzo-reale-facade.jpg",
+      "location": "Palazzo Reale — Sala delle Cariatidi",
+      "period": "Modern",
+      "relatedFactIds": [
+        "palazzo-reale-postwar-restoration",
+        "piazza-wwii-bombing"
+      ],
+      "points": 100
+    },
+    {
+      "id": "9",
+      "landmark": "palazzo",
+      "title": "The Ballroom That Was Never Rebuilt",
+      "description": "Inside Palazzo Reale, find the doorway into the bombed ballroom that has been left in ruins since 1943.",
+      "type": "photo",
+      "photoPrompt": "Find the entrance to the Sala delle Cariatidi inside Palazzo Reale.",
+      "verifierSubject": "Doorway sign reading 'Sala delle Cariatidi' or a view of damaged neoclassical columns",
+      "feedback": {
+        "correct": "Found it! Beyond this doorway the Sala delle Cariatidi stands as it was left after 1943 — scarred neoclassical caryatids under a lost ceiling. Today Palazzo Reale is one of Italy's most-visited exhibition venues.",
+        "incorrect": "Look for the doorway sign reading 'Sala delle Cariatidi'. Staff at the entrance can point you to it."
+      },
+      "arHint": "Stand at the Palazzo entrance and follow the AR markers toward the Sala delle Cariatidi.",
+      "markerImage": "/markers/palazzo-reale-facade.jpg",
+      "location": "Palazzo Reale — Sala delle Cariatidi entrance",
+      "period": "Modern",
+      "relatedFactIds": [
+        "palazzo-reale-postwar-restoration"
+      ],
+      "points": 100
+    },
+    {
+      "id": "10",
+      "landmark": "duomo",
+      "title": "The Day Milan Was Free",
+      "description": "A 20-second video clue plays archive footage of a celebrating crowd in Piazza del Duomo. Watch, then answer.",
+      "type": "question",
+      "question": "What date is being celebrated in this footage?",
+      "expectedAnswer": "25 April 1945",
+      "acceptedAnswers": [
+        "25 april 1945",
+        "april 25 1945",
+        "25/04/1945",
+        "25-04-1945",
+        "25.04.1945",
+        "25 apr 1945",
+        "liberation day 1945",
+        "25 april",
+        "april 25"
+      ],
+      "feedback": {
+        "correct": "Correct — 25 April 1945, Italy's Liberation Day, marking the end of Nazi occupation and Fascist rule. Milan still fills Piazza del Duomo every year to remember it.",
+        "incorrect": "The footage marks 25 April 1945 — Liberation Day — when Milan was freed at the end of the Second World War."
+      },
+      "arHint": "Face the centre of Piazza del Duomo and tap the 1945 video marker to play the Liberation footage.",
+      "markerImage": "/markers/duomo-facade.jpg",
+      "location": "Piazza del Duomo — Liberation footage",
+      "period": "Modern",
+      "relatedFactIds": [
+        "piazza-wwii-bombing"
+      ],
       "points": 80
     }
   ]
