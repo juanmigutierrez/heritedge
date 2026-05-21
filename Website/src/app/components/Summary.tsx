@@ -22,10 +22,10 @@ const landmarks = [
 export function Summary() {
   const navigate = useNavigate();
   const { state, resetState } = useHuntState();
-  const challenges = huntData.challenges as Array<{ id: string; rewardPoints?: number }>;
+  const challenges = huntData.challenges as Array<{ id: string; points?: number }>;
   const totalChallenges = challenges.length;
   const totalScore = challenges.reduce(
-    (sum, challenge) => sum + (challenge.rewardPoints ?? 0),
+    (sum, challenge) => sum + (challenge.points ?? 0),
     0
   );
   const completedCount = challenges.filter((challenge) =>

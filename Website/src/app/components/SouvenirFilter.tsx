@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
-import { Camera, Download, Share2, X, ImageIcon, Home } from "lucide-react";
+import { Camera, Download, Share2, X, ImageIcon, Home, Loader2, Sparkles } from "lucide-react";
 import { useHuntState } from "./HuntStateProvider";
 
 type Overlay = "madonnina" | "spires" | "renaissance" | "flaneur";
@@ -13,12 +13,12 @@ const overlayMeta: Record<Overlay, { label: string; emoji: string }> = {
 };
 
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-3xl bg-white p-6 shadow-sm ${className}`}>{children}</div>;
+  return <div className={`rounded-3xl bg-white dark:bg-stone-900 p-6 border border-stone-200/80 dark:border-white/5 shadow-md ${className}`}>{children}</div>;
 }
 
 function FramedPanel({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-3xl border border-stone-200 bg-stone-50 p-6 text-center ${className}`}>
+    <div className={`rounded-3xl border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950/40 p-6 text-center ${className}`}>
       {children}
     </div>
   );
@@ -26,10 +26,10 @@ function FramedPanel({ children, className = "" }: { children: ReactNode; classN
 
 function EmptySouvenirState() {
   return (
-    <div className="rounded-3xl border border-dashed border-stone-300 p-6 text-stone-500">
+    <div className="rounded-3xl border border-dashed border-stone-300 dark:border-stone-700 p-8 text-stone-400 dark:text-stone-500 my-auto">
       <div className="flex flex-col items-center gap-3">
-        <ImageIcon className="h-10 w-10" />
-        <p className="text-sm">Your souvenir will appear here after capture.</p>
+        <ImageIcon className="h-10 w-10 text-stone-300 dark:text-stone-600" />
+        <p className="text-sm font-medium">Your souvenir will appear here after capture.</p>
       </div>
     </div>
   );
@@ -37,13 +37,13 @@ function EmptySouvenirState() {
 
 function PermissionWarning() {
   return (
-    <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-rose-700">
+    <div className="rounded-2xl border border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-950/20 p-5 text-rose-700 dark:text-rose-400">
       <div className="flex items-start gap-3">
-        <X className="h-5 w-5 shrink-0" />
+        <X className="h-5 w-5 shrink-0 mt-0.5" />
         <div>
-          <p className="font-semibold">Enable Camera to Capture Souvenir</p>
-          <p className="mt-1 text-sm text-rose-700/80">
-            Allow camera access from your browser settings, then refresh this page.
+          <p className="font-bold text-base">Enable Camera Access</p>
+          <p className="mt-1 text-sm text-rose-700/80 dark:text-rose-400/80 leading-relaxed">
+            Please allow camera permission in your browser or system settings, then refresh this page to snap your souvenir selfie.
           </p>
         </div>
       </div>
@@ -63,16 +63,16 @@ function drawOverlayGraphic(
 
   ctx.save();
   ctx.lineWidth = 6;
-  ctx.strokeStyle = "rgba(255, 215, 0, 0.85)";
+  ctx.strokeStyle = "rgba(255, 215, 0, 0.9)";
   ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
-  ctx.shadowColor = "rgba(255, 225, 120, 0.65)";
+  ctx.shadowColor = "rgba(255, 225, 120, 0.7)";
   ctx.shadowBlur = 24;
 
   if (overlay === "madonnina") {
     ctx.beginPath();
     ctx.arc(centerX, topY, box.width * 0.45, 0, Math.PI, true);
     ctx.stroke();
-    ctx.fillStyle = "rgba(255, 236, 179, 0.25)";
+    ctx.fillStyle = "rgba(255, 236, 179, 0.2)";
     ctx.fill();
   }
 
@@ -83,10 +83,10 @@ function drawOverlayGraphic(
       const x = centerX + Math.cos(angle) * box.width * 0.65;
       const y = topY + Math.sin(angle) * box.height * 0.25;
       ctx.beginPath();
-      ctx.moveTo(x, y - 16);
-      ctx.lineTo(x, y + 16);
-      ctx.moveTo(x - 16, y);
-      ctx.lineTo(x + 16, y);
+      ctx.moveTo(x, y - 14);
+      ctx.lineTo(x, y + 14);
+      ctx.moveTo(x - 14, y);
+      ctx.lineTo(x + 14, y);
       ctx.stroke();
     }
   }
@@ -96,7 +96,7 @@ function drawOverlayGraphic(
     ctx.ellipse(centerX, box.y + box.height * 0.18, box.width * 0.75, box.height * 0.75, 0, 0, Math.PI * 2);
     ctx.fillStyle = "rgba(255, 192, 203, 0.12)";
     ctx.fill();
-    ctx.strokeStyle = "rgba(248, 181, 0, 0.8)";
+    ctx.strokeStyle = "rgba(248, 181, 0, 0.85)";
     ctx.stroke();
   }
 
@@ -107,9 +107,9 @@ function drawOverlayGraphic(
     ctx.lineTo(centerX + box.width * 0.26, topY + box.height * 0.24);
     ctx.lineTo(centerX - box.width * 0.26, topY + box.height * 0.24);
     ctx.closePath();
-    ctx.fillStyle = "rgba(45, 55, 72, 0.75)";
+    ctx.fillStyle = "rgba(45, 55, 72, 0.8)";
     ctx.fill();
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.75)";
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
     ctx.stroke();
   }
 
@@ -134,41 +134,49 @@ export function SouvenirFilter() {
   const [shareStatus, setShareStatus] = useState<"idle" | "sharing">("idle");
   const faceBoxRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
 
+  // Initialize camera and face-api on mount immediately to trigger browser modal
   useEffect(() => {
     let active = true;
-    async function initCamera() {
+    async function initCameraAndModels() {
       try {
+        setLoading(true);
         const mediaStream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user" },
+          audio: false
         });
-        if (!active) return;
+        
+        if (!active) {
+          mediaStream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+
         setStream(mediaStream);
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream;
-          await videoRef.current.play();
-          setCameraReady(true);
         }
 
+        // Lazy load face-api assets safely
         const faceapi = await import("face-api.js");
         await Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
           faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
         ]);
+
         if (!active) return;
         setFaceApi(faceapi);
         setModelsLoaded(true);
       } catch (error: unknown) {
+        console.error("Camera prompt or face-api loading failed:", error);
         const err = error as { name?: string };
         if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
           setPermissionDenied(true);
         }
-        console.error("SouvenirFilter error:", error);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
 
-    initCamera();
+    initCameraAndModels();
 
     return () => {
       active = false;
@@ -178,55 +186,81 @@ export function SouvenirFilter() {
     };
   }, []);
 
+  // Handle video meta loading for precise playback sizing triggers
+  const handleVideoLoad = async () => {
+    if (videoRef.current) {
+      try {
+        await videoRef.current.play();
+        setCameraReady(true);
+      } catch (e) {
+        console.warn("Autoplay interrupted or paused:", e);
+      }
+    }
+  };
+
+  // Live Processing loop matching face-api vectors over display layout space
   useEffect(() => {
-    if (!faceApi || !videoRef.current || !overlayCanvasRef.current) return;
+    if (!faceApi || !videoRef.current || !overlayCanvasRef.current || !cameraReady) return;
     const video = videoRef.current;
     const canvas = overlayCanvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    let animationFrameId: number;
+
     const drawLoop = async () => {
-      if (!video || video.readyState < 2) return;
-      // Use the displayed video size (clientWidth/clientHeight) so
-      // canvas drawing aligns with the visible preview (object-cover)
+      if (video.paused || video.ended || video.readyState < 2) {
+        animationFrameId = requestAnimationFrame(drawLoop);
+        return;
+      }
+
       const rect = video.getBoundingClientRect();
       const displayW = Math.max(1, Math.floor(rect.width));
       const displayH = Math.max(1, Math.floor(rect.height));
+      
       if (canvas.width !== displayW || canvas.height !== displayH) {
         canvas.width = displayW;
         canvas.height = displayH;
       }
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
       try {
         const detection = await faceApi
-          .detectSingleFace(video, new faceApi.TinyFaceDetectorOptions())
+          .detectSingleFace(video, new faceApi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 }))
           .withFaceLandmarks(true);
+
         if (!detection) {
           faceBoxRef.current = null;
-          return;
+        } else {
+          const dims = faceApi.matchDimensions(canvas, { width: displayW, height: displayH });
+          const resized = faceApi.resizeResults(detection, dims);
+          const { x, y, width, height } = resized.detection.box;
+          
+          faceBoxRef.current = { x, y, width, height };
+
+          // Visual Feedback Matrix Box Indicator
+          ctx.strokeStyle = "rgba(16, 185, 129, 0.75)";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(x, y, width, height);
+          ctx.fillStyle = "rgba(16, 185, 129, 0.08)";
+          ctx.fillRect(x, y, width, height);
+
+          drawOverlayGraphic(ctx, overlay, faceBoxRef.current);
         }
-        // Map the detection results into the canvas display size
-        const dims = faceApi.matchDimensions(canvas, {
-          width: displayW,
-          height: displayH,
-        });
-        const resized = faceApi.resizeResults(detection, dims);
-        const { x, y, width, height } = resized.detection.box;
-        faceBoxRef.current = { x, y, width, height };
-        ctx.strokeStyle = "rgba(16, 185, 129, 0.85)";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x, y, width, height);
-        ctx.fillStyle = "rgba(16, 185, 129, 0.16)";
-        ctx.fillRect(x, y, width, height);
-        drawOverlayGraphic(ctx, overlay, faceBoxRef.current);
       } catch (error) {
-        console.error("Face detection failed:", error);
+        console.error("Detection loop error:", error);
       }
+
+      // Short timeout to minimize performance footprint during active execution loops
+      setTimeout(() => {
+        animationFrameId = requestAnimationFrame(drawLoop);
+      }, 120);
     };
 
-    const interval = window.setInterval(drawLoop, 250);
-    return () => window.clearInterval(interval);
-  }, [faceApi, overlay]);
+    animationFrameId = requestAnimationFrame(drawLoop);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [faceApi, overlay, cameraReady]);
 
   const ready = Boolean(stream && cameraReady && modelsLoaded && !permissionDenied);
 
@@ -252,12 +286,13 @@ export function SouvenirFilter() {
     ctx.drawImage(video, 60, frameY, frameWidth, frameHeight);
 
     const faceBox = faceBoxRef.current;
-    if (faceBox) {
+    if (faceBox && overlayCanvasRef.current) {
+      const canvasEl = overlayCanvasRef.current;
       const relative = {
-        x: 60 + (faceBox.x / video.videoWidth) * frameWidth,
-        y: frameY + (faceBox.y / video.videoHeight) * frameHeight,
-        width: (faceBox.width / video.videoWidth) * frameWidth,
-        height: (faceBox.height / video.videoHeight) * frameHeight,
+        x: 60 + (faceBox.x / canvasEl.width) * frameWidth,
+        y: frameY + (faceBox.y / canvasEl.height) * frameHeight,
+        width: (faceBox.width / canvasEl.width) * frameWidth,
+        height: (faceBox.height / canvasEl.height) * frameHeight,
       };
       drawOverlayGraphic(ctx, overlay, relative);
     }
@@ -268,186 +303,218 @@ export function SouvenirFilter() {
 
     ctx.fillStyle = "#111827";
     ctx.font = "700 32px Inter, sans-serif";
-    ctx.fillText("Milan Heritage", 80, 62);
+    ctx.fillText("Milan Heritage Journey", 80, 68);
 
     ctx.font = "600 24px Inter, sans-serif";
     ctx.fillText(overlayMeta[overlay].label, 80, height - 80);
 
     ctx.fillStyle = "#10b981";
     ctx.font = "700 24px Inter, sans-serif";
-    ctx.fillText(`Score ${state.score}`, width - 260, height - 80);
+    ctx.fillText(`Score: ${state.score} pts`, width - 280, height - 80);
 
     ctx.font = "700 40px Inter, sans-serif";
-    ctx.fillText(overlayMeta[overlay].emoji, width - 110, 60);
+    ctx.fillText(overlayMeta[overlay].emoji, width - 110, 65);
 
     const image = canvas.toDataURL("image/png");
     setCaptured(image);
     setSouvenirImage(image);
-    navigate("/summary");
   };
 
   const handleShare = async () => {
-    if (!captured) return;
-    if (!navigator.share) return;
+    if (!captured || !navigator.share) return;
     setShareStatus("sharing");
     try {
       await navigator.share({
         title: "Milan Heritage Souvenir",
-        text: `I scored ${state.score} points on my Milan Heritage journey!`,
+        text: `I finished my scavenger quest and scored ${state.score} points!`,
         url: window.location.href,
       });
     } catch {
-      // ignore share cancellation
+      // User cancelled share panel sheet
     } finally {
       setShareStatus("idle");
     }
   };
 
-  const downloadLink = useMemo(() => {
-    return captured ? captured : undefined;
-  }, [captured]);
+  const downloadLink = useMemo(() => captured || undefined, [captured]);
 
   return (
-    <div className="min-h-screen bg-stone-50 pb-10">
-      <div className="bg-gradient-to-r from-slate-900 to-emerald-700 px-6 py-10 text-white">
-        <div className="mx-auto flex max-w-5xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans antialiased pb-12">
+      {/* Header Band occupying max-w-5xl (75% view layout area) */}
+      <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-950 border-b border-white/5 px-6 py-12 text-white">
+        <div className="mx-auto flex max-w-5xl w-full flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-semibold">Souvenir Filter</h1>
-            <p className="mt-2 text-stone-200">
-              Capture your final Milan memory with a themed overlay and keep it as a polaroid.
+            <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold tracking-widest uppercase">
+              <Sparkles className="h-4 w-4" />
+              <span>Quest Completed Souvenir</span>
+            </div>
+            <h1 className="text-3xl font-black tracking-tight mt-1">Souvenir Filter Studio</h1>
+            <p className="mt-2 text-stone-400 text-base leading-relaxed max-w-2xl">
+              Capture your final Milan memory with a custom historical overlay filter and preserve it inside an archival digital Polaroid frame.
             </p>
           </div>
           <button
             type="button"
             onClick={() => navigate("/")}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-3xl bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/20 sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white/10 px-6 py-3.5 text-sm font-bold text-white backdrop-blur-md border border-white/10 transition hover:bg-white/20 active:scale-95 sm:w-auto shrink-0"
           >
             <Home className="h-4 w-4" />
-            Back Home
+            Back to Homepage
           </button>
         </div>
       </div>
 
-      <div className="mx-auto max-w-5xl px-6 pt-8">
-        <div className="grid gap-6 lg:grid-cols-[0.9fr_0.7fr] lg:items-stretch">
-            <div className="order-1 rounded-[32px] bg-white p-6 shadow-sm h-full">
-              <div className="relative overflow-hidden rounded-3xl border border-stone-200 bg-black/5">
+      {/* Main Container Area matching 75% width constraint footprint */}
+      <div className="mx-auto max-w-5xl w-full px-6 pt-10">
+        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] items-start">
+          
+          {/* Column Left: Live Camera Viewfinder Panel */}
+          <div className="space-y-6">
+            <Card className="overflow-hidden">
+              <h2 className="text-xl font-black tracking-tight text-stone-900 dark:text-white mb-4">Live Viewfinder</h2>
+              <div className="relative overflow-hidden rounded-2xl border border-stone-200 dark:border-white/5 bg-stone-950 aspect-[4/3] w-full shadow-inner flex items-center justify-center">
+                
+                {loading && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-stone-950 text-stone-300 z-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+                    <p className="text-sm font-semibold text-stone-400">Setting up processing stream...</p>
+                  </div>
+                )}
+
                 <video
                   ref={videoRef}
-                  className="h-[340px] w-full object-cover"
+                  onLoadedMetadata={handleVideoLoad}
+                  className="h-full w-full object-cover"
                   playsInline
                   muted
                   autoPlay
                 />
                 <canvas
                   ref={overlayCanvasRef}
-                  className="absolute inset-0 h-full w-full"
+                  className="absolute inset-0 h-full w-full pointer-events-none"
                 />
-                <div className="absolute bottom-4 left-4 rounded-3xl bg-white/90 px-3 py-2 text-sm font-semibold text-stone-900 backdrop-blur-sm max-w-[calc(100%-1.5rem)]">
-                  {permissionDenied
-                    ? "Camera access denied"
-                    : !stream
-                    ? "Requesting camera permission..."
-                    : !cameraReady
-                    ? "Starting camera..."
-                    : !modelsLoaded
-                    ? "Loading face filter models..."
-                    : "Face detection active"}
-                </div>
-              </div>
-            </div>
-
-            <div className="order-2 rounded-[32px] bg-white p-6 shadow-sm h-full lg:order-3">
-              <div className="rounded-3xl border border-stone-200 bg-stone-50 p-4 h-full flex flex-col">
-                <div>
-                  <p className="text-sm uppercase tracking-[0.24em] text-stone-500">
-                    Overlay choice
-                  </p>
-                  <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    {Object.entries(overlayMeta).map(([key, meta]) => {
-                      const overlayKey = key as Overlay;
-                      const selected = overlayKey === overlay;
-                      return (
-                        <button
-                          key={overlayKey}
-                          type="button"
-                          onClick={() => setOverlay(overlayKey)}
-                          className={`rounded-3xl border px-3 py-4 text-center transition ${
-                            selected
-                              ? "border-emerald-500 bg-emerald-50 text-emerald-900"
-                              : "border-stone-200 bg-white text-stone-700 hover:bg-stone-100"
-                          }`}
-                        >
-                          <div className="text-2xl">{meta.emoji}</div>
-                          <p className="mt-2 text-xs font-semibold">{meta.label}</p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="mt-6 flex-1 flex flex-col justify-end">
+                
+                <div className="absolute bottom-4 left-4 rounded-xl bg-stone-900/90 border border-white/10 px-4 py-2.5 text-xs font-bold text-white backdrop-blur-md max-w-[calc(100%-2rem)] flex items-center gap-2 shadow-md">
                   {permissionDenied ? (
-                    <PermissionWarning />
+                    <span className="text-rose-400">Camera access permission blocked</span>
+                  ) : !stream ? (
+                    <span className="animate-pulse text-amber-400">Requesting device hardware...</span>
+                  ) : !cameraReady ? (
+                    <span className="text-amber-400">Starting video track loop...</span>
+                  ) : !modelsLoaded ? (
+                    <span className="text-emerald-400 animate-pulse">Parsing face-api feature meshes...</span>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={captureSouvenir}
-                      disabled={!ready}
-                      className="inline-flex items-center justify-center gap-2 rounded-3xl bg-emerald-600 px-6 py-4 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-stone-300"
-                    >
-                      <Camera className="h-5 w-5" />
-                      Capture Souvenir
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-stone-200">Face Vector Mesh Matrix Active</span>
+                    </div>
                   )}
                 </div>
               </div>
-            </div>
-            <Card className="order-3 flex h-full flex-col lg:order-2">
-              <h2 className="text-lg font-semibold">Preview</h2>
-              <p className="mt-2 text-sm text-stone-500">
-                Your souvenir will become a framed polaroid with a Milan Heritage label and score stamp.
+            </Card>
+
+            {/* Overlay Selector Controls */}
+            <Card>
+              <p className="text-xs uppercase tracking-[0.2em] font-black text-stone-400 dark:text-stone-500 mb-3">
+                Select Your Custom Filter Theme
               </p>
-              <FramedPanel className="mt-6 flex flex-1 flex-col justify-center">
-                <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-emerald-100 text-3xl">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {Object.entries(overlayMeta).map(([key, meta]) => {
+                  const overlayKey = key as Overlay;
+                  const selected = overlayKey === overlay;
+                  return (
+                    <button
+                      key={overlayKey}
+                      type="button"
+                      onClick={() => setOverlay(overlayKey)}
+                      className={`rounded-2xl border p-4 text-center transition focus:outline-none active:scale-95 ${
+                        selected
+                          ? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold shadow-sm"
+                          : "border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/50 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
+                      }`}
+                    >
+                      <div className="text-3xl filter drop-shadow-sm">{meta.emoji}</div>
+                      <p className="mt-2 text-xs font-bold tracking-tight whitespace-nowrap">{meta.label}</p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-6 border-t border-stone-100 dark:border-white/5 pt-5">
+                {permissionDenied ? (
+                  <PermissionWarning />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={captureSouvenir}
+                    disabled={!ready}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 dark:bg-emerald-500 px-6 py-4 text-base font-bold text-white shadow-md transition hover:bg-emerald-700 dark:hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:cursor-not-allowed disabled:bg-stone-200 dark:disabled:bg-stone-800 disabled:text-stone-400 dark:disabled:text-stone-600 active:scale-[0.99]"
+                  >
+                    <Camera className="h-5 w-5" />
+                    Snap Polaroid Souvenir
+                  </button>
+                )}
+              </div>
+            </Card>
+          </div>
+
+          {/* Column Right: Live Blueprint Filter Preview & Saved Results */}
+          <div className="space-y-6 lg:sticky lg:top-8">
+            <Card className="flex flex-col">
+              <h2 className="text-xl font-black tracking-tight text-stone-900 dark:text-white">Souvenir Preview</h2>
+              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400 leading-relaxed">
+                Your captured image automatically gets dynamic vector assets baked into a traditional high-gloss polaroid border print.
+              </p>
+              
+              <FramedPanel className="mt-5 flex flex-1 flex-col justify-center py-8">
+                <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-500/10 text-4xl shadow-sm border border-emerald-500/10">
                   {overlayMeta[overlay].emoji}
                 </div>
-                <p className="font-semibold">{overlayMeta[overlay].label}</p>
-                <p className="mt-2 text-sm text-stone-500">Face filter overlay is rendered on top of your selfie.</p>
+                <p className="font-bold text-base text-stone-800 dark:text-stone-200">{overlayMeta[overlay].label} Overlay</p>
+                <p className="mt-1.5 text-xs text-stone-400 dark:text-stone-500 max-w-xs mx-auto leading-normal">
+                  The graphics dynamically auto-render relative to your posture, orientation and face vector tracking frame values.
+                </p>
               </FramedPanel>
             </Card>
 
-            <Card className="order-4 h-full">
-              <h2 className="text-lg font-semibold">Saved Souvenir</h2>
-              {captured ? (
-                <div className="space-y-4">
-                  <img src={captured} alt="Souvenir Polaroid" className="w-full rounded-3xl border border-stone-200 object-cover" />
-                  <div className="grid gap-3">
-                    <button
-                      type="button"
-                      onClick={handleShare}
-                      disabled={shareStatus === "sharing"}
-                      className="inline-flex items-center justify-center gap-2 rounded-3xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-stone-300"
-                    >
-                      <Share2 className="h-4 w-4" />
-                      {shareStatus === "sharing" ? "Sharing..." : "Share Souvenir"}
-                    </button>
-                    <a
-                      href={downloadLink}
-                      download="milan-heritage-souvenir.png"
-                      className="inline-flex items-center justify-center gap-2 rounded-3xl border border-stone-200 bg-white px-4 py-3 text-sm font-semibold text-stone-700 transition hover:bg-stone-50"
-                    >
-                      <Download className="h-4 w-4" />
-                      Download Image
-                    </a>
+            {/* Polaroid Saved Stack */}
+            <Card className="flex flex-col">
+              <h2 className="text-xl font-black tracking-tight text-stone-900 dark:text-white">Saved Souvenir Print</h2>
+              <div className="mt-4 flex-1 flex flex-col justify-center">
+                {captured ? (
+                  <div className="space-y-4">
+                    <div className="p-3 bg-stone-100 dark:bg-stone-950 rounded-2xl border border-stone-200 dark:border-white/5 shadow-inner">
+                      <img src={captured} alt="Souvenir Polaroid Printout" className="w-full rounded-xl border border-stone-200 dark:border-stone-800 object-cover bg-white" />
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={handleShare}
+                        disabled={shareStatus === "sharing" || !navigator.share}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-stone-200 dark:disabled:bg-stone-800 disabled:text-stone-400 shadow-sm"
+                      >
+                        <Share2 className="h-4 w-4" />
+                        {shareStatus === "sharing" ? "Sharing..." : "Share Print"}
+                      </button>
+                      <a
+                        href={downloadLink}
+                        download="milan-heritage-souvenir.png"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-4 py-3.5 text-sm font-bold text-stone-700 dark:text-stone-200 transition hover:bg-stone-100 dark:hover:bg-stone-800 shadow-sm"
+                      >
+                        <Download className="h-4 w-4" />
+                        Download Image
+                      </a>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <EmptySouvenirState />
-              )}
+                ) : (
+                  <EmptySouvenirState />
+                )}
+              </div>
             </Card>
           </div>
+
         </div>
+      </div>
     </div>
   );
 }
