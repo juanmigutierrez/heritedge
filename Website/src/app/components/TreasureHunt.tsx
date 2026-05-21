@@ -1,6 +1,6 @@
-import { useState, useRef, useMemo } from "react";
-import { useNavigate } from "react-router";
-import { motion, AnimatePresence } from "motion/react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useLocation, useNavigate } from "react-router";
+import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowLeft,
   Camera,
@@ -12,13 +12,19 @@ import {
   RotateCcw,
   Trophy,
   X,
+  Sparkles,
+  HelpCircle,
+  AlertTriangle,
+  ChevronRight,
+  Compass
 } from "lucide-react";
+import { useHuntState } from "./HuntStateProvider";
 import huntData from "@/content/treasure-hunt.json";
 import knowledgeBase from "@/content/knowledge-base.json";
 import {
-  verifyPhoto,
-  gradeAnswer,
   getHint,
+  gradeAnswer,
+  verifyPhoto,
   type Verdict,
 } from "@/services/huntService";
 
@@ -27,13 +33,14 @@ interface ChallengeFeedback {
   incorrect: string;
 }
 
-interface RawChallenge {
-  id: number;
+interface HuntChallenge {
+  id: string;
   landmark: string;
   title: string;
   description: string;
   type: "photo" | "question";
   photoPrompt?: string;
+  verifierSubject?: string;
   question?: string;
   expectedAnswer?: string;
   acceptedAnswers?: string[];
@@ -52,9 +59,10 @@ interface RecapState {
   reason?: string;
   source?: { label: string; url?: string };
   pointsEarned: number;
+  correctAnswer?: string;
 }
 
-const challenges: RawChallenge[] = huntData.challenges as RawChallenge[];
+const challenges = huntData.challenges as HuntChallenge[];
 const facts = knowledgeBase.facts as Array<{
   id: string;
   body: string;
@@ -63,124 +71,158 @@ const facts = knowledgeBase.facts as Array<{
 
 function factById(id: string | undefined) {
   if (!id) return undefined;
-  return facts.find((f) => f.id === id);
+  return facts.find((fact) => fact.id === id);
 }
 
-function primaryFactBody(challenge: RawChallenge): string {
-  const ids = challenge.relatedFactIds ?? [];
-  return ids
+function primaryFactBody(challenge: HuntChallenge): string {
+  return (challenge.relatedFactIds ?? [])
     .map((id) => factById(id)?.body)
     .filter(Boolean)
     .join(" ");
 }
 
-function primarySource(challenge: RawChallenge) {
+function primarySource(challenge: HuntChallenge) {
   const firstId = challenge.relatedFactIds?.[0];
   return factById(firstId)?.source;
 }
 
+function badgeForChallenge(challenge: HuntChallenge) {
+  if (challenge.type === "photo") return "Field Photographer";
+  if (challenge.landmark === "duomo") return "Duomo Defender";
+  if (challenge.landmark === "galleria") return "Galleria Guide";
+  if (challenge.landmark === "palazzo") return "Palazzo Patron";
+  return "Quiz Solver";
+}
+
 export function TreasureHunt() {
   const navigate = useNavigate();
+  const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { state, completeChallenge, startHunt, pauseHunt } = useHuntState();
+  const completedCount = challenges.filter((challenge) =>
+    state.completedChallenges.includes(challenge.id)
+  ).length;
+  const routeIndex = location.state?.currentIndex;
+  const nextAvailableIndex = Math.min(completedCount, challenges.length - 1);
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [completedIds, setCompletedIds] = useState<number[]>([]);
-  const [totalScore, setTotalScore] = useState(0);
-
-  // Per-attempt state — reset when we move to the next challenge
+  const [currentIndex, setCurrentIndex] = useState(() =>
+    typeof routeIndex === "number" && routeIndex >= 0 && routeIndex < challenges.length
+      ? routeIndex
+      : nextAvailableIndex
+  );
   const [attemptCount, setAttemptCount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [recap, setRecap] = useState<RecapState | null>(null);
-
-  // PHOTO-specific
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-
-  // QUESTION-specific
   const [textAnswer, setTextAnswer] = useState("");
   const [voiceListening, setVoiceListening] = useState(false);
-
-  // HINT
   const [hintLoading, setHintLoading] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
 
   const current = challenges[currentIndex];
-  const progressPct = (completedIds.length / challenges.length) * 100;
+  const isCompleted = state.completedChallenges.includes(current.id);
+  const progressPct = Math.round((completedCount / challenges.length) * 100);
+
+  useEffect(() => {
+    startHunt();
+    return () => pauseHunt();
+  }, []);
+
+  useEffect(() => {
+    if (typeof routeIndex === "number" && routeIndex >= 0 && routeIndex < challenges.length) {
+      setCurrentIndex(routeIndex);
+      resetAttempt();
+    }
+  }, [routeIndex]);
+
+  useEffect(() => {
+    return () => {
+      if (photoPreview) URL.revokeObjectURL(photoPreview);
+    };
+  }, [photoPreview]);
 
   const photoSubject = useMemo(() => {
-    // Build a "subject string" for the vision model from the user-facing prompt
-    // plus any related fact for context. Keeps the verifier grounded.
-    const fact = primaryFactBody(current);
-    return [current.photoPrompt, fact].filter(Boolean).join(" — ");
+    return [current.verifierSubject ?? current.photoPrompt, primaryFactBody(current)].filter(Boolean).join(" - ");
   }, [current]);
 
-  function resetForNext() {
+  function resetAttempt() {
     setAttemptCount(0);
     setSubmitting(false);
     setRecap(null);
     setPhotoFile(null);
-    setPhotoPreview(null);
+    setPhotoPreview((preview) => {
+      if (preview) URL.revokeObjectURL(preview);
+      return null;
+    });
     setTextAnswer("");
     setHint(null);
     setVoiceListening(false);
   }
 
-  function goToNext() {
-    resetForNext();
-    if (currentIndex < challenges.length - 1) {
-      setCurrentIndex((i) => i + 1);
-    } else {
-      navigate("/summary", {
-        state: {
-          score: totalScore,
-          totalChallenges: challenges.length,
-          completed: completedIds.length,
-          treasureHunt: true,
-        },
-      });
-    }
+  function completeCurrent(points: number) {
+    completeChallenge(
+      current.id,
+      points,
+      current.landmark,
+      points > 0 ? badgeForChallenge(current) : undefined
+    );
   }
 
-  // ── PHOTO ────────────────────────────────────────────────────────────────
-  function onPhotoPicked(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  function moveNext() {
+    resetAttempt();
+    if (currentIndex < challenges.length - 1) {
+      setCurrentIndex((index) => index + 1);
+      return;
+    }
+    navigate("/summary", { state: { completedQuiz: true } });
+  }
+
+  function submitIncorrectAndNext() {
+    if (!isCompleted) {
+      completeCurrent(0);
+    }
+    moveNext();
+  }
+
+  const onPhotoPicked = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
     setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
+    setPhotoPreview((preview) => {
+      if (preview) URL.revokeObjectURL(preview);
+      return URL.createObjectURL(file);
+    });
     setRecap(null);
-  }
+  };
 
   function retakePhoto() {
     setPhotoFile(null);
-    if (photoPreview) URL.revokeObjectURL(photoPreview);
-    setPhotoPreview(null);
+    setPhotoPreview((preview) => {
+      if (preview) URL.revokeObjectURL(preview);
+      return null;
+    });
     setRecap(null);
   }
 
   async function submitPhoto() {
     if (!photoFile) return;
     setSubmitting(true);
-    setAttemptCount((n) => n + 1);
+    setAttemptCount((count) => count + 1);
     try {
       const result = await verifyPhoto(photoFile, photoSubject, photoFile.name);
       handleVerdict(result.verdict, result.reason);
-    } catch (err) {
-      handleNetworkError(err);
+    } catch (error) {
+      handleNetworkError(error);
     } finally {
       setSubmitting(false);
     }
   }
 
-  function acceptLowConfidenceAnyway() {
-    // User said "submit anyway" on a low-confidence verdict.
-    awardSuccess("low-confidence");
-  }
-
-  // ── QUESTION ─────────────────────────────────────────────────────────────
   async function submitAnswer() {
     if (!textAnswer.trim() || !current.question || !current.expectedAnswer) return;
     setSubmitting(true);
-    setAttemptCount((n) => n + 1);
+    setAttemptCount((count) => count + 1);
     try {
       const result = await gradeAnswer(
         {
@@ -192,32 +234,34 @@ export function TreasureHunt() {
         textAnswer.trim()
       );
       if (result.correct) {
-        awardSuccess("correct");
+        awardSuccess(current.points);
       } else {
         showIncorrect(result.reason);
       }
-    } catch (err) {
-      handleNetworkError(err);
+    } catch (error) {
+      handleNetworkError(error);
     } finally {
       setSubmitting(false);
     }
   }
 
   function startVoiceCapture() {
-    // Browser Web Speech API. Falls back silently if unsupported.
-    const w = window as unknown as { webkitSpeechRecognition?: any; SpeechRecognition?: any };
-    const Ctor = w.SpeechRecognition || w.webkitSpeechRecognition;
-    if (!Ctor) {
-      alert("Voice input isn't available in this browser. Please type your answer.");
+    const browserWindow = window as unknown as {
+      webkitSpeechRecognition?: any;
+      SpeechRecognition?: any;
+    };
+    const Recognition = browserWindow.SpeechRecognition || browserWindow.webkitSpeechRecognition;
+    if (!Recognition) {
+      alert("Voice input is not available in your browser. Please type your answer.");
       return;
     }
-    const recognition = new Ctor();
+    const recognition = new Recognition();
     recognition.lang = "en-US";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
     setVoiceListening(true);
-    recognition.onresult = (e: any) => {
-      const transcript = e.results?.[0]?.[0]?.transcript ?? "";
+    recognition.onresult = (event: any) => {
+      const transcript = event.results?.[0]?.[0]?.transcript ?? "";
       setTextAnswer(transcript);
     };
     recognition.onerror = () => setVoiceListening(false);
@@ -225,14 +269,16 @@ export function TreasureHunt() {
     recognition.start();
   }
 
-  // ── VERDICT HANDLERS ─────────────────────────────────────────────────────
-  function handleVerdict(v: Verdict, reason: string) {
-    if (v === "match") return awardSuccess("correct");
-    if (v === "low-confidence") {
+  function handleVerdict(verdict: Verdict, reason: string) {
+    if (verdict === "match") {
+      awardSuccess(current.points);
+      return;
+    }
+    if (verdict === "low-confidence") {
       setRecap({
         outcome: "low-confidence",
         message:
-          "We're not 100% sure this is the right subject. You can submit it anyway, or retake the photo.",
+          "We can't tell for sure if this is the right spot. You can submit it anyway for fewer points, or retake the photo.",
         reason,
         pointsEarned: 0,
       });
@@ -241,18 +287,19 @@ export function TreasureHunt() {
     showIncorrect(reason);
   }
 
-  function awardSuccess(kind: "correct" | "low-confidence") {
-    const earned =
-      kind === "low-confidence"
-        ? Math.round(current.points * 0.6) // soft credit when we weren't sure
-        : current.points;
-    setTotalScore((s) => s + earned);
-    setCompletedIds((ids) => [...ids, current.id]);
+  function acceptLowConfidenceAnyway() {
+    awardSuccess(Math.round(current.points * 0.6));
+  }
+
+  function awardSuccess(points: number) {
+    if (!isCompleted) {
+      completeCurrent(points);
+    }
     setRecap({
-      outcome: kind === "correct" ? "correct" : "low-confidence",
+      outcome: "correct",
       message: current.feedback.correct,
       source: primarySource(current),
-      pointsEarned: earned,
+      pointsEarned: points,
     });
   }
 
@@ -263,187 +310,235 @@ export function TreasureHunt() {
       reason,
       source: primarySource(current),
       pointsEarned: 0,
+      correctAnswer: current.expectedAnswer,
     });
   }
 
-  function handleNetworkError(err: unknown) {
-    console.error("[TreasureHunt] network error:", err);
+  function handleNetworkError(error: unknown) {
+    console.error("[TreasureHunt] network error:", error);
     setRecap({
       outcome: "incorrect",
       message:
-        "We couldn't reach the server. Check your connection and try again — your progress is safe.",
+        "Something went wrong while checking your answer. Please check your internet connection and try again.",
       pointsEarned: 0,
     });
   }
 
-  // ── HINT ─────────────────────────────────────────────────────────────────
   async function requestHint() {
     setHintLoading(true);
     try {
-      const ctx = {
+      const prompt = current.photoPrompt ?? current.question ?? current.description;
+      const result = await getHint({
         title: current.title,
-        prompt: current.photoPrompt ?? current.question ?? current.description,
+        prompt,
         factBody: primaryFactBody(current),
         attemptCount: Math.max(1, attemptCount + 1),
         type: current.type,
-      } as const;
-      const r = await getHint(ctx);
-      setHint(r.hint);
-    } catch (err) {
-      setHint("Hints are unavailable right now. Look around — what stands out?");
+      });
+      setHint(result.hint);
+    } catch {
+      setHint("Look around closely! Is there a small detail or sign nearby that matches the description?");
     } finally {
       setHintLoading(false);
     }
   }
 
-  // ── RENDER ───────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-background/85 backdrop-blur-md border-b border-border px-4 py-3">
-        <div className="flex items-center gap-3 mb-3">
-          <button
-            onClick={() => navigate(-1)}
-            aria-label="Back"
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-secondary text-foreground hover:bg-muted active:scale-95 transition-all"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg text-foreground">Treasure Hunt</h1>
-            <p className="text-xs text-muted-foreground">
-              Challenge {currentIndex + 1} of {challenges.length}
-            </p>
+    <div className="flex min-h-screen flex-col bg-background text-foreground font-sans antialiased selection:bg-accent/30 selection:text-accent-strong">
+      {/* Header Area spanning 75% width container */}
+      <div className="sticky top-0 z-30 border-b border-border bg-card/90 px-6 pt-12 pb-4 shadow-xl backdrop-blur-xl">
+        <div className="mx-auto flex max-w-5xl w-full items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground transition hover:bg-secondary hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent active:scale-95"
+              aria-label="Exit current challenge"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent" />
+                <h1 className="text-xs font-bold tracking-widest text-muted-foreground uppercase">Current Challenge</h1>
+              </div>
+              <p className="text-sm font-medium text-foreground">
+                Stop {currentIndex + 1} <span className="text-muted-foreground">of {challenges.length}</span>
+              </p>
+            </div>
           </div>
-          <div
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full"
-            style={{
-              background: "color-mix(in srgb, var(--accent) 16%, transparent)",
-              color: "var(--accent-strong)",
-            }}
-          >
-            <Trophy className="w-4 h-4" />
-            <span className="text-sm">{totalScore}</span>
+
+          <div className="flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-sm font-bold text-accent-strong shadow-sm backdrop-blur-md">
+            <Trophy className="h-4 w-4 animate-bounce" />
+            <motion.span key={state.score} initial={{ scale: 1.3, color: "#9C7A1F" }} animate={{ scale: 1, color: "#9C7A1F" }}>
+              {state.score}
+            </motion.span>
           </div>
         </div>
 
-        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-          <motion.div
-            className="h-full"
-            style={{ background: "var(--accent)" }}
-            initial={{ width: 0 }}
-            animate={{ width: `${progressPct}%` }}
-            transition={{ duration: 0.5 }}
-          />
+        {/* Challenge Progress Rail with expanded max-w width */}
+        <div className="mx-auto mt-4 max-w-5xl w-full px-1">
+          <div className="relative h-2 w-full rounded-full bg-secondary">
+            <motion.div
+              className="absolute top-0 bottom-0 left-0 rounded-full bg-accent shadow-[0_0_12px_rgba(229,185,72,0.4)]"
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPct}%` }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            />
+            {challenges.map((_, idx) => (
+              <div
+                key={idx}
+                className={`absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2 transition-all duration-300 ${
+                  idx <= completedCount
+                    ? "border-accent bg-card"
+                    : "border-border bg-secondary"
+                }`}
+                style={{ left: `${(idx / (challenges.length - 1)) * 100}%` }}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto">
-        <AnimatePresence mode="wait">
-          {recap && recap.outcome !== "low-confidence" ? (
-            <RecapCard
-              key="recap"
-              recap={recap}
-              isLast={currentIndex === challenges.length - 1}
-              onNext={goToNext}
-              onRetry={
-                recap.outcome === "incorrect"
-                  ? () => {
-                      setRecap(null);
-                      // keep photoFile / textAnswer so user can adjust
-                    }
-                  : undefined
-              }
-            />
-          ) : (
-            <motion.div
-              key={`challenge-${current.id}`}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.25 }}
-              className="px-6 py-6 space-y-4"
-            >
-              {/* Challenge header card */}
-              <div className="bg-card border border-border rounded-2xl p-5">
-                <div className="flex items-start gap-3 mb-3">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                    style={{
-                      background: "color-mix(in srgb, var(--accent) 16%, transparent)",
-                    }}
-                  >
-                    {current.type === "photo" ? "📷" : "❓"}
-                  </div>
-                  <div className="flex-1">
-                    <h2 className="text-lg mb-1 text-foreground">{current.title}</h2>
-                    <p className="text-sm text-muted-foreground">{current.description}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span>{current.location}</span>
-                  <span className="ml-auto" style={{ color: "var(--accent-strong)" }}>
-                    +{current.points} pts
-                  </span>
-                </div>
-              </div>
-
-              {/* PHOTO challenge */}
-              {current.type === "photo" && (
-                <PhotoChallenge
-                  prompt={current.photoPrompt ?? ""}
-                  preview={photoPreview}
-                  submitting={submitting}
-                  recapLowConfidence={recap}
-                  onPick={() => fileInputRef.current?.click()}
-                  onRetake={retakePhoto}
-                  onSubmit={submitPhoto}
-                  onAcceptAnyway={acceptLowConfidenceAnyway}
-                />
-              )}
-              {current.type === "photo" && (
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={onPhotoPicked}
-                  className="hidden"
-                />
-              )}
-
-              {/* QUESTION challenge */}
-              {current.type === "question" && (
-                <QuestionChallenge
-                  question={current.question ?? ""}
-                  answer={textAnswer}
-                  setAnswer={setTextAnswer}
-                  submitting={submitting}
-                  voiceListening={voiceListening}
-                  onVoice={startVoiceCapture}
-                  onSubmit={submitAnswer}
-                />
-              )}
-
-              {/* Hint card */}
-              <HintBlock
-                attemptCount={attemptCount}
-                loading={hintLoading}
-                hint={hint}
-                onRequest={requestHint}
+      {/* Main Container Area - Adjusted to max-w-5xl for an open, wide look */}
+      <div className="flex-1 overflow-y-auto px-6 py-8">
+        <div className="mx-auto max-w-5xl w-full">
+          <AnimatePresence mode="wait">
+            {recap && recap.outcome !== "low-confidence" ? (
+              <RecapCard
+                key="recap"
+                recap={recap}
+                isLast={currentIndex === challenges.length - 1}
+                onNext={moveNext}
+                onSkip={submitIncorrectAndNext}
+                onRetry={() => setRecap(null)}
               />
-            </motion.div>
-          )}
-        </AnimatePresence>
+            ) : (
+              <motion.div
+                key={`challenge-${current.id}`}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -15 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="space-y-6"
+              >
+                {/* Challenge Information Card */}
+                <div className={`relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-xl ${
+                  current.type === "photo" 
+                    ? "" 
+                    : ""
+                }`}>
+                  <div className="mb-4 flex items-start gap-4">
+                    <div className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl shadow-md border ${
+                      current.type === "photo" 
+                        ? "bg-accent/15 border-accent/20 text-accent-strong" 
+                        : "bg-accent/15 border-accent/20 text-accent-strong"
+                    }`}>
+                      {current.type === "photo" ? <Camera className="h-7 w-7" /> : <HelpCircle className="h-7 w-7" />}
+                    </div>
+                    <div className="flex-1">
+                      <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
+                        {current.period || "History & Heritage"}
+                      </span>
+                      <h2 className="text-2xl font-black tracking-tight text-foreground mt-0.5">{current.title}</h2>
+                      <p className="mt-3 text-base leading-relaxed text-muted-foreground">{current.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-sm">
+                      <MapPin className="h-4 w-4 text-accent-strong" />
+                      <span className="font-semibold text-foreground">{current.location}</span>
+                    </div>
+                    <div className="ml-auto flex items-center gap-1 font-bold text-accent-strong bg-accent/10 border border-accent/20 px-3 py-1.5 rounded-md text-sm">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>+{current.points} Points</span>
+                    </div>
+                  </div>
+                </div>
+
+                {isCompleted && (
+                  <div className="flex items-center gap-3 rounded-2xl border border-success/30 bg-success/10 p-5 text-base text-success shadow-sm backdrop-blur-md">
+                    <Check className="h-5 w-5 flex-shrink-0 text-success" />
+                    <span>You already answered this challenge correctly! Feel free to read through the info or tap below to continue.</span>
+                  </div>
+                )}
+
+                {/* Challenge Type Dispatcher */}
+                {current.type === "photo" && (
+                  <>
+                    <PhotoChallenge
+                      prompt={current.photoPrompt ?? ""}
+                      preview={photoPreview}
+                      submitting={submitting}
+                      recapLowConfidence={recap}
+                      onPick={() => fileInputRef.current?.click()}
+                      onRetake={retakePhoto}
+                      onSubmit={submitPhoto}
+                      onAcceptAnyway={acceptLowConfidenceAnyway}
+                    />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={onPhotoPicked}
+                      className="hidden"
+                    />
+                  </>
+                )}
+
+                {current.type === "question" && (
+                  <QuestionChallenge
+                    question={current.question ?? ""}
+                    answer={textAnswer}
+                    setAnswer={setTextAnswer}
+                    submitting={submitting}
+                    voiceListening={voiceListening}
+                    onVoice={startVoiceCapture}
+                    onSubmit={submitAnswer}
+                  />
+                )}
+
+                {/* Updated Simplified Hint System Block */}
+                <HintBlock
+                  attemptCount={attemptCount}
+                  loading={hintLoading}
+                  hint={hint}
+                  onRequest={requestHint}
+                />
+
+                {/* Navigation Bottom Panel */}
+                <div className="rounded-[2rem] border border-border bg-card/60 p-8 text-center shadow-md backdrop-blur-md">
+                  <div className="flex items-center justify-center gap-2 text-base text-muted-foreground">
+                    <Compass className="h-5 w-5 text-muted-foreground" />
+                    <p>You have finished {completedCount} out of {challenges.length} stops</p>
+                  </div>
+                  <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:justify-center">
+                    <button
+                      type="button"
+                      onClick={() => navigate("/hunt")}
+                      className="inline-flex w-full items-center justify-center rounded-2xl bg-primary px-8 py-4 text-base font-bold text-primary-foreground transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent active:scale-95 sm:w-auto"
+                    >
+                      View Map Tracker
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/summary")}
+                      className="inline-flex w-full items-center justify-center rounded-2xl border border-border bg-muted px-8 py-4 text-base font-bold text-foreground transition hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-accent active:scale-95 sm:w-auto"
+                    >
+                      Go to Summary
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
 }
-
-// ═══ Sub-components ════════════════════════════════════════════════════════
 
 function PhotoChallenge(props: {
   prompt: string;
@@ -465,94 +560,99 @@ function PhotoChallenge(props: {
     onSubmit,
     onAcceptAnyway,
   } = props;
-
-  const isLowConf = recapLowConfidence?.outcome === "low-confidence";
+  const isLowConfidence = recapLowConfidence?.outcome === "low-confidence";
 
   return (
-    <div className="space-y-3">
-      <div
-        className="bg-secondary border border-border border-l-[3px] rounded-2xl p-4"
-        style={{ borderLeftColor: "var(--accent)" }}
-      >
-        <p className="text-sm leading-relaxed text-foreground">{prompt}</p>
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-accent/20 bg-accent/10 p-5 text-foreground shadow-sm">
+        <div className="flex gap-2.5">
+          <Sparkles className="h-5 w-5 flex-shrink-0 text-accent-strong mt-0.5" />
+          <p className="text-base font-medium leading-relaxed">{prompt}</p>
+        </div>
       </div>
 
       {preview ? (
-        <div className="relative rounded-2xl overflow-hidden bg-muted aspect-[4/3]">
-          <img src={preview} alt="Submitted" className="w-full h-full object-cover" />
-          {!submitting && !isLowConf && (
-            <button
-              onClick={onRetake}
-              className="absolute bottom-3 left-3 right-3 py-2 bg-card/90 backdrop-blur-sm text-foreground border border-border rounded-xl text-sm active:scale-95 transition-transform"
-            >
-              Retake photo
-            </button>
+        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-3xl border border-border bg-muted shadow-xl group">
+          <img src={preview} alt="Your captured photo" className="h-full w-full object-cover" />
+          
+          <div className="absolute inset-4 pointer-events-none border border-white/20 rounded-xl">
+            <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white/60" />
+            <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white/60" />
+            <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white/60" />
+            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white/60" />
+          </div>
+
+          {!submitting && !isLowConfidence && (
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-5">
+              <button
+                type="button"
+                onClick={onRetake}
+                className="w-full max-w-sm mx-auto block rounded-xl bg-white/10 border border-white/20 py-3 text-base font-bold text-white backdrop-blur-md transition hover:bg-white/20 active:scale-95"
+              >
+                Retake Photo
+              </button>
+            </div>
           )}
           {submitting && (
-            <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white gap-2">
-              <Loader2 className="w-8 h-8 animate-spin" />
-              <span className="text-sm">Verifying photo…</span>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 text-white backdrop-blur-sm">
+              <Loader2 className="h-9 w-9 animate-spin text-accent" />
+              <span className="text-base font-bold text-white animate-pulse">Checking your photo...</span>
             </div>
           )}
         </div>
       ) : (
         <button
+          type="button"
           onClick={onPick}
-          className="w-full aspect-[4/3] border-2 border-dashed border-border rounded-2xl bg-secondary flex flex-col items-center justify-center gap-3 active:scale-[0.98] transition-transform"
+          className="relative flex aspect-[16/10] w-full flex-col items-center justify-center gap-4 rounded-3xl border-2 border-dashed border-border bg-muted/50 transition hover:bg-muted hover:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent active:scale-[0.99] group"
         >
-          <div
-            className="w-16 h-16 rounded-full flex items-center justify-center"
-            style={{ background: "color-mix(in srgb, var(--accent) 16%, transparent)" }}
-          >
-            <Camera className="w-8 h-8" style={{ color: "var(--accent-strong)" }} />
+          <div className="absolute inset-6 border border-transparent group-hover:border-border rounded-2xl pointer-events-none transition-colors" />
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-accent/20 bg-accent/15 shadow-md text-accent-strong transition-transform group-hover:scale-110">
+            <Camera className="h-9 w-9" />
           </div>
-          <div className="text-center px-6">
-            <p className="text-base text-foreground mb-1">Take photo</p>
-            <p className="text-xs text-muted-foreground">Tap to open camera</p>
+          <div className="px-6 text-center">
+            <p className="text-lg font-black text-foreground">Take Photo</p>
+            <p className="mt-1 text-sm text-muted-foreground">Tap here to open your camera and scan the location</p>
           </div>
         </button>
       )}
 
-      {isLowConf && (
-        <div
-          className="rounded-2xl p-4 space-y-3 border"
-          style={{
-            background: "color-mix(in srgb, var(--accent) 10%, transparent)",
-            borderColor: "color-mix(in srgb, var(--accent) 35%, transparent)",
-          }}
-        >
-          <p className="text-sm text-foreground">{recapLowConfidence?.message}</p>
-          {recapLowConfidence?.reason && (
-            <p className="text-xs text-muted-foreground">
-              Vision model said: {recapLowConfidence.reason}
-            </p>
-          )}
-          <div className="flex gap-2">
+      {isLowConfidence && (
+        <div className="space-y-4 rounded-2xl border border-accent/30 bg-accent/10 p-6 shadow-md backdrop-blur-md">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-6 w-6 flex-shrink-0 text-accent-strong mt-0.5" />
+            <div>
+              <p className="text-base font-bold text-foreground">Not quite sure</p>
+              <p className="mt-1 text-base text-muted-foreground leading-relaxed">{recapLowConfidence?.message}</p>
+            </div>
+          </div>
+          <div className="flex gap-4">
             <button
+              type="button"
               onClick={onRetake}
-              className="flex-1 py-3 bg-card border border-border text-foreground rounded-xl text-sm active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-accent/30 bg-muted py-3.5 text-base font-bold text-accent-strong transition hover:bg-secondary active:scale-[0.98]"
             >
-              <RotateCcw className="w-4 h-4" />
-              Retake
+              <RotateCcw className="h-5 w-5" />
+              Retake Photo
             </button>
             <button
+              type="button"
               onClick={onAcceptAnyway}
-              className="flex-1 py-3 rounded-xl text-sm active:scale-[0.98] transition-transform"
-              style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+              className="flex-1 rounded-xl bg-accent py-3.5 text-base font-bold text-accent-foreground shadow-md transition hover:opacity-90 active:scale-[0.98]"
             >
-              Submit anyway
+              Submit Anyway
             </button>
           </div>
         </div>
       )}
 
-      {preview && !isLowConf && !submitting && (
+      {preview && !isLowConfidence && !submitting && (
         <button
+          type="button"
           onClick={onSubmit}
-          className="w-full py-4 rounded-2xl active:scale-[0.98] transition-transform"
-          style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+          className="w-full rounded-2xl bg-accent py-4 text-base font-bold text-accent-foreground shadow-md transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background active:scale-[0.98]"
         >
-          Submit photo
+          Submit Photo
         </button>
       )}
     </div>
@@ -562,7 +662,7 @@ function PhotoChallenge(props: {
 function QuestionChallenge(props: {
   question: string;
   answer: string;
-  setAnswer: (v: string) => void;
+  setAnswer: (value: string) => void;
   submitting: boolean;
   voiceListening: boolean;
   onVoice: () => void;
@@ -571,52 +671,50 @@ function QuestionChallenge(props: {
   const { question, answer, setAnswer, submitting, voiceListening, onVoice, onSubmit } = props;
 
   return (
-    <div className="space-y-3">
-      <div
-        className="bg-secondary border border-border border-l-[3px] rounded-2xl p-4"
-        style={{ borderLeftColor: "var(--accent)" }}
-      >
-        <p className="text-sm leading-relaxed text-foreground">{question}</p>
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-accent/20 bg-accent/10 p-5 text-foreground shadow-sm">
+        <p className="text-base font-medium leading-relaxed">{question}</p>
       </div>
 
-      <div className="bg-card border border-border rounded-2xl p-3 flex items-center gap-2">
+      <div className="flex items-center gap-2 rounded-2xl border border-border bg-card p-2.5 shadow-sm focus-within:border-accent/40 focus-within:ring-1 focus-within:ring-accent/40 transition">
         <input
           type="text"
           value={answer}
-          onChange={(e) => setAnswer(e.target.value)}
-          placeholder="Type or speak your answer…"
-          className="flex-1 px-3 py-2 outline-none text-sm bg-transparent text-foreground placeholder:text-muted-foreground"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && answer.trim() && !submitting) onSubmit();
+          onChange={(event) => setAnswer(event.target.value)}
+          placeholder="Type your answer here..."
+          className="flex-1 bg-transparent px-3 py-2 text-base text-foreground placeholder:text-muted-foreground outline-none"
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && answer.trim() && !submitting) onSubmit();
           }}
         />
         <button
           type="button"
           onClick={onVoice}
           disabled={voiceListening}
-          className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+          className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl transition-all ${
             voiceListening
-              ? "bg-[var(--destructive)] text-white"
-              : "bg-secondary text-foreground hover:bg-muted"
+              ? "bg-destructive text-destructive-foreground animate-pulse shadow-[0_0_12px_rgba(178,58,58,0.4)]"
+              : "bg-muted text-muted-foreground hover:bg-secondary hover:text-foreground"
           }`}
-          title={voiceListening ? "Listening…" : "Speak your answer"}
+          title={voiceListening ? "Listening..." : "Tap to speak your answer"}
         >
-          <Mic className="w-5 h-5" />
+          <Mic className="h-5 w-5" />
         </button>
       </div>
 
       <button
+        type="button"
         onClick={onSubmit}
         disabled={!answer.trim() || submitting}
-        className="w-full py-4 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
-        style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent py-4 text-base font-bold text-accent-foreground shadow-md transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
       >
         {submitting ? (
           <>
-            <Loader2 className="w-5 h-5 animate-spin" /> Grading…
+            <Loader2 className="h-5 w-5 animate-spin text-accent-foreground" />
+            Checking your answer...
           </>
         ) : (
-          "Submit answer"
+          "Submit Answer"
         )}
       </button>
     </div>
@@ -630,38 +728,73 @@ function HintBlock(props: {
   onRequest: () => void;
 }) {
   const { attemptCount, loading, hint, onRequest } = props;
+  const [expanded, setExpanded] = useState(false);
+
   return (
-    <div className="bg-secondary border border-border rounded-2xl p-4">
-      <div className="flex items-start gap-3">
-        <Lightbulb
-          className="w-5 h-5 flex-shrink-0 mt-0.5"
-          style={{ color: "var(--accent-strong)" }}
-        />
-        <div className="flex-1">
-          {hint ? (
-            <p className="text-sm text-foreground leading-relaxed">{hint}</p>
-          ) : (
-            <p className="text-sm text-foreground">
-              Stuck? Get a nudge — we won't give the answer away.
-            </p>
-          )}
-          <button
-            onClick={onRequest}
-            disabled={loading}
-            className="mt-3 px-4 py-2 rounded-xl text-sm disabled:opacity-50 active:scale-[0.98] transition-transform flex items-center gap-2"
-            style={{
-              background: "color-mix(in srgb, var(--accent) 18%, transparent)",
-              color: "var(--accent-strong)",
-            }}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Thinking…
-              </>
+    <div className={`rounded-2xl border transition-all duration-300 ${
+      hint 
+        ? "border-accent/30 bg-accent/5 shadow-sm" 
+        : "border-border bg-card/50"
+    }`}>
+      <div className="p-5">
+        <div className="flex items-start gap-4">
+          <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border ${
+            hint ? "bg-accent/15 border-accent/20 text-accent-strong" : "bg-muted border-border text-muted-foreground"
+          }`}>
+            <Lightbulb className="h-5 w-5" />
+          </div>
+          <div className="flex-1">
+            <h4 className="text-base font-bold text-foreground">Need a Hint?</h4>
+            
+            {hint ? (
+              <motion.p 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                className="mt-2 text-base leading-relaxed text-foreground font-medium"
+              >
+                {hint}
+              </motion.p>
             ) : (
-              <>I'm stuck — give me a hint{attemptCount > 0 ? ` (${attemptCount + 1})` : ""}</>
+              <div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Stuck on this challenge? Get a helpful clue about this location.
+                </p>
+                {expanded && (
+                  <p className="mt-2 text-xs text-muted-foreground italic">
+                    Note: Hints help point you toward interesting historical clues or design details nearby without giving away the exact answer.
+                  </p>
+                )}
+              </div>
             )}
-          </button>
+
+            <div className="mt-4 flex items-center gap-4">
+              <button
+                type="button"
+                onClick={onRequest}
+                disabled={loading}
+                className="flex items-center gap-2 rounded-xl bg-muted border border-border px-5 py-2.5 text-xs font-bold text-foreground transition hover:bg-secondary active:scale-95 disabled:opacity-40"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
+                    Finding hint...
+                  </>
+                ) : (
+                  <>Get Hint {attemptCount > 0 ? `(Attempt ${attemptCount + 1})` : ""}</>
+                )}
+              </button>
+              
+              {!hint && (
+                <button
+                  type="button"
+                  onClick={() => setExpanded(!expanded)}
+                  className="text-xs font-semibold text-muted-foreground hover:text-foreground"
+                >
+                  {expanded ? "Hide Details" : "How hints work"}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -672,56 +805,66 @@ function RecapCard(props: {
   recap: RecapState;
   isLast: boolean;
   onNext: () => void;
-  onRetry?: () => void;
+  onSkip: () => void;
+  onRetry: () => void;
 }) {
-  const { recap, isLast, onNext, onRetry } = props;
-  const isCorrect = recap.outcome === "correct";
+  const { recap, isLast, onNext, onSkip, onRetry } = props;
+  const isCorrect = recap.outcome === "correct" || recap.outcome === "low-confidence";
+
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.3 }}
-      className="flex flex-col items-center justify-center px-6 py-10 text-center"
+      exit={{ opacity: 0, scale: 0.98 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="rounded-3xl border border-border bg-card p-8 shadow-2xl text-center relative overflow-hidden"
     >
+      <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-[80px] pointer-events-none opacity-20 ${
+        isCorrect ? "bg-success" : "bg-destructive"
+      }`} />
+
       <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
-        className="w-24 h-24 rounded-full flex items-center justify-center mb-6"
-        style={
-          isCorrect
-            ? {
-                background: "color-mix(in srgb, var(--success) 18%, transparent)",
-                color: "var(--success)",
-              }
-            : {
-                background: "color-mix(in srgb, var(--destructive) 16%, transparent)",
-                color: "var(--destructive)",
-              }
-        }
+        initial={{ scale: 0.4, rotate: -15 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ delay: 0.1, type: "spring", stiffness: 160, damping: 12 }}
+        className={`mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border shadow-md ${
+          isCorrect 
+            ? "bg-success/10 border-success/30 text-success" 
+            : "bg-destructive/10 border-destructive/30 text-destructive"
+        }`}
       >
-        {isCorrect ? (
-          <Check className="w-12 h-12" />
-        ) : (
-          <X className="w-12 h-12" />
-        )}
+        {isCorrect ? <Check className="h-11 w-11" /> : <X className="h-11 w-11" />}
       </motion.div>
 
-      <h2 className="text-2xl mb-2 text-foreground">
-        {isCorrect ? "Nice find!" : "Not quite — try again"}
+      <h2 className="text-3xl font-black tracking-tight text-foreground">
+        {isCorrect ? "Correct! Well Done!" : "Not Quite Right"}
       </h2>
 
       {isCorrect && recap.pointsEarned > 0 && (
-        <p className="mb-4" style={{ color: "var(--accent-strong)" }}>
-          +{recap.pointsEarned} pts
-        </p>
+        <motion.div 
+          initial={{ y: 5, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="mx-auto mt-2 inline-flex items-center gap-1 rounded-md bg-success/10 border border-success/30 px-3 py-1 text-sm font-black text-success"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          <span>+{recap.pointsEarned} POINTS EARNED</span>
+        </motion.div>
       )}
 
-      <p className="text-foreground mb-4 max-w-md">{recap.message}</p>
+      <p className="mt-4 text-base leading-relaxed text-muted-foreground max-w-2xl mx-auto">{recap.message}</p>
+
+      {!isCorrect && recap.correctAnswer && (
+        <div className="mt-5 max-w-md mx-auto text-left rounded-xl border border-destructive/20 bg-destructive/10 p-4 shadow-inner">
+          <p className="text-xs font-bold uppercase tracking-wider text-destructive">The Correct Answer</p>
+          <p className="mt-1 text-sm font-semibold text-foreground">{recap.correctAnswer}</p>
+        </div>
+      )}
 
       {recap.reason && !isCorrect && (
-        <p className="text-xs text-muted-foreground mb-4 max-w-md">Why: {recap.reason}</p>
+        <p className="mt-3 text-sm font-medium text-muted-foreground bg-muted border border-border rounded-lg p-2 max-w-2xl mx-auto">
+          Tip: {recap.reason}
+        </p>
       )}
 
       {recap.source && (
@@ -729,38 +872,38 @@ function RecapCard(props: {
           href={recap.source.url}
           target="_blank"
           rel="noreferrer"
-          className="text-xs underline underline-offset-2 mb-6"
-          style={{ color: "var(--accent-strong)" }}
+          className="mt-6 inline-flex items-center gap-1 text-sm font-bold text-accent-strong hover:opacity-80 transition-colors group mx-auto"
         >
-          📚 Source: {recap.source.label}
+          <span>Learn more about this site: {recap.source.label}</span>
+          <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
         </a>
       )}
 
-      <div className="flex flex-col gap-3 w-full max-w-sm">
+      <div className="mt-8 flex w-full flex-col gap-3 max-w-xs mx-auto">
         {isCorrect ? (
           <button
+            type="button"
             onClick={onNext}
-            className="w-full py-4 rounded-2xl active:scale-95 transition-transform"
-            style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+            className="w-full rounded-xl bg-accent py-4 text-base font-bold text-accent-foreground shadow-md transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent active:scale-95"
           >
-            {isLast ? "View results" : "Next challenge"}
+            {isLast ? "See Final Score" : "Next Challenge"}
           </button>
         ) : (
           <>
-            {onRetry && (
-              <button
-                onClick={onRetry}
-                className="w-full py-4 rounded-2xl active:scale-95 transition-transform flex items-center justify-center gap-2"
-                style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
-              >
-                <RotateCcw className="w-5 h-5" /> Try again
-              </button>
-            )}
             <button
-              onClick={onNext}
-              className="w-full py-3 bg-secondary border border-border text-foreground rounded-2xl active:scale-95 transition-transform"
+              type="button"
+              onClick={onRetry}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 text-base font-bold text-primary-foreground shadow-md transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent active:scale-95"
             >
-              Skip this one
+              <RotateCcw className="h-4 w-4" />
+              Try Again
+            </button>
+            <button
+              type="button"
+              onClick={onSkip}
+              className="w-full rounded-xl border border-border bg-muted py-3 text-xs font-bold text-muted-foreground transition hover:bg-secondary active:scale-95"
+            >
+              Skip this stop (0 points)
             </button>
           </>
         )}

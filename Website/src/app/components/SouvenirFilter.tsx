@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { Camera, Loader2, RotateCcw, Share2, X } from "lucide-react";
+import { useHuntState } from "./HuntStateProvider";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SouvenirFilter — the closing moment of the Quick Guide tour.
+// SouvenirFilter — the souvenir captured after the treasure hunt.
 // The visitor takes a front-camera "portrait" and a Milan-themed filter is
 // composited over it (the Madonnina's halo, the Duomo spires, a Renaissance
 // frame, a Flâneur's hat). The result is drawn on a <canvas> so it can be
@@ -14,7 +16,8 @@ import { Camera, Loader2, RotateCcw, Share2, X } from "lucide-react";
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface SouvenirFilterProps {
-  onClose: () => void;
+  /** Optional close handler. When omitted (mounted as the /souvenir route) it returns to the summary. */
+  onClose?: () => void;
   /** Small footer line, e.g. a trip summary. */
   caption?: string;
 }
@@ -212,6 +215,10 @@ function FilterIcon({ id }: { id: FilterId }) {
 }
 
 export function SouvenirFilter({ onClose, caption }: SouvenirFilterProps) {
+  const navigate = useNavigate();
+  const { setSouvenirImage } = useHuntState();
+  const close = onClose ?? (() => navigate("/summary"));
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -304,6 +311,8 @@ export function SouvenirFilter({ onClose, caption }: SouvenirFilterProps) {
   function handleShutter() {
     renderFrame();
     cancelAnimationFrame(rafRef.current);
+    const canvas = canvasRef.current;
+    if (canvas) setSouvenirImage(canvas.toDataURL("image/png"));
     setShared(false);
     setCaptured(true);
   }
@@ -368,7 +377,7 @@ export function SouvenirFilter({ onClose, caption }: SouvenirFilterProps) {
         {/* Header */}
         <div className="text-center relative">
           <button
-            onClick={onClose}
+            onClick={close}
             aria-label="Close"
             className="absolute right-0 top-0 w-9 h-9 rounded-full flex items-center justify-center active:scale-95 transition-transform"
             style={{ background: "rgba(237,230,218,0.1)" }}
@@ -466,7 +475,7 @@ export function SouvenirFilter({ onClose, caption }: SouvenirFilterProps) {
         {/* Controls */}
         <div className="mt-5 flex items-center justify-between">
           <button
-            onClick={onClose}
+            onClick={close}
             className="px-5 py-2.5 rounded-full text-sm active:scale-95 transition-transform"
             style={{ background: "rgba(237,230,218,0.1)", color: "#EDE6DA" }}
           >
@@ -507,7 +516,7 @@ export function SouvenirFilter({ onClose, caption }: SouvenirFilterProps) {
         </div>
 
         <p className="mt-4 text-center text-xs" style={{ color: "rgba(237,230,218,0.45)" }}>
-          {caption ?? "Heritage Quick Guide · Piazza del Duomo"}
+          {caption ?? "Heritage Treasure Hunt · Piazza del Duomo"}
         </p>
       </div>
     </motion.div>
