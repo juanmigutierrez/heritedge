@@ -1,520 +1,524 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { Camera, Download, Share2, X, ImageIcon, Home, Loader2, Sparkles } from "lucide-react";
+import { motion } from "motion/react";
+import { Camera, Loader2, RotateCcw, Share2, X } from "lucide-react";
 import { useHuntState } from "./HuntStateProvider";
 
-type Overlay = "madonnina" | "spires" | "renaissance" | "flaneur";
+// ─────────────────────────────────────────────────────────────────────────────
+// SouvenirFilter — the souvenir captured after the treasure hunt.
+// The visitor takes a front-camera "portrait" and a Milan-themed filter is
+// composited over it (the Madonnina's halo, the Duomo spires, a Renaissance
+// frame, a Flâneur's hat). The result is drawn on a <canvas> so it can be
+// captured, shared or downloaded as a keepsake.
+//
+// Overlays are placed at a fixed head position (with an on-screen guide)
+// rather than face-tracked — reliable across mobile browsers.
+// ─────────────────────────────────────────────────────────────────────────────
 
-const overlayMeta: Record<Overlay, { label: string; emoji: string }> = {
-  madonnina: { label: "Madonnina", emoji: "⛪" },
-  spires: { label: "Spire Lights", emoji: "✨" },
-  renaissance: { label: "Renaissance Glow", emoji: "🎨" },
-  flaneur: { label: "Flâneur", emoji: "🕊️" },
-};
-
-function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-3xl bg-card p-6 border border-border shadow-md ${className}`}>{children}</div>;
+interface SouvenirFilterProps {
+  /** Optional close handler. When omitted (mounted as the /souvenir route) it returns to the summary. */
+  onClose?: () => void;
+  /** Small footer line, e.g. a trip summary. */
+  caption?: string;
 }
 
-function FramedPanel({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={`rounded-3xl border border-border bg-muted p-6 text-center ${className}`}>
-      {children}
-    </div>
-  );
+type FilterId = "madonnina" | "spires" | "renaissance" | "flaneur";
+
+interface FilterDef {
+  id: FilterId;
+  label: string;
+  tagline: string;
+  /** CSS filter applied to the photo itself. */
+  photoFilter: string;
 }
 
-function EmptySouvenirState() {
-  return (
-    <div className="rounded-3xl border border-dashed border-border p-8 text-muted-foreground my-auto">
-      <div className="flex flex-col items-center gap-3">
-        <ImageIcon className="h-10 w-10 text-muted-foreground" />
-        <p className="text-sm font-medium">Your souvenir will appear here after capture.</p>
-      </div>
-    </div>
-  );
-}
+const FILTERS: FilterDef[] = [
+  {
+    id: "madonnina",
+    label: "Madonnina",
+    tagline: "A golden halo, like the statue that crowns the Duomo.",
+    photoFilter: "brightness(1.06) saturate(1.12)",
+  },
+  {
+    id: "spires",
+    label: "Spires",
+    tagline: "Wear the cathedral's marble pinnacles as a crown.",
+    photoFilter: "contrast(1.08) saturate(1.05)",
+  },
+  {
+    id: "renaissance",
+    label: "Renaissance",
+    tagline: "An old-master portrait in a gilded arch.",
+    photoFilter: "sepia(0.5) contrast(1.06) brightness(1.02)",
+  },
+  {
+    id: "flaneur",
+    label: "Flâneur",
+    tagline: "A black-and-white stroll through the Galleria.",
+    photoFilter: "grayscale(0.9) contrast(1.12)",
+  },
+];
 
-function PermissionWarning() {
-  return (
-    <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5 text-destructive">
-      <div className="flex items-start gap-3">
-        <X className="h-5 w-5 shrink-0 mt-0.5" />
-        <div>
-          <p className="font-bold text-base">Enable Camera Access</p>
-          <p className="mt-1 text-sm text-destructive/80 leading-relaxed">
-            Please allow camera permission in your browser or system settings, then refresh this page to snap your souvenir selfie.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
+const CW = 768;
+const CH = 1024;
+const GOLD = "#E5B948";
 
-function drawOverlayGraphic(
-  ctx: CanvasRenderingContext2D,
-  overlay: Overlay,
-  box: { x: number; y: number; width: number; height: number } | null
-) {
-  if (!box) return;
+// ── Canvas overlay art ───────────────────────────────────────────────────────
 
-  const centerX = box.x + box.width / 2;
-  const topY = box.y - box.height * 0.35;
-
+function drawHalo(ctx: CanvasRenderingContext2D) {
   ctx.save();
-  ctx.lineWidth = 6;
-  ctx.strokeStyle = "rgba(255, 215, 0, 0.9)";
-  ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
-  ctx.shadowColor = "rgba(255, 225, 120, 0.7)";
-  ctx.shadowBlur = 24;
-
-  if (overlay === "madonnina") {
-    ctx.beginPath();
-    ctx.arc(centerX, topY, box.width * 0.45, 0, Math.PI, true);
-    ctx.stroke();
-    ctx.fillStyle = "rgba(255, 236, 179, 0.2)";
-    ctx.fill();
-  }
-
-  if (overlay === "spires") {
-    const sparkleCount = 5;
-    for (let i = 0; i < sparkleCount; i += 1) {
-      const angle = (Math.PI * 2 * i) / sparkleCount;
-      const x = centerX + Math.cos(angle) * box.width * 0.65;
-      const y = topY + Math.sin(angle) * box.height * 0.25;
-      ctx.beginPath();
-      ctx.moveTo(x, y - 14);
-      ctx.lineTo(x, y + 14);
-      ctx.moveTo(x - 14, y);
-      ctx.lineTo(x + 14, y);
-      ctx.stroke();
-    }
-  }
-
-  if (overlay === "renaissance") {
-    ctx.beginPath();
-    ctx.ellipse(centerX, box.y + box.height * 0.18, box.width * 0.75, box.height * 0.75, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(255, 192, 203, 0.12)";
-    ctx.fill();
-    ctx.strokeStyle = "rgba(248, 181, 0, 0.85)";
-    ctx.stroke();
-  }
-
-  if (overlay === "flaneur") {
-    ctx.beginPath();
-    ctx.moveTo(centerX - box.width * 0.28, topY + 8);
-    ctx.quadraticCurveTo(centerX, topY - box.height * 0.16, centerX + box.width * 0.28, topY + 8);
-    ctx.lineTo(centerX + box.width * 0.26, topY + box.height * 0.24);
-    ctx.lineTo(centerX - box.width * 0.26, topY + box.height * 0.24);
-    ctx.closePath();
-    ctx.fillStyle = "rgba(45, 55, 72, 0.8)";
-    ctx.fill();
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
-    ctx.stroke();
-  }
-
+  ctx.strokeStyle = GOLD;
+  ctx.shadowColor = "rgba(229,185,72,0.75)";
+  ctx.shadowBlur = 34;
+  ctx.lineWidth = 17;
+  ctx.beginPath();
+  ctx.ellipse(CW / 2, 252, 156, 54, 0, 0, Math.PI * 2);
+  ctx.stroke();
   ctx.restore();
 }
 
-const MODEL_URL = "https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights";
+function drawSpires(ctx: CanvasRenderingContext2D) {
+  ctx.save();
+  ctx.fillStyle = GOLD;
+  ctx.shadowColor = "rgba(0,0,0,0.35)";
+  ctx.shadowBlur = 12;
+  const baseY = 196;
+  const cols = [
+    { x: 150, h: 86 },
+    { x: 268, h: 138 },
+    { x: 384, h: 188 },
+    { x: 500, h: 138 },
+    { x: 618, h: 86 },
+  ];
+  for (const c of cols) {
+    ctx.beginPath();
+    ctx.moveTo(c.x - 34, baseY);
+    ctx.lineTo(c.x + 34, baseY);
+    ctx.lineTo(c.x, baseY - c.h);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
 
-export function SouvenirFilter() {
+function drawArch(ctx: CanvasRenderingContext2D) {
+  ctx.save();
+  // Gilded portrait frame
+  ctx.strokeStyle = GOLD;
+  ctx.lineWidth = 24;
+  ctx.strokeRect(30, 30, CW - 60, CH - 60);
+  ctx.lineWidth = 4;
+  ctx.strokeRect(60, 60, CW - 120, CH - 120);
+  // Arched top crowning the head
+  ctx.lineWidth = 12;
+  ctx.beginPath();
+  ctx.arc(CW / 2, 392, 214, Math.PI, 0);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawHat(ctx: CanvasRenderingContext2D) {
+  ctx.save();
+  const cx = CW / 2;
+  // Brim
+  ctx.fillStyle = "#1f1b18";
+  ctx.shadowColor = "rgba(0,0,0,0.4)";
+  ctx.shadowBlur = 16;
+  ctx.beginPath();
+  ctx.ellipse(cx, 318, 214, 44, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  // Crown
+  ctx.beginPath();
+  ctx.moveTo(cx - 116, 320);
+  ctx.lineTo(cx - 98, 196);
+  ctx.quadraticCurveTo(cx, 168, cx + 98, 196);
+  ctx.lineTo(cx + 116, 320);
+  ctx.closePath();
+  ctx.fill();
+  // Gold band
+  ctx.fillStyle = GOLD;
+  ctx.beginPath();
+  ctx.moveTo(cx - 110, 300);
+  ctx.lineTo(cx + 110, 300);
+  ctx.lineTo(cx + 104, 268);
+  ctx.lineTo(cx - 104, 268);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCaption(ctx: CanvasRenderingContext2D, label: string) {
+  ctx.save();
+  const grad = ctx.createLinearGradient(0, CH - 220, 0, CH);
+  grad.addColorStop(0, "rgba(0,0,0,0)");
+  grad.addColorStop(1, "rgba(0,0,0,0.62)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, CH - 220, CW, 220);
+
+  ctx.fillStyle = GOLD;
+  ctx.fillRect(56, CH - 132, 54, 5);
+
+  ctx.textBaseline = "alphabetic";
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "600 46px Georgia, 'Times New Roman', serif";
+  ctx.fillText(`The ${label}`, 56, CH - 78);
+
+  ctx.fillStyle = "rgba(255,255,255,0.78)";
+  ctx.font = "500 24px system-ui, -apple-system, sans-serif";
+  ctx.fillText("MILANO · PIAZZA DEL DUOMO · 2026", 56, CH - 44);
+  ctx.restore();
+}
+
+function drawFilterArt(ctx: CanvasRenderingContext2D, id: FilterId) {
+  if (id === "madonnina") drawHalo(ctx);
+  else if (id === "spires") drawSpires(ctx);
+  else if (id === "renaissance") drawArch(ctx);
+  else if (id === "flaneur") drawHat(ctx);
+}
+
+// ── Filter chip icons ────────────────────────────────────────────────────────
+
+function FilterIcon({ id }: { id: FilterId }) {
+  const s = { fill: "none", stroke: "currentColor", strokeWidth: 2 } as const;
+  if (id === "madonnina") {
+    return (
+      <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden>
+        <ellipse cx="12" cy="8" rx="8" ry="3.4" {...s} />
+        <circle cx="12" cy="8" r="1" fill="currentColor" stroke="none" />
+      </svg>
+    );
+  }
+  if (id === "spires") {
+    return (
+      <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden>
+        <path d="M3 19 L7 9 L11 19 Z M9 19 L12 4 L15 19 Z M13 19 L17 9 L21 19 Z"
+          fill="currentColor" stroke="none" />
+      </svg>
+    );
+  }
+  if (id === "renaissance") {
+    return (
+      <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden>
+        <path d="M5 21 V11 a7 7 0 0 1 14 0 V21" {...s} />
+        <rect x="3" y="20" width="18" height="2.5" fill="currentColor" stroke="none" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden>
+      <ellipse cx="12" cy="16" rx="9" ry="2.6" fill="currentColor" stroke="none" />
+      <path d="M7 16 L8.5 7 a3.5 3 0 0 1 7 0 L17 16 Z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function SouvenirFilter({ onClose, caption }: SouvenirFilterProps) {
   const navigate = useNavigate();
-  const { state, setSouvenirImage } = useHuntState();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const [faceApi, setFaceApi] = useState<any>(null);
-  const [permissionDenied, setPermissionDenied] = useState(false);
-  const [cameraReady, setCameraReady] = useState(false);
-  const [modelsLoaded, setModelsLoaded] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [overlay, setOverlay] = useState<Overlay>("madonnina");
-  const [captured, setCaptured] = useState<string | undefined>(state.souvenirImage);
-  const [shareStatus, setShareStatus] = useState<"idle" | "sharing">("idle");
-  const faceBoxRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
+  const { setSouvenirImage } = useHuntState();
+  const close = onClose ?? (() => navigate("/summary"));
 
-  // Initialize camera and face-api on mount immediately to trigger browser modal
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const rafRef = useRef<number>(0);
+
+  const [status, setStatus] = useState<"loading" | "live" | "denied">("loading");
+  const [filterId, setFilterId] = useState<FilterId>("madonnina");
+  const [captured, setCaptured] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [shared, setShared] = useState(false);
+
+  const active = FILTERS.find((f) => f.id === filterId) ?? FILTERS[0];
+
+  // Start the front camera.
   useEffect(() => {
-    let active = true;
-    async function initCameraAndModels() {
-      try {
-        setLoading(true);
-        const mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user" },
-          audio: false
-        });
-        
-        if (!active) {
-          mediaStream.getTracks().forEach((t) => t.stop());
+    let cancelled = false;
+    const md = typeof navigator !== "undefined" ? navigator.mediaDevices : undefined;
+    if (!md?.getUserMedia) {
+      setStatus("denied");
+      return;
+    }
+    md.getUserMedia({ video: { facingMode: "user" }, audio: false })
+      .then((stream) => {
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
           return;
         }
-
-        setStream(mediaStream);
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
+        streamRef.current = stream;
+        const v = videoRef.current;
+        if (v) {
+          v.srcObject = stream;
+          v.play().catch(() => undefined);
         }
-
-        // Lazy load face-api assets safely
-        const faceapi = await import("face-api.js");
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-          faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
-        ]);
-
-        if (!active) return;
-        setFaceApi(faceapi);
-        setModelsLoaded(true);
-      } catch (error: unknown) {
-        console.error("Camera prompt or face-api loading failed:", error);
-        const err = error as { name?: string };
-        if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-          setPermissionDenied(true);
-        }
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    initCameraAndModels();
-
+        setStatus("live");
+      })
+      .catch(() => setStatus("denied"));
     return () => {
-      active = false;
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
+      cancelled = true;
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
     };
   }, []);
 
-  // Handle video meta loading for precise playback sizing triggers
-  const handleVideoLoad = async () => {
-    if (videoRef.current) {
-      try {
-        await videoRef.current.play();
-        setCameraReady(true);
-      } catch (e) {
-        console.warn("Autoplay interrupted or paused:", e);
-      }
-    }
-  };
+  const renderFrame = useCallback(() => {
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    if (!canvas || !video) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx || video.readyState < 2) return;
 
-  // Live Processing loop matching face-api vectors over display layout space
+    ctx.clearRect(0, 0, CW, CH);
+
+    // Cover-fit the video frame, mirrored like a selfie.
+    const vr = video.videoWidth / video.videoHeight;
+    const cr = CW / CH;
+    let sx = 0;
+    let sy = 0;
+    let sw = video.videoWidth;
+    let sh = video.videoHeight;
+    if (vr > cr) {
+      sw = video.videoHeight * cr;
+      sx = (video.videoWidth - sw) / 2;
+    } else {
+      sh = video.videoWidth / cr;
+      sy = (video.videoHeight - sh) / 2;
+    }
+    ctx.save();
+    ctx.translate(CW, 0);
+    ctx.scale(-1, 1);
+    ctx.filter = active.photoFilter;
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, CW, CH);
+    ctx.restore();
+    ctx.filter = "none";
+
+    drawFilterArt(ctx, filterId);
+    drawCaption(ctx, active.label);
+  }, [active, filterId]);
+
+  // Live preview loop — runs until a shot is captured.
   useEffect(() => {
-    if (!faceApi || !videoRef.current || !overlayCanvasRef.current || !cameraReady) return;
-    const video = videoRef.current;
-    const canvas = overlayCanvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let animationFrameId: number;
-
-    const drawLoop = async () => {
-      if (video.paused || video.ended || video.readyState < 2) {
-        animationFrameId = requestAnimationFrame(drawLoop);
-        return;
-      }
-
-      const rect = video.getBoundingClientRect();
-      const displayW = Math.max(1, Math.floor(rect.width));
-      const displayH = Math.max(1, Math.floor(rect.height));
-      
-      if (canvas.width !== displayW || canvas.height !== displayH) {
-        canvas.width = displayW;
-        canvas.height = displayH;
-      }
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      try {
-        const detection = await faceApi
-          .detectSingleFace(video, new faceApi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 }))
-          .withFaceLandmarks(true);
-
-        if (!detection) {
-          faceBoxRef.current = null;
-        } else {
-          const dims = faceApi.matchDimensions(canvas, { width: displayW, height: displayH });
-          const resized = faceApi.resizeResults(detection, dims);
-          const { x, y, width, height } = resized.detection.box;
-          
-          faceBoxRef.current = { x, y, width, height };
-
-          // Visual Feedback Matrix Box Indicator
-          ctx.strokeStyle = "rgba(16, 185, 129, 0.75)";
-          ctx.lineWidth = 2;
-          ctx.strokeRect(x, y, width, height);
-          ctx.fillStyle = "rgba(16, 185, 129, 0.08)";
-          ctx.fillRect(x, y, width, height);
-
-          drawOverlayGraphic(ctx, overlay, faceBoxRef.current);
-        }
-      } catch (error) {
-        console.error("Detection loop error:", error);
-      }
-
-      // Short timeout to minimize performance footprint during active execution loops
-      setTimeout(() => {
-        animationFrameId = requestAnimationFrame(drawLoop);
-      }, 120);
+    if (status !== "live" || captured) return;
+    const loop = () => {
+      renderFrame();
+      rafRef.current = requestAnimationFrame(loop);
     };
+    rafRef.current = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [status, captured, renderFrame]);
 
-    animationFrameId = requestAnimationFrame(drawLoop);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [faceApi, overlay, cameraReady]);
+  function handleShutter() {
+    renderFrame();
+    cancelAnimationFrame(rafRef.current);
+    const canvas = canvasRef.current;
+    if (canvas) setSouvenirImage(canvas.toDataURL("image/png"));
+    setShared(false);
+    setCaptured(true);
+  }
 
-  const ready = Boolean(stream && cameraReady && modelsLoaded && !permissionDenied);
+  function handleRetake() {
+    setCaptured(false);
+    setShared(false);
+  }
 
-  const captureSouvenir = async () => {
-    if (!videoRef.current) return;
-    const video = videoRef.current;
-    const width = 900;
-    const height = 1100;
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+  function withBlob(run: (blob: Blob) => void) {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    setBusy(true);
+    canvas.toBlob((blob) => {
+      if (blob) run(blob);
+      setBusy(false);
+    }, "image/png");
+  }
 
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, width, height);
+  function handleDownload() {
+    withBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "milan-souvenir.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setShared(true);
+    });
+  }
 
-    const frameWidth = width - 120;
-    const frameHeight = Math.round((video.videoHeight / video.videoWidth) * frameWidth);
-    const frameY = 120;
-    ctx.fillStyle = "#f8fafc";
-    ctx.fillRect(60, frameY, frameWidth, frameHeight);
-    ctx.drawImage(video, 60, frameY, frameWidth, frameHeight);
-
-    const faceBox = faceBoxRef.current;
-    if (faceBox && overlayCanvasRef.current) {
-      const canvasEl = overlayCanvasRef.current;
-      const relative = {
-        x: 60 + (faceBox.x / canvasEl.width) * frameWidth,
-        y: frameY + (faceBox.y / canvasEl.height) * frameHeight,
-        width: (faceBox.width / canvasEl.width) * frameWidth,
-        height: (faceBox.height / canvasEl.height) * frameHeight,
+  function handleShare() {
+    withBlob(async (blob) => {
+      const file = new File([blob], "milan-souvenir.png", { type: "image/png" });
+      const nav = navigator as Navigator & {
+        canShare?: (data?: unknown) => boolean;
       };
-      drawOverlayGraphic(ctx, overlay, relative);
-    }
-
-    ctx.strokeStyle = "#e2e8f0";
-    ctx.lineWidth = 8;
-    ctx.strokeRect(60, frameY, frameWidth, frameHeight);
-
-    ctx.fillStyle = "#111827";
-    ctx.font = "700 32px Inter, sans-serif";
-    ctx.fillText("Milan Heritage Journey", 80, 68);
-
-    ctx.font = "600 24px Inter, sans-serif";
-    ctx.fillText(overlayMeta[overlay].label, 80, height - 80);
-
-    ctx.fillStyle = "#10b981";
-    ctx.font = "700 24px Inter, sans-serif";
-    ctx.fillText(`Score: ${state.score} pts`, width - 280, height - 80);
-
-    ctx.font = "700 40px Inter, sans-serif";
-    ctx.fillText(overlayMeta[overlay].emoji, width - 110, 65);
-
-    const image = canvas.toDataURL("image/png");
-    setCaptured(image);
-    setSouvenirImage(image);
-  };
-
-  const handleShare = async () => {
-    if (!captured || !navigator.share) return;
-    setShareStatus("sharing");
-    try {
-      await navigator.share({
-        title: "Milan Heritage Souvenir",
-        text: `I finished my scavenger quest and scored ${state.score} points!`,
-        url: window.location.href,
-      });
-    } catch {
-      // User cancelled share panel sheet
-    } finally {
-      setShareStatus("idle");
-    }
-  };
-
-  const downloadLink = useMemo(() => captured || undefined, [captured]);
+      try {
+        if (nav.share && nav.canShare && nav.canShare({ files: [file] })) {
+          await nav.share({ files: [file], title: "My Milan souvenir" });
+          setShared(true);
+          return;
+        }
+      } catch {
+        return; // share sheet dismissed
+      }
+      handleDownload();
+    });
+  }
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans antialiased pb-12">
-      {/* Header Band occupying max-w-5xl (75% view layout area) */}
-      <div className="bg-accent border-b border-border px-6 py-12 text-accent-foreground">
-        <div className="mx-auto flex max-w-5xl w-full flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-accent-foreground/80 text-xs font-bold tracking-widest uppercase">
-              <Sparkles className="h-4 w-4" />
-              <span>Quest Completed Souvenir</span>
-            </div>
-            <h1 className="text-3xl font-black tracking-tight mt-1">Souvenir Filter Studio</h1>
-            <p className="mt-2 text-accent-foreground/80 text-base leading-relaxed max-w-2xl">
-              Capture your final Milan memory with a custom historical overlay filter and preserve it inside an archival digital Polaroid frame.
-            </p>
-          </div>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{ background: "#14110F", color: "#EDE6DA" }}
+    >
+      <div className="flex-1 overflow-y-auto px-5 pt-8 pb-5 max-w-md mx-auto w-full flex flex-col">
+        {/* Header */}
+        <div className="text-center relative">
           <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-black/10 px-6 py-3.5 text-sm font-bold text-accent-foreground backdrop-blur-md border border-black/10 transition hover:bg-black/20 active:scale-95 sm:w-auto shrink-0"
+            onClick={close}
+            aria-label="Close"
+            className="absolute right-0 top-0 w-9 h-9 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+            style={{ background: "rgba(237,230,218,0.1)" }}
           >
-            <Home className="h-4 w-4" />
-            Back to Homepage
+            <X className="w-4 h-4" />
+          </button>
+          <p
+            className="text-xs tracking-[0.22em] uppercase font-medium"
+            style={{ color: GOLD }}
+          >
+            Your Milan souvenir
+          </p>
+          <h1
+            className="mt-1 text-3xl"
+            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+          >
+            Take a portrait.
+          </h1>
+        </div>
+
+        {/* Camera / souvenir preview */}
+        <div className="mt-5 relative">
+          <canvas
+            ref={canvasRef}
+            width={CW}
+            height={CH}
+            className="w-full rounded-3xl border"
+            style={{ borderColor: "rgba(237,230,218,0.14)", aspectRatio: `${CW} / ${CH}` }}
+          />
+          <video ref={videoRef} playsInline muted className="hidden" />
+
+          {status === "loading" && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-3xl"
+              style={{ background: "#1F1B19" }}>
+              <Loader2 className="w-7 h-7 animate-spin" style={{ color: GOLD }} />
+              <span className="text-xs" style={{ color: "rgba(237,230,218,0.6)" }}>
+                Starting camera…
+              </span>
+            </div>
+          )}
+          {status === "denied" && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-3xl px-8 text-center"
+              style={{ background: "#1F1B19" }}>
+              <Camera className="w-8 h-8" style={{ color: "rgba(237,230,218,0.5)" }} />
+              <p className="text-sm" style={{ color: "rgba(237,230,218,0.8)" }}>
+                The camera isn't available. Allow camera access (and use https or
+                localhost) to take your souvenir.
+              </p>
+            </div>
+          )}
+          {status === "live" && !captured && (
+            <div
+              className="absolute left-1/2 -translate-x-1/2 rounded-full border-2 border-dashed pointer-events-none"
+              style={{
+                top: "26%",
+                width: "46%",
+                aspectRatio: "1 / 1.2",
+                borderColor: "rgba(237,230,218,0.35)",
+              }}
+            />
+          )}
+        </div>
+
+        {/* Filter picker */}
+        <div className="mt-5">
+          <p className="text-xs tracking-[0.16em] uppercase mb-2"
+            style={{ color: "rgba(237,230,218,0.55)" }}>
+            Choose your filter
+          </p>
+          <div className="grid grid-cols-4 gap-2">
+            {FILTERS.map((f) => {
+              const on = f.id === filterId;
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => setFilterId(f.id)}
+                  className="flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-2.5 transition-all active:scale-95"
+                  style={{
+                    background: on ? "rgba(229,185,72,0.16)" : "rgba(237,230,218,0.06)",
+                    borderColor: on ? GOLD : "rgba(237,230,218,0.12)",
+                    color: on ? GOLD : "rgba(237,230,218,0.7)",
+                  }}
+                >
+                  <FilterIcon id={f.id} />
+                  <span className="text-[11px] leading-tight">{f.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-xs" style={{ color: "rgba(237,230,218,0.5)" }}>
+            {active.tagline}
+          </p>
+        </div>
+
+        {/* Controls */}
+        <div className="mt-5 flex items-center justify-between">
+          <button
+            onClick={close}
+            className="px-5 py-2.5 rounded-full text-sm active:scale-95 transition-transform"
+            style={{ background: "rgba(237,230,218,0.1)", color: "#EDE6DA" }}
+          >
+            Skip
+          </button>
+
+          <button
+            onClick={captured ? handleRetake : handleShutter}
+            disabled={status !== "live" || busy}
+            aria-label={captured ? "Retake" : "Take photo"}
+            className="w-[72px] h-[72px] rounded-full flex items-center justify-center disabled:opacity-40 active:scale-95 transition-transform"
+            style={{
+              background: captured ? "rgba(237,230,218,0.12)" : GOLD,
+              border: captured ? "2px solid rgba(237,230,218,0.3)" : "4px solid #14110F",
+              boxShadow: captured ? "none" : "0 0 0 3px rgba(229,185,72,0.45)",
+            }}
+          >
+            {captured ? (
+              <RotateCcw className="w-6 h-6" style={{ color: "#EDE6DA" }} />
+            ) : (
+              <Camera className="w-7 h-7" style={{ color: "#14110F" }} />
+            )}
+          </button>
+
+          <button
+            onClick={handleShare}
+            disabled={!captured || busy}
+            className="px-5 py-2.5 rounded-full text-sm flex items-center gap-2 disabled:opacity-35 active:scale-95 transition-transform"
+            style={{ background: captured ? GOLD : "rgba(237,230,218,0.1)", color: captured ? "#14110F" : "#EDE6DA" }}
+          >
+            {busy ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Share2 className="w-4 h-4" />
+            )}
+            {shared ? "Saved!" : "Share"}
           </button>
         </div>
+
+        <p className="mt-4 text-center text-xs" style={{ color: "rgba(237,230,218,0.45)" }}>
+          {caption ?? "Heritage Treasure Hunt · Piazza del Duomo"}
+        </p>
       </div>
-
-      {/* Main Container Area matching 75% width constraint footprint */}
-      <div className="mx-auto max-w-5xl w-full px-6 pt-10">
-        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] items-start">
-          
-          {/* Column Left: Live Camera Viewfinder Panel */}
-          <div className="space-y-6">
-            <Card className="overflow-hidden">
-              <h2 className="text-xl font-black tracking-tight text-foreground mb-4">Live Viewfinder</h2>
-              <div className="relative overflow-hidden rounded-2xl border border-border bg-black aspect-[4/3] w-full shadow-inner flex items-center justify-center">
-                
-                {loading && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black text-white/80 z-10">
-                    <Loader2 className="h-8 w-8 animate-spin text-accent" />
-                    <p className="text-sm font-semibold text-white/70">Setting up processing stream...</p>
-                  </div>
-                )}
-
-                <video
-                  ref={videoRef}
-                  onLoadedMetadata={handleVideoLoad}
-                  className="h-full w-full object-cover"
-                  playsInline
-                  muted
-                  autoPlay
-                />
-                <canvas
-                  ref={overlayCanvasRef}
-                  className="absolute inset-0 h-full w-full pointer-events-none"
-                />
-                
-                <div className="absolute bottom-4 left-4 rounded-xl bg-black/80 border border-white/10 px-4 py-2.5 text-xs font-bold text-white backdrop-blur-md max-w-[calc(100%-2rem)] flex items-center gap-2 shadow-md">
-                  {permissionDenied ? (
-                    <span className="text-destructive">Camera access permission blocked</span>
-                  ) : !stream ? (
-                    <span className="animate-pulse text-accent">Requesting device hardware...</span>
-                  ) : !cameraReady ? (
-                    <span className="text-accent">Starting video track loop...</span>
-                  ) : !modelsLoaded ? (
-                    <span className="text-accent animate-pulse">Parsing face-api feature meshes...</span>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-                      <span className="text-white/80">Face Vector Mesh Matrix Active</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </Card>
-
-            {/* Overlay Selector Controls */}
-            <Card>
-              <p className="text-xs uppercase tracking-[0.2em] font-black text-muted-foreground mb-3">
-                Select Your Custom Filter Theme
-              </p>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {Object.entries(overlayMeta).map(([key, meta]) => {
-                  const overlayKey = key as Overlay;
-                  const selected = overlayKey === overlay;
-                  return (
-                    <button
-                      key={overlayKey}
-                      type="button"
-                      onClick={() => setOverlay(overlayKey)}
-                      className={`rounded-2xl border p-4 text-center transition focus:outline-none active:scale-95 ${
-                        selected
-                          ? "border-accent bg-accent/15 text-accent-strong font-bold shadow-sm"
-                          : "border-border bg-card text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      <div className="text-3xl filter drop-shadow-sm">{meta.emoji}</div>
-                      <p className="mt-2 text-xs font-bold tracking-tight whitespace-nowrap">{meta.label}</p>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="mt-6 border-t border-border pt-5">
-                {permissionDenied ? (
-                  <PermissionWarning />
-                ) : (
-                  <button
-                    type="button"
-                    onClick={captureSouvenir}
-                    disabled={!ready}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-6 py-4 text-base font-bold text-accent-foreground shadow-md transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground active:scale-[0.99]"
-                  >
-                    <Camera className="h-5 w-5" />
-                    Snap Polaroid Souvenir
-                  </button>
-                )}
-              </div>
-            </Card>
-          </div>
-
-          {/* Column Right: Live Blueprint Filter Preview & Saved Results */}
-          <div className="space-y-6 lg:sticky lg:top-8">
-            <Card className="flex flex-col">
-              <h2 className="text-xl font-black tracking-tight text-foreground">Souvenir Preview</h2>
-              <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-                Your captured image automatically gets dynamic vector assets baked into a traditional high-gloss polaroid border print.
-              </p>
-              
-              <FramedPanel className="mt-5 flex flex-1 flex-col justify-center py-8">
-                <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-2xl bg-accent/15 text-4xl shadow-sm border border-accent/20">
-                  {overlayMeta[overlay].emoji}
-                </div>
-                <p className="font-bold text-base text-foreground">{overlayMeta[overlay].label} Overlay</p>
-                <p className="mt-1.5 text-xs text-muted-foreground max-w-xs mx-auto leading-normal">
-                  The graphics dynamically auto-render relative to your posture, orientation and face vector tracking frame values.
-                </p>
-              </FramedPanel>
-            </Card>
-
-            {/* Polaroid Saved Stack */}
-            <Card className="flex flex-col">
-              <h2 className="text-xl font-black tracking-tight text-foreground">Saved Souvenir Print</h2>
-              <div className="mt-4 flex-1 flex flex-col justify-center">
-                {captured ? (
-                  <div className="space-y-4">
-                    <div className="p-3 bg-muted rounded-2xl border border-border shadow-inner">
-                      <img src={captured} alt="Souvenir Polaroid Printout" className="w-full rounded-xl border border-border object-cover bg-card" />
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <button
-                        type="button"
-                        onClick={handleShare}
-                        disabled={shareStatus === "sharing" || !navigator.share}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3.5 text-sm font-bold text-accent-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground shadow-sm"
-                      >
-                        <Share2 className="h-4 w-4" />
-                        {shareStatus === "sharing" ? "Sharing..." : "Share Print"}
-                      </button>
-                      <a
-                        href={downloadLink}
-                        download="milan-heritage-souvenir.png"
-                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3.5 text-sm font-bold text-foreground transition hover:bg-muted shadow-sm"
-                      >
-                        <Download className="h-4 w-4" />
-                        Download Image
-                      </a>
-                    </div>
-                  </div>
-                ) : (
-                  <EmptySouvenirState />
-                )}
-              </div>
-            </Card>
-          </div>
-
-        </div>
-      </div>
-    </div>
+    </motion.div>
   );
 }
