@@ -36,11 +36,11 @@ export function Hunt() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 pb-10">
-      <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 py-10 text-white">
+    <div className="min-h-screen bg-background pb-10">
+      <div className="bg-accent px-6 py-10 text-accent-foreground">
         <div className="mx-auto max-w-5xl">
           <h1 className="text-3xl font-semibold">Hunt Progress</h1>
-          <p className="mt-2 text-stone-100/90">
+          <p className="mt-2 text-accent-foreground/80">
             Track your challenges, badges, and progress across the Milan Heritage experience.
           </p>
         </div>
@@ -48,24 +48,24 @@ export function Hunt() {
 
       <div className="mx-auto max-w-5xl px-6 pt-8">
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
+          <div className="rounded-3xl bg-card border border-border p-6 shadow-sm">
             <div className="flex items-center gap-4">
-              <div className="grid h-24 w-24 place-items-center rounded-full bg-emerald-50 text-emerald-700">
+              <div className="grid h-24 w-24 place-items-center rounded-full bg-accent/15 text-accent-strong">
                 <Trophy className="h-10 w-10" />
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.24em] text-stone-500">
+                <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">
                   Completed Challenges
                 </p>
                 <p className="text-3xl font-semibold">{completedCount} / {total}</p>
-                <p className="mt-1 text-sm text-stone-600">Completion {completionPct}%</p>
+                <p className="mt-1 text-sm text-muted-foreground">Completion {completionPct}%</p>
               </div>
             </div>
 
             <div className="mt-8">
-              <div className="w-full h-4 overflow-hidden rounded-full bg-stone-200">
+              <div className="w-full h-4 overflow-hidden rounded-full bg-secondary">
                 <motion.div
-                  className="h-full rounded-full bg-emerald-500"
+                  className="h-full rounded-full bg-accent"
                   initial={{ width: 0 }}
                   animate={{ width: `${completionPct}%` }}
                   transition={{ duration: 0.5 }}
@@ -74,8 +74,8 @@ export function Hunt() {
             </div>
           </div>
 
-          <div className="rounded-3xl bg-white p-6 shadow-sm">
-            <p className="text-sm uppercase tracking-[0.24em] text-stone-500">Badges</p>
+          <div className="rounded-3xl bg-card border border-border p-6 shadow-sm">
+            <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Badges</p>
             <div className="mt-4 grid gap-3">
               {badgeSlots.map((badge) => {
                 const earned = state.badges.includes(badge);
@@ -84,8 +84,8 @@ export function Hunt() {
                     key={badge}
                     className={`flex items-center justify-between rounded-3xl border px-4 py-3 transition ${
                       earned
-                        ? "border-emerald-100 bg-emerald-50 text-emerald-900"
-                        : "border-stone-200 bg-stone-50 text-stone-500 blur-[0.3px]"
+                        ? "border-success/30 bg-success/10 text-success"
+                        : "border-border bg-muted text-muted-foreground blur-[0.3px]"
                     }`}
                   >
                     <span>{badge}</span>
@@ -100,11 +100,11 @@ export function Hunt() {
         <section className="mt-8 rounded-3xl bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
             <div>
-              <p className="text-sm uppercase tracking-[0.24em] text-stone-500">Challenge List</p>
+              <p className="text-sm uppercase tracking-[0.24em] text-muted-foreground">Challenge List</p>
               <h2 className="text-2xl font-semibold">Current chapter status</h2>
             </div>
             <div className="flex flex-col items-start gap-3 sm:items-end">
-              <span className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
+              <span className="rounded-full bg-accent/15 px-4 py-2 text-sm font-semibold text-accent-strong">
                 {completionPct}% complete
               </span>
               {allCompleted ? (
@@ -112,14 +112,14 @@ export function Hunt() {
                   <button
                     type="button"
                     onClick={() => navigate("/souvenir")}
-                    className="inline-flex w-full items-center justify-center rounded-3xl border border-emerald-600 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 sm:w-auto"
+                    className="inline-flex w-full items-center justify-center rounded-3xl border border-accent bg-card px-4 py-2 text-sm font-semibold text-accent-strong transition hover:bg-accent/10 sm:w-auto"
                   >
                     Collect Souvenir
                   </button>
                   <button
                     type="button"
                     onClick={retakeQuiz}
-                    className="inline-flex w-full items-center justify-center rounded-3xl bg-stone-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-stone-800 sm:w-auto"
+                    className="inline-flex w-full items-center justify-center rounded-3xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90 sm:w-auto"
                   >
                     Retake Quiz
                   </button>
@@ -128,7 +128,7 @@ export function Hunt() {
                 <button
                   type="button"
                   onClick={() => navigate("/treasure-hunt", { state: { currentIndex: nextQuestionIndex } })}
-                  className="inline-flex w-full items-center justify-center rounded-3xl border border-emerald-600 bg-white px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 sm:w-auto"
+                  className="inline-flex w-full items-center justify-center rounded-3xl border border-accent bg-card px-4 py-2 text-sm font-semibold text-accent-strong transition hover:bg-accent/10 sm:w-auto"
                 >
                   Continue current question
                 </button>
@@ -149,10 +149,10 @@ export function Hunt() {
                   onClick={() => unlocked && navigate("/treasure-hunt", { state: { currentIndex: index } })}
                   className={`rounded-3xl border p-5 transition ${
                     completed
-                      ? "border-emerald-200 bg-emerald-50"
+                      ? "border-success/30 bg-success/10"
                       : unlocked
-                      ? "border-stone-200 bg-white cursor-pointer hover:shadow-lg"
-                      : "border-stone-100 bg-stone-50/80 opacity-70"
+                      ? "border-border bg-card cursor-pointer hover:shadow-lg"
+                      : "border-border bg-muted opacity-70"
                   }`}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -160,40 +160,40 @@ export function Hunt() {
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <p className="text-sm text-stone-500 uppercase tracking-[0.22em]">
+                      <p className="text-sm text-muted-foreground uppercase tracking-[0.22em]">
                         {challenge.type}
                       </p>
                       <h3 className="text-lg font-semibold">{challenge.title}</h3>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-stone-600">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       {completed ? (
-                        <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1.5 text-emerald-800">
+                        <span className="inline-flex items-center gap-2 rounded-full bg-success/15 px-3 py-1.5 text-success">
                           <ShieldCheck className="h-4 w-4" /> Completed
                         </span>
                       ) : unlocked ? (
-                        <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-slate-700">
+                        <span className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-foreground">
                           <Sparkles className="h-4 w-4" /> Unlocked
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-2 rounded-full bg-stone-100 px-3 py-1.5 text-stone-500">
+                        <span className="inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-muted-foreground">
                           <Lock className="h-4 w-4" /> Locked
                         </span>
                       )}
                     </div>
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2 text-sm text-stone-600">
+                  <div className="mt-4 flex flex-wrap gap-2 text-sm text-muted-foreground">
                     <span
                       className={`rounded-full px-3 py-1 ${
                         completed && earnedPoints === 0
-                          ? "bg-red-50 text-red-700"
+                          ? "bg-destructive/10 text-destructive"
                           : completed && earnedPoints > 0
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-stone-100 text-stone-600"
+                          ? "bg-success/15 text-success"
+                          : "bg-muted text-muted-foreground"
                       }`}
                     >
                       +{earnedPoints} pts
                     </span>
-                    <span className="rounded-full bg-stone-100 px-3 py-1">
+                    <span className="rounded-full bg-muted px-3 py-1">
                       {challenge.type === "photo"
                         ? "Camera capture"
                         : `${challenge.acceptedAnswers?.length ?? 1} accepted answers`}

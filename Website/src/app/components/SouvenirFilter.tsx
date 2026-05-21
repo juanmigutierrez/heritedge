@@ -13,12 +13,12 @@ const overlayMeta: Record<Overlay, { label: string; emoji: string }> = {
 };
 
 function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-3xl bg-white dark:bg-stone-900 p-6 border border-stone-200/80 dark:border-white/5 shadow-md ${className}`}>{children}</div>;
+  return <div className={`rounded-3xl bg-card p-6 border border-border shadow-md ${className}`}>{children}</div>;
 }
 
 function FramedPanel({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`rounded-3xl border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950/40 p-6 text-center ${className}`}>
+    <div className={`rounded-3xl border border-border bg-muted p-6 text-center ${className}`}>
       {children}
     </div>
   );
@@ -26,9 +26,9 @@ function FramedPanel({ children, className = "" }: { children: ReactNode; classN
 
 function EmptySouvenirState() {
   return (
-    <div className="rounded-3xl border border-dashed border-stone-300 dark:border-stone-700 p-8 text-stone-400 dark:text-stone-500 my-auto">
+    <div className="rounded-3xl border border-dashed border-border p-8 text-muted-foreground my-auto">
       <div className="flex flex-col items-center gap-3">
-        <ImageIcon className="h-10 w-10 text-stone-300 dark:text-stone-600" />
+        <ImageIcon className="h-10 w-10 text-muted-foreground" />
         <p className="text-sm font-medium">Your souvenir will appear here after capture.</p>
       </div>
     </div>
@@ -37,12 +37,12 @@ function EmptySouvenirState() {
 
 function PermissionWarning() {
   return (
-    <div className="rounded-2xl border border-rose-200 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-950/20 p-5 text-rose-700 dark:text-rose-400">
+    <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5 text-destructive">
       <div className="flex items-start gap-3">
         <X className="h-5 w-5 shrink-0 mt-0.5" />
         <div>
           <p className="font-bold text-base">Enable Camera Access</p>
-          <p className="mt-1 text-sm text-rose-700/80 dark:text-rose-400/80 leading-relaxed">
+          <p className="mt-1 text-sm text-destructive/80 leading-relaxed">
             Please allow camera permission in your browser or system settings, then refresh this page to snap your souvenir selfie.
           </p>
         </div>
@@ -339,24 +339,24 @@ export function SouvenirFilter() {
   const downloadLink = useMemo(() => captured || undefined, [captured]);
 
   return (
-    <div className="min-h-screen bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans antialiased pb-12">
+    <div className="min-h-screen bg-background text-foreground font-sans antialiased pb-12">
       {/* Header Band occupying max-w-5xl (75% view layout area) */}
-      <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-emerald-950 border-b border-white/5 px-6 py-12 text-white">
+      <div className="bg-accent border-b border-border px-6 py-12 text-accent-foreground">
         <div className="mx-auto flex max-w-5xl w-full flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold tracking-widest uppercase">
+            <div className="flex items-center gap-2 text-accent-foreground/80 text-xs font-bold tracking-widest uppercase">
               <Sparkles className="h-4 w-4" />
               <span>Quest Completed Souvenir</span>
             </div>
             <h1 className="text-3xl font-black tracking-tight mt-1">Souvenir Filter Studio</h1>
-            <p className="mt-2 text-stone-400 text-base leading-relaxed max-w-2xl">
+            <p className="mt-2 text-accent-foreground/80 text-base leading-relaxed max-w-2xl">
               Capture your final Milan memory with a custom historical overlay filter and preserve it inside an archival digital Polaroid frame.
             </p>
           </div>
           <button
             type="button"
             onClick={() => navigate("/")}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white/10 px-6 py-3.5 text-sm font-bold text-white backdrop-blur-md border border-white/10 transition hover:bg-white/20 active:scale-95 sm:w-auto shrink-0"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-black/10 px-6 py-3.5 text-sm font-bold text-accent-foreground backdrop-blur-md border border-black/10 transition hover:bg-black/20 active:scale-95 sm:w-auto shrink-0"
           >
             <Home className="h-4 w-4" />
             Back to Homepage
@@ -371,13 +371,13 @@ export function SouvenirFilter() {
           {/* Column Left: Live Camera Viewfinder Panel */}
           <div className="space-y-6">
             <Card className="overflow-hidden">
-              <h2 className="text-xl font-black tracking-tight text-stone-900 dark:text-white mb-4">Live Viewfinder</h2>
-              <div className="relative overflow-hidden rounded-2xl border border-stone-200 dark:border-white/5 bg-stone-950 aspect-[4/3] w-full shadow-inner flex items-center justify-center">
+              <h2 className="text-xl font-black tracking-tight text-foreground mb-4">Live Viewfinder</h2>
+              <div className="relative overflow-hidden rounded-2xl border border-border bg-black aspect-[4/3] w-full shadow-inner flex items-center justify-center">
                 
                 {loading && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-stone-950 text-stone-300 z-10">
-                    <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
-                    <p className="text-sm font-semibold text-stone-400">Setting up processing stream...</p>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black text-white/80 z-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-accent" />
+                    <p className="text-sm font-semibold text-white/70">Setting up processing stream...</p>
                   </div>
                 )}
 
@@ -394,19 +394,19 @@ export function SouvenirFilter() {
                   className="absolute inset-0 h-full w-full pointer-events-none"
                 />
                 
-                <div className="absolute bottom-4 left-4 rounded-xl bg-stone-900/90 border border-white/10 px-4 py-2.5 text-xs font-bold text-white backdrop-blur-md max-w-[calc(100%-2rem)] flex items-center gap-2 shadow-md">
+                <div className="absolute bottom-4 left-4 rounded-xl bg-black/80 border border-white/10 px-4 py-2.5 text-xs font-bold text-white backdrop-blur-md max-w-[calc(100%-2rem)] flex items-center gap-2 shadow-md">
                   {permissionDenied ? (
-                    <span className="text-rose-400">Camera access permission blocked</span>
+                    <span className="text-destructive">Camera access permission blocked</span>
                   ) : !stream ? (
-                    <span className="animate-pulse text-amber-400">Requesting device hardware...</span>
+                    <span className="animate-pulse text-accent">Requesting device hardware...</span>
                   ) : !cameraReady ? (
-                    <span className="text-amber-400">Starting video track loop...</span>
+                    <span className="text-accent">Starting video track loop...</span>
                   ) : !modelsLoaded ? (
-                    <span className="text-emerald-400 animate-pulse">Parsing face-api feature meshes...</span>
+                    <span className="text-accent animate-pulse">Parsing face-api feature meshes...</span>
                   ) : (
                     <div className="flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-stone-200">Face Vector Mesh Matrix Active</span>
+                      <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+                      <span className="text-white/80">Face Vector Mesh Matrix Active</span>
                     </div>
                   )}
                 </div>
@@ -415,7 +415,7 @@ export function SouvenirFilter() {
 
             {/* Overlay Selector Controls */}
             <Card>
-              <p className="text-xs uppercase tracking-[0.2em] font-black text-stone-400 dark:text-stone-500 mb-3">
+              <p className="text-xs uppercase tracking-[0.2em] font-black text-muted-foreground mb-3">
                 Select Your Custom Filter Theme
               </p>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -429,8 +429,8 @@ export function SouvenirFilter() {
                       onClick={() => setOverlay(overlayKey)}
                       className={`rounded-2xl border p-4 text-center transition focus:outline-none active:scale-95 ${
                         selected
-                          ? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-bold shadow-sm"
-                          : "border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900/50 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
+                          ? "border-accent bg-accent/15 text-accent-strong font-bold shadow-sm"
+                          : "border-border bg-card text-muted-foreground hover:bg-muted"
                       }`}
                     >
                       <div className="text-3xl filter drop-shadow-sm">{meta.emoji}</div>
@@ -440,7 +440,7 @@ export function SouvenirFilter() {
                 })}
               </div>
 
-              <div className="mt-6 border-t border-stone-100 dark:border-white/5 pt-5">
+              <div className="mt-6 border-t border-border pt-5">
                 {permissionDenied ? (
                   <PermissionWarning />
                 ) : (
@@ -448,7 +448,7 @@ export function SouvenirFilter() {
                     type="button"
                     onClick={captureSouvenir}
                     disabled={!ready}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 dark:bg-emerald-500 px-6 py-4 text-base font-bold text-white shadow-md transition hover:bg-emerald-700 dark:hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:cursor-not-allowed disabled:bg-stone-200 dark:disabled:bg-stone-800 disabled:text-stone-400 dark:disabled:text-stone-600 active:scale-[0.99]"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-6 py-4 text-base font-bold text-accent-foreground shadow-md transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground active:scale-[0.99]"
                   >
                     <Camera className="h-5 w-5" />
                     Snap Polaroid Souvenir
@@ -461,17 +461,17 @@ export function SouvenirFilter() {
           {/* Column Right: Live Blueprint Filter Preview & Saved Results */}
           <div className="space-y-6 lg:sticky lg:top-8">
             <Card className="flex flex-col">
-              <h2 className="text-xl font-black tracking-tight text-stone-900 dark:text-white">Souvenir Preview</h2>
-              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400 leading-relaxed">
+              <h2 className="text-xl font-black tracking-tight text-foreground">Souvenir Preview</h2>
+              <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
                 Your captured image automatically gets dynamic vector assets baked into a traditional high-gloss polaroid border print.
               </p>
               
               <FramedPanel className="mt-5 flex flex-1 flex-col justify-center py-8">
-                <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-500/10 text-4xl shadow-sm border border-emerald-500/10">
+                <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-2xl bg-accent/15 text-4xl shadow-sm border border-accent/20">
                   {overlayMeta[overlay].emoji}
                 </div>
-                <p className="font-bold text-base text-stone-800 dark:text-stone-200">{overlayMeta[overlay].label} Overlay</p>
-                <p className="mt-1.5 text-xs text-stone-400 dark:text-stone-500 max-w-xs mx-auto leading-normal">
+                <p className="font-bold text-base text-foreground">{overlayMeta[overlay].label} Overlay</p>
+                <p className="mt-1.5 text-xs text-muted-foreground max-w-xs mx-auto leading-normal">
                   The graphics dynamically auto-render relative to your posture, orientation and face vector tracking frame values.
                 </p>
               </FramedPanel>
@@ -479,19 +479,19 @@ export function SouvenirFilter() {
 
             {/* Polaroid Saved Stack */}
             <Card className="flex flex-col">
-              <h2 className="text-xl font-black tracking-tight text-stone-900 dark:text-white">Saved Souvenir Print</h2>
+              <h2 className="text-xl font-black tracking-tight text-foreground">Saved Souvenir Print</h2>
               <div className="mt-4 flex-1 flex flex-col justify-center">
                 {captured ? (
                   <div className="space-y-4">
-                    <div className="p-3 bg-stone-100 dark:bg-stone-950 rounded-2xl border border-stone-200 dark:border-white/5 shadow-inner">
-                      <img src={captured} alt="Souvenir Polaroid Printout" className="w-full rounded-xl border border-stone-200 dark:border-stone-800 object-cover bg-white" />
+                    <div className="p-3 bg-muted rounded-2xl border border-border shadow-inner">
+                      <img src={captured} alt="Souvenir Polaroid Printout" className="w-full rounded-xl border border-border object-cover bg-card" />
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <button
                         type="button"
                         onClick={handleShare}
                         disabled={shareStatus === "sharing" || !navigator.share}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3.5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-stone-200 dark:disabled:bg-stone-800 disabled:text-stone-400 shadow-sm"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3.5 text-sm font-bold text-accent-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground shadow-sm"
                       >
                         <Share2 className="h-4 w-4" />
                         {shareStatus === "sharing" ? "Sharing..." : "Share Print"}
@@ -499,7 +499,7 @@ export function SouvenirFilter() {
                       <a
                         href={downloadLink}
                         download="milan-heritage-souvenir.png"
-                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 px-4 py-3.5 text-sm font-bold text-stone-700 dark:text-stone-200 transition hover:bg-stone-100 dark:hover:bg-stone-800 shadow-sm"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-3.5 text-sm font-bold text-foreground transition hover:bg-muted shadow-sm"
                       >
                         <Download className="h-4 w-4" />
                         Download Image
