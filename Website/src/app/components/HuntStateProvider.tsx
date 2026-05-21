@@ -7,7 +7,6 @@ export interface HuntState {
   visitedStops: string[];
   badges: string[];
   souvenirImage?: string;
-  tutorialSeen: boolean;
   startedAt?: number;
   accumulatedTimeMs: number;
 }
@@ -24,14 +23,12 @@ interface HuntStateContext {
   visitStop: (stopId: string) => void;
   addBadge: (name: string) => void;
   setSouvenirImage: (image: string) => void;
-  markTutorialSeen: () => void;
   startHunt: () => void;
   pauseHunt: () => void;
   resetState: () => void;
 }
 
 const HUNT_STATE_KEY = "hunt-state";
-const TUTORIAL_SEEN_KEY = "tutorialSeen";
 const defaultState: HuntState = {
   score: 0,
   completedChallenges: [],
@@ -39,7 +36,6 @@ const defaultState: HuntState = {
   visitedStops: [],
   badges: [],
   souvenirImage: undefined,
-  tutorialSeen: false,
   accumulatedTimeMs: 0,
 };
 
@@ -53,22 +49,14 @@ export function HuntProvider({ children }: { children: ReactNode }) {
     if (typeof window === "undefined") return;
     try {
       const stored = window.localStorage.getItem(HUNT_STATE_KEY);
-      const tutorialSeen = window.localStorage.getItem(TUTORIAL_SEEN_KEY) === "true";
-
       if (stored) {
         const parsed = JSON.parse(stored) as Partial<HuntState>;
         setState((prev) => ({
           ...prev,
           ...parsed,
           challengeScores: parsed.challengeScores ?? prev.challengeScores,
-          tutorialSeen: tutorialSeen || parsed.tutorialSeen || false,
           startedAt: parsed.startedAt ?? prev.startedAt,
           accumulatedTimeMs: parsed.accumulatedTimeMs ?? prev.accumulatedTimeMs,
-        }));
-      } else {
-        setState((prev) => ({
-          ...prev,
-          tutorialSeen,
         }));
       }
     } catch (error) {
@@ -168,20 +156,9 @@ export function HuntProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const markTutorialSeen = () => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(TUTORIAL_SEEN_KEY, "true");
-    }
-    setState((current) => ({
-      ...current,
-      tutorialSeen: true,
-    }));
-  };
-
   const resetState = () => {
-    setState((current) => ({
+    setState(() => ({
       ...defaultState,
-      tutorialSeen: current.tutorialSeen,
       accumulatedTimeMs: 0,
     }));
   };
@@ -194,7 +171,6 @@ export function HuntProvider({ children }: { children: ReactNode }) {
       visitStop,
       addBadge,
       setSouvenirImage,
-      markTutorialSeen,
       startHunt,
       pauseHunt,
       resetState,

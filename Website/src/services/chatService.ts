@@ -1,5 +1,3 @@
-import OpenAI from "openai";
-
 export interface ChatResponse {
   answer: string;
   reply?: string; // alias used by VoiceAssistant and VoiceCommand
@@ -10,23 +8,18 @@ export const sendMessage = async (
   message: string,
   artifactContext?: string | null
 ): Promise<ChatResponse> => {
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY as string | undefined;
-  if (!apiKey) throw new Error("Missing VITE_OPENAI_API_KEY");
-
-  const client = new OpenAI({ apiKey, dangerouslyAllowBrowser: true });
-  const systemPrompt = artifactContext ? `Context: ${artifactContext}` : "";
-
-  const completion = await client.chat.completions.create({
-    model: "gpt-4o-mini",
-    temperature: 0.7,
-    messages: [
-      ...(systemPrompt ? [{ role: "system" as const, content: systemPrompt }] : []),
-      { role: "user", content: message },
-    ],
+  const res = await fetch("http://localhost:3001/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message,
+      artifact: artifactContext ?? null,
+    }),
   });
 
-  const answer = completion.choices?.[0]?.message?.content?.trim() ?? "";
-  return { answer, reply: answer };
+  if (!res.ok) throw new Error("Chat request failed");
+
+  return res.json();
 };
 
 // ─── Luca voice ───────────────────────────────────────────────────────────────

@@ -343,33 +343,33 @@ export function TreasureHunt() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans antialiased selection:bg-emerald-500/30 selection:text-emerald-800 dark:selection:text-emerald-200">
+    <div className="flex min-h-screen flex-col bg-background text-foreground font-sans antialiased selection:bg-accent/30 selection:text-accent-strong">
       {/* Header Area spanning 75% width container */}
-      <div className="sticky top-0 z-30 border-b border-stone-200/80 dark:border-white/5 bg-white/90 dark:bg-stone-900/80 px-6 pt-12 pb-4 shadow-xl backdrop-blur-xl">
+      <div className="sticky top-0 z-30 border-b border-border bg-card/90 px-6 pt-12 pb-4 shadow-xl backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl w-full items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-stone-200 dark:border-white/10 bg-stone-100 dark:bg-white/5 text-stone-600 dark:text-stone-300 transition hover:bg-stone-200 dark:hover:bg-white/10 hover:text-stone-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground transition hover:bg-secondary hover:text-foreground focus:outline-none focus:ring-2 focus:ring-accent active:scale-95"
               aria-label="Exit current challenge"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-                <h1 className="text-xs font-bold tracking-widest text-stone-500 dark:text-stone-400 uppercase">Current Challenge</h1>
+                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-accent" />
+                <h1 className="text-xs font-bold tracking-widest text-muted-foreground uppercase">Current Challenge</h1>
               </div>
-              <p className="text-sm font-medium text-stone-800 dark:text-stone-200">
-                Stop {currentIndex + 1} <span className="text-stone-400 dark:text-stone-500">of {challenges.length}</span>
+              <p className="text-sm font-medium text-foreground">
+                Stop {currentIndex + 1} <span className="text-muted-foreground">of {challenges.length}</span>
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-bold text-amber-600 dark:text-amber-400 shadow-sm dark:shadow-inner backdrop-blur-md">
+          <div className="flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-sm font-bold text-accent-strong shadow-sm backdrop-blur-md">
             <Trophy className="h-4 w-4 animate-bounce" />
-            <motion.span key={state.score} initial={{ scale: 1.3, color: "#d97706" }} animate={{ scale: 1, color: "#d97706" }}>
+            <motion.span key={state.score} initial={{ scale: 1.3, color: "#9C7A1F" }} animate={{ scale: 1, color: "#9C7A1F" }}>
               {state.score}
             </motion.span>
           </div>
@@ -377,9 +377,9 @@ export function TreasureHunt() {
 
         {/* Challenge Progress Rail with expanded max-w width */}
         <div className="mx-auto mt-4 max-w-5xl w-full px-1">
-          <div className="relative h-2 w-full rounded-full bg-stone-200 dark:bg-stone-800">
+          <div className="relative h-2 w-full rounded-full bg-secondary">
             <motion.div
-              className="absolute top-0 bottom-0 left-0 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_12px_rgba(16,185,129,0.4)]"
+              className="absolute top-0 bottom-0 left-0 rounded-full bg-accent shadow-[0_0_12px_rgba(229,185,72,0.4)]"
               initial={{ width: 0 }}
               animate={{ width: `${progressPct}%` }}
               transition={{ duration: 0.6, ease: "easeOut" }}
@@ -389,8 +389,8 @@ export function TreasureHunt() {
                 key={idx}
                 className={`absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2 transition-all duration-300 ${
                   idx <= completedCount
-                    ? "border-emerald-500 bg-white dark:bg-stone-900"
-                    : "border-stone-300 dark:border-stone-700 bg-stone-200 dark:bg-stone-800"
+                    ? "border-accent bg-card"
+                    : "border-border bg-secondary"
                 }`}
                 style={{ left: `${(idx / (challenges.length - 1)) * 100}%` }}
               />
@@ -422,34 +422,34 @@ export function TreasureHunt() {
                 className="space-y-6"
               >
                 {/* Challenge Information Card */}
-                <div className={`relative overflow-hidden rounded-3xl border border-stone-200 dark:border-white/5 bg-gradient-to-b p-8 shadow-xl ${
+                <div className={`relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-xl ${
                   current.type === "photo" 
-                    ? "from-white via-white to-purple-500/5 dark:from-stone-900 dark:via-stone-900 dark:to-purple-950/20" 
-                    : "from-white via-white to-cyan-500/5 dark:from-stone-900 dark:via-stone-900 dark:to-cyan-950/20"
+                    ? "" 
+                    : ""
                 }`}>
                   <div className="mb-4 flex items-start gap-4">
                     <div className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-2xl shadow-md border ${
                       current.type === "photo" 
-                        ? "bg-purple-500/10 border-purple-500/20 dark:border-purple-500/30 text-purple-600 dark:text-purple-400" 
-                        : "bg-cyan-500/10 border-cyan-500/20 dark:border-cyan-500/30 text-cyan-600 dark:text-cyan-400"
+                        ? "bg-accent/15 border-accent/20 text-accent-strong" 
+                        : "bg-accent/15 border-accent/20 text-accent-strong"
                     }`}>
                       {current.type === "photo" ? <Camera className="h-7 w-7" /> : <HelpCircle className="h-7 w-7" />}
                     </div>
                     <div className="flex-1">
-                      <span className="text-[11px] font-bold tracking-wider text-stone-400 dark:text-stone-500 uppercase">
+                      <span className="text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
                         {current.period || "History & Heritage"}
                       </span>
-                      <h2 className="text-2xl font-black tracking-tight text-stone-900 dark:text-white mt-0.5">{current.title}</h2>
-                      <p className="mt-3 text-base leading-relaxed text-stone-600 dark:text-stone-300">{current.description}</p>
+                      <h2 className="text-2xl font-black tracking-tight text-foreground mt-0.5">{current.title}</h2>
+                      <p className="mt-3 text-base leading-relaxed text-muted-foreground">{current.description}</p>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-y-2 border-t border-stone-100 dark:border-white/5 pt-4 text-xs text-stone-500 dark:text-stone-400">
-                    <div className="flex items-center gap-1.5 rounded-md bg-stone-100 dark:bg-white/5 px-3 py-1.5 text-sm">
-                      <MapPin className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                      <span className="font-semibold text-stone-700 dark:text-stone-300">{current.location}</span>
+                  <div className="flex flex-wrap items-center gap-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-sm">
+                      <MapPin className="h-4 w-4 text-accent-strong" />
+                      <span className="font-semibold text-foreground">{current.location}</span>
                     </div>
-                    <div className="ml-auto flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-md text-sm">
+                    <div className="ml-auto flex items-center gap-1 font-bold text-accent-strong bg-accent/10 border border-accent/20 px-3 py-1.5 rounded-md text-sm">
                       <Sparkles className="h-3.5 w-3.5" />
                       <span>+{current.points} Points</span>
                     </div>
@@ -457,8 +457,8 @@ export function TreasureHunt() {
                 </div>
 
                 {isCompleted && (
-                  <div className="flex items-center gap-3 rounded-2xl border border-emerald-500/20 dark:border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10 p-5 text-base text-emerald-700 dark:text-emerald-300 shadow-sm backdrop-blur-md">
-                    <Check className="h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <div className="flex items-center gap-3 rounded-2xl border border-success/30 bg-success/10 p-5 text-base text-success shadow-sm backdrop-blur-md">
+                    <Check className="h-5 w-5 flex-shrink-0 text-success" />
                     <span>You already answered this challenge correctly! Feel free to read through the info or tap below to continue.</span>
                   </div>
                 )}
@@ -508,23 +508,23 @@ export function TreasureHunt() {
                 />
 
                 {/* Navigation Bottom Panel */}
-                <div className="rounded-[2rem] border border-stone-200 dark:border-white/5 bg-white/60 dark:bg-stone-900/60 p-8 text-center shadow-md backdrop-blur-md">
-                  <div className="flex items-center justify-center gap-2 text-base text-stone-500 dark:text-stone-400">
-                    <Compass className="h-5 w-5 text-stone-400 dark:text-stone-500" />
+                <div className="rounded-[2rem] border border-border bg-card/60 p-8 text-center shadow-md backdrop-blur-md">
+                  <div className="flex items-center justify-center gap-2 text-base text-muted-foreground">
+                    <Compass className="h-5 w-5 text-muted-foreground" />
                     <p>You have finished {completedCount} out of {challenges.length} stops</p>
                   </div>
                   <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:justify-center">
                     <button
                       type="button"
                       onClick={() => navigate("/hunt")}
-                      className="inline-flex w-full items-center justify-center rounded-2xl bg-stone-900 dark:bg-white px-8 py-4 text-base font-bold text-white dark:text-stone-950 transition hover:bg-stone-800 dark:hover:bg-stone-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95 sm:w-auto"
+                      className="inline-flex w-full items-center justify-center rounded-2xl bg-primary px-8 py-4 text-base font-bold text-primary-foreground transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent active:scale-95 sm:w-auto"
                     >
                       View Map Tracker
                     </button>
                     <button
                       type="button"
                       onClick={() => navigate("/summary")}
-                      className="inline-flex w-full items-center justify-center rounded-2xl border border-stone-200 dark:border-white/10 bg-stone-100 dark:bg-white/5 px-8 py-4 text-base font-bold text-stone-700 dark:text-white transition hover:bg-stone-200 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95 sm:w-auto"
+                      className="inline-flex w-full items-center justify-center rounded-2xl border border-border bg-muted px-8 py-4 text-base font-bold text-foreground transition hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-accent active:scale-95 sm:w-auto"
                     >
                       Go to Summary
                     </button>
@@ -563,15 +563,15 @@ function PhotoChallenge(props: {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-purple-500/10 bg-purple-500/5 dark:bg-purple-950/20 p-5 text-purple-900 dark:text-purple-200 shadow-sm">
+      <div className="rounded-2xl border border-accent/20 bg-accent/10 p-5 text-foreground shadow-sm">
         <div className="flex gap-2.5">
-          <Sparkles className="h-5 w-5 flex-shrink-0 text-purple-500 dark:text-purple-400 mt-0.5" />
+          <Sparkles className="h-5 w-5 flex-shrink-0 text-accent-strong mt-0.5" />
           <p className="text-base font-medium leading-relaxed">{prompt}</p>
         </div>
       </div>
 
       {preview ? (
-        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-3xl border border-stone-200 dark:border-white/10 bg-stone-100 dark:bg-stone-900 shadow-xl group">
+        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-3xl border border-border bg-muted shadow-xl group">
           <img src={preview} alt="Your captured photo" className="h-full w-full object-cover" />
           
           <div className="absolute inset-4 pointer-events-none border border-white/20 rounded-xl">
@@ -593,9 +593,9 @@ function PhotoChallenge(props: {
             </div>
           )}
           {submitting && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-stone-950/80 text-white backdrop-blur-sm">
-              <Loader2 className="h-9 w-9 animate-spin text-purple-400" />
-              <span className="text-base font-bold text-purple-200 animate-pulse">Checking your photo...</span>
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 text-white backdrop-blur-sm">
+              <Loader2 className="h-9 w-9 animate-spin text-accent" />
+              <span className="text-base font-bold text-white animate-pulse">Checking your photo...</span>
             </div>
           )}
         </div>
@@ -603,33 +603,33 @@ function PhotoChallenge(props: {
         <button
           type="button"
           onClick={onPick}
-          className="relative flex aspect-[16/10] w-full flex-col items-center justify-center gap-4 rounded-3xl border-2 border-dashed border-stone-300 dark:border-stone-800 bg-stone-100/50 dark:bg-stone-900/40 transition hover:bg-stone-100 dark:hover:bg-stone-900 hover:border-purple-500/40 dark:hover:border-purple-500/40 focus:outline-none focus:ring-2 focus:ring-purple-500 active:scale-[0.99] group"
+          className="relative flex aspect-[16/10] w-full flex-col items-center justify-center gap-4 rounded-3xl border-2 border-dashed border-border bg-muted/50 transition hover:bg-muted hover:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent active:scale-[0.99] group"
         >
-          <div className="absolute inset-6 border border-transparent group-hover:border-stone-400/20 dark:group-hover:border-white/5 rounded-2xl pointer-events-none transition-colors" />
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-purple-500/20 bg-purple-500/10 shadow-md text-purple-600 dark:text-purple-400 transition-transform group-hover:scale-110">
+          <div className="absolute inset-6 border border-transparent group-hover:border-border rounded-2xl pointer-events-none transition-colors" />
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-accent/20 bg-accent/15 shadow-md text-accent-strong transition-transform group-hover:scale-110">
             <Camera className="h-9 w-9" />
           </div>
           <div className="px-6 text-center">
-            <p className="text-lg font-black text-stone-700 dark:text-stone-200">Take Photo</p>
-            <p className="mt-1 text-sm text-stone-400 dark:text-stone-500">Tap here to open your camera and scan the location</p>
+            <p className="text-lg font-black text-foreground">Take Photo</p>
+            <p className="mt-1 text-sm text-muted-foreground">Tap here to open your camera and scan the location</p>
           </div>
         </button>
       )}
 
       {isLowConfidence && (
-        <div className="space-y-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6 shadow-md backdrop-blur-md">
+        <div className="space-y-4 rounded-2xl border border-accent/30 bg-accent/10 p-6 shadow-md backdrop-blur-md">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="h-6 w-6 flex-shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
+            <AlertTriangle className="h-6 w-6 flex-shrink-0 text-accent-strong mt-0.5" />
             <div>
-              <p className="text-base font-bold text-amber-800 dark:text-amber-200">Not quite sure</p>
-              <p className="mt-1 text-base text-amber-700 dark:text-amber-300/90 leading-relaxed">{recapLowConfidence?.message}</p>
+              <p className="text-base font-bold text-foreground">Not quite sure</p>
+              <p className="mt-1 text-base text-muted-foreground leading-relaxed">{recapLowConfidence?.message}</p>
             </div>
           </div>
           <div className="flex gap-4">
             <button
               type="button"
               onClick={onRetake}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-stone-100 dark:bg-white/5 py-3.5 text-base font-bold text-amber-700 dark:text-amber-300 transition hover:bg-stone-200 dark:hover:bg-white/10 active:scale-[0.98]"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-accent/30 bg-muted py-3.5 text-base font-bold text-accent-strong transition hover:bg-secondary active:scale-[0.98]"
             >
               <RotateCcw className="h-5 w-5" />
               Retake Photo
@@ -637,7 +637,7 @@ function PhotoChallenge(props: {
             <button
               type="button"
               onClick={onAcceptAnyway}
-              className="flex-1 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 py-3.5 text-base font-bold text-white dark:text-stone-950 shadow-md transition hover:from-amber-500 hover:to-amber-400 active:scale-[0.98]"
+              className="flex-1 rounded-xl bg-accent py-3.5 text-base font-bold text-accent-foreground shadow-md transition hover:opacity-90 active:scale-[0.98]"
             >
               Submit Anyway
             </button>
@@ -649,7 +649,7 @@ function PhotoChallenge(props: {
         <button
           type="button"
           onClick={onSubmit}
-          className="w-full rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 py-4 text-base font-bold text-white shadow-md transition hover:from-purple-500 hover:to-indigo-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-stone-950 active:scale-[0.98]"
+          className="w-full rounded-2xl bg-accent py-4 text-base font-bold text-accent-foreground shadow-md transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background active:scale-[0.98]"
         >
           Submit Photo
         </button>
@@ -671,17 +671,17 @@ function QuestionChallenge(props: {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-cyan-500/10 bg-cyan-500/5 dark:bg-cyan-950/20 p-5 text-cyan-900 dark:text-cyan-200 shadow-sm">
+      <div className="rounded-2xl border border-accent/20 bg-accent/10 p-5 text-foreground shadow-sm">
         <p className="text-base font-medium leading-relaxed">{question}</p>
       </div>
 
-      <div className="flex items-center gap-2 rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-2.5 shadow-sm focus-within:border-cyan-500/40 focus-within:ring-1 focus-within:ring-cyan-500/40 transition">
+      <div className="flex items-center gap-2 rounded-2xl border border-border bg-card p-2.5 shadow-sm focus-within:border-accent/40 focus-within:ring-1 focus-within:ring-accent/40 transition">
         <input
           type="text"
           value={answer}
           onChange={(event) => setAnswer(event.target.value)}
           placeholder="Type your answer here..."
-          className="flex-1 bg-transparent px-3 py-2 text-base text-stone-800 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 outline-none"
+          className="flex-1 bg-transparent px-3 py-2 text-base text-foreground placeholder:text-muted-foreground outline-none"
           onKeyDown={(event) => {
             if (event.key === "Enter" && answer.trim() && !submitting) onSubmit();
           }}
@@ -692,8 +692,8 @@ function QuestionChallenge(props: {
           disabled={voiceListening}
           className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl transition-all ${
             voiceListening
-              ? "bg-red-500 text-white animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.4)]"
-              : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700 hover:text-white"
+              ? "bg-destructive text-destructive-foreground animate-pulse shadow-[0_0_12px_rgba(178,58,58,0.4)]"
+              : "bg-muted text-muted-foreground hover:bg-secondary hover:text-foreground"
           }`}
           title={voiceListening ? "Listening..." : "Tap to speak your answer"}
         >
@@ -705,11 +705,11 @@ function QuestionChallenge(props: {
         type="button"
         onClick={onSubmit}
         disabled={!answer.trim() || submitting}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-600 py-4 text-base font-bold text-white shadow-md transition hover:from-cyan-500 hover:to-blue-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-stone-950 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent py-4 text-base font-bold text-accent-foreground shadow-md transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
       >
         {submitting ? (
           <>
-            <Loader2 className="h-5 w-5 animate-spin text-white" />
+            <Loader2 className="h-5 w-5 animate-spin text-accent-foreground" />
             Checking your answer...
           </>
         ) : (
@@ -732,34 +732,34 @@ function HintBlock(props: {
   return (
     <div className={`rounded-2xl border transition-all duration-300 ${
       hint 
-        ? "border-amber-500/30 dark:border-amber-500/20 bg-amber-500/5 shadow-sm" 
-        : "border-stone-200 dark:border-stone-800 bg-white/50 dark:bg-stone-900/40"
+        ? "border-accent/30 bg-accent/5 shadow-sm" 
+        : "border-border bg-card/50"
     }`}>
       <div className="p-5">
         <div className="flex items-start gap-4">
           <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border ${
-            hint ? "bg-amber-500/10 border-amber-500/20 dark:border-amber-500/30 text-amber-600 dark:text-amber-400" : "bg-stone-100 dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-500 dark:text-stone-400"
+            hint ? "bg-accent/15 border-accent/20 text-accent-strong" : "bg-muted border-border text-muted-foreground"
           }`}>
             <Lightbulb className="h-5 w-5" />
           </div>
           <div className="flex-1">
-            <h4 className="text-base font-bold text-stone-800 dark:text-stone-200">Need a Hint?</h4>
+            <h4 className="text-base font-bold text-foreground">Need a Hint?</h4>
             
             {hint ? (
               <motion.p 
                 initial={{ opacity: 0 }} 
                 animate={{ opacity: 1 }} 
-                className="mt-2 text-base leading-relaxed text-amber-800 dark:text-amber-200/90 font-medium"
+                className="mt-2 text-base leading-relaxed text-foreground font-medium"
               >
                 {hint}
               </motion.p>
             ) : (
               <div>
-                <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Stuck on this challenge? Get a helpful clue about this location.
                 </p>
                 {expanded && (
-                  <p className="mt-2 text-xs text-stone-400 dark:text-stone-500 italic">
+                  <p className="mt-2 text-xs text-muted-foreground italic">
                     Note: Hints help point you toward interesting historical clues or design details nearby without giving away the exact answer.
                   </p>
                 )}
@@ -771,11 +771,11 @@ function HintBlock(props: {
                 type="button"
                 onClick={onRequest}
                 disabled={loading}
-                className="flex items-center gap-2 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 px-5 py-2.5 text-xs font-bold text-stone-700 dark:text-stone-200 transition hover:bg-stone-200 dark:hover:bg-stone-700 active:scale-95 disabled:opacity-40"
+                className="flex items-center gap-2 rounded-xl bg-muted border border-border px-5 py-2.5 text-xs font-bold text-foreground transition hover:bg-secondary active:scale-95 disabled:opacity-40"
               >
                 {loading ? (
                   <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-amber-500" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
                     Finding hint...
                   </>
                 ) : (
@@ -787,7 +787,7 @@ function HintBlock(props: {
                 <button
                   type="button"
                   onClick={() => setExpanded(!expanded)}
-                  className="text-xs font-semibold text-stone-400 hover:text-stone-600 dark:text-stone-500 dark:hover:text-stone-400"
+                  className="text-xs font-semibold text-muted-foreground hover:text-foreground"
                 >
                   {expanded ? "Hide Details" : "How hints work"}
                 </button>
@@ -816,10 +816,10 @@ function RecapCard(props: {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="rounded-3xl border border-stone-200 dark:border-white/5 bg-white dark:bg-stone-900 p-8 shadow-2xl text-center relative overflow-hidden"
+      className="rounded-3xl border border-border bg-card p-8 shadow-2xl text-center relative overflow-hidden"
     >
-      <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-[80px] pointer-events-none opacity-20 dark:opacity-20 ${
-        isCorrect ? "bg-emerald-500" : "bg-red-500"
+      <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 rounded-full blur-[80px] pointer-events-none opacity-20 ${
+        isCorrect ? "bg-success" : "bg-destructive"
       }`} />
 
       <motion.div
@@ -828,14 +828,14 @@ function RecapCard(props: {
         transition={{ delay: 0.1, type: "spring", stiffness: 160, damping: 12 }}
         className={`mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border shadow-md ${
           isCorrect 
-            ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400" 
-            : "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400"
+            ? "bg-success/10 border-success/30 text-success" 
+            : "bg-destructive/10 border-destructive/30 text-destructive"
         }`}
       >
         {isCorrect ? <Check className="h-11 w-11" /> : <X className="h-11 w-11" />}
       </motion.div>
 
-      <h2 className="text-3xl font-black tracking-tight text-stone-900 dark:text-white">
+      <h2 className="text-3xl font-black tracking-tight text-foreground">
         {isCorrect ? "Correct! Well Done!" : "Not Quite Right"}
       </h2>
 
@@ -844,24 +844,24 @@ function RecapCard(props: {
           initial={{ y: 5, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="mx-auto mt-2 inline-flex items-center gap-1 rounded-md bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-3 py-1 text-sm font-black text-emerald-600 dark:text-emerald-400"
+          className="mx-auto mt-2 inline-flex items-center gap-1 rounded-md bg-success/10 border border-success/30 px-3 py-1 text-sm font-black text-success"
         >
           <Sparkles className="h-3.5 w-3.5" />
           <span>+{recap.pointsEarned} POINTS EARNED</span>
         </motion.div>
       )}
 
-      <p className="mt-4 text-base leading-relaxed text-stone-600 dark:text-stone-300 max-w-2xl mx-auto">{recap.message}</p>
+      <p className="mt-4 text-base leading-relaxed text-muted-foreground max-w-2xl mx-auto">{recap.message}</p>
 
       {!isCorrect && recap.correctAnswer && (
-        <div className="mt-5 max-w-md mx-auto text-left rounded-xl border border-red-200 dark:border-red-500/10 bg-red-50/50 dark:bg-red-950/10 p-4 shadow-inner">
-          <p className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-400/80">The Correct Answer</p>
-          <p className="mt-1 text-sm font-semibold text-stone-900 dark:text-stone-100">{recap.correctAnswer}</p>
+        <div className="mt-5 max-w-md mx-auto text-left rounded-xl border border-destructive/20 bg-destructive/10 p-4 shadow-inner">
+          <p className="text-xs font-bold uppercase tracking-wider text-destructive">The Correct Answer</p>
+          <p className="mt-1 text-sm font-semibold text-foreground">{recap.correctAnswer}</p>
         </div>
       )}
 
       {recap.reason && !isCorrect && (
-        <p className="mt-3 text-sm font-medium text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-950/40 border border-stone-200 dark:border-white/5 rounded-lg p-2 max-w-2xl mx-auto">
+        <p className="mt-3 text-sm font-medium text-muted-foreground bg-muted border border-border rounded-lg p-2 max-w-2xl mx-auto">
           Tip: {recap.reason}
         </p>
       )}
@@ -871,7 +871,7 @@ function RecapCard(props: {
           href={recap.source.url}
           target="_blank"
           rel="noreferrer"
-          className="mt-6 inline-flex items-center gap-1 text-sm font-bold text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 transition-colors group mx-auto"
+          className="mt-6 inline-flex items-center gap-1 text-sm font-bold text-accent-strong hover:opacity-80 transition-colors group mx-auto"
         >
           <span>Learn more about this site: {recap.source.label}</span>
           <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
@@ -883,7 +883,7 @@ function RecapCard(props: {
           <button
             type="button"
             onClick={onNext}
-            className="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 py-4 text-base font-bold text-white shadow-md transition hover:from-emerald-500 hover:to-teal-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
+            className="w-full rounded-xl bg-accent py-4 text-base font-bold text-accent-foreground shadow-md transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent active:scale-95"
           >
             {isLast ? "See Final Score" : "Next Challenge"}
           </button>
@@ -892,7 +892,7 @@ function RecapCard(props: {
             <button
               type="button"
               onClick={onRetry}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-stone-900 dark:bg-stone-100 py-4 text-base font-bold text-white dark:text-stone-950 shadow-md transition hover:bg-stone-800 dark:hover:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 text-base font-bold text-primary-foreground shadow-md transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent active:scale-95"
             >
               <RotateCcw className="h-4 w-4" />
               Try Again
@@ -900,7 +900,7 @@ function RecapCard(props: {
             <button
               type="button"
               onClick={onSkip}
-              className="w-full rounded-xl border border-stone-200 dark:border-white/10 bg-stone-50 dark:bg-white/5 py-3 text-xs font-bold text-stone-500 dark:text-stone-400 transition hover:bg-stone-100 dark:hover:bg-white/10 active:scale-95"
+              className="w-full rounded-xl border border-border bg-muted py-3 text-xs font-bold text-muted-foreground transition hover:bg-secondary active:scale-95"
             >
               Skip this stop (0 points)
             </button>

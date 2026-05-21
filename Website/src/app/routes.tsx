@@ -1,4 +1,4 @@
-import { createBrowserRouter, useLocation } from "react-router";
+import { createBrowserRouter } from "react-router";
 import { AppShell } from "./components/ui/AppShell";
 import { Home } from "./components/Home";
 import { QuickGuide } from "./components/QuickGuide";
@@ -8,29 +8,12 @@ import { TreasureHunt } from "./components/TreasureHunt";
 import { QuizFeedback } from "./components/QuizFeedback";
 import { Summary } from "./components/Summary";
 import { HotspotSheetPreview } from "./components/ar/HotspotSheetPreview";
-import { Tutorial } from "./components/Tutorial";
 import { Hunt } from "./components/Hunt";
 import { SouvenirFilter } from "./components/SouvenirFilter";
-import { useHuntState } from "./components/HuntStateProvider";
-
-function RouteGate() {
-  const location = useLocation();
-  const { state, ready, markTutorialSeen } = useHuntState();
-
-  if (!ready) {
-    return null;
-  }
-
-  if (!state.tutorialSeen && location.pathname === "/") {
-    return <Tutorial onFinish={markTutorialSeen} />;
-  }
-
-  return <AppShell />;
-}
 
 export const router = createBrowserRouter([
   {
-    element: <RouteGate />,
+    element: <AppShell />,
     children: [
       { path: "/", element: <Home /> },
       { path: "/quick-guide", element: <QuickGuide /> },
