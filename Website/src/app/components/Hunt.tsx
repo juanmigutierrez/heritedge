@@ -6,14 +6,10 @@ import huntData from "@/content/treasure-hunt.json";
 
 interface HuntChallenge {
   id: string;
-  type: "quiz" | "ar" | "audio" | "video";
+  type: "photo" | "question";
   title: string;
-  question: string;
-  options: string[];
-  answer: string;
-  rewardPoints: number;
-  mediaSrc?: string;
-  mediaLabel?: string;
+  points: number;
+  acceptedAnswers?: string[];
 }
 
 const challenges = huntData.challenges as HuntChallenge[];
@@ -144,8 +140,8 @@ export function Hunt() {
             {challenges.map((challenge, index) => {
               const completed = state.completedChallenges.includes(challenge.id);
               const earnedPoints = completed
-                ? state.challengeScores?.[challenge.id] ?? challenge.rewardPoints
-                : challenge.rewardPoints;
+                ? state.challengeScores?.[challenge.id] ?? challenge.points
+                : challenge.points;
               const unlocked = index <= completedCount;
               return (
                 <motion.div
@@ -197,7 +193,11 @@ export function Hunt() {
                     >
                       +{earnedPoints} pts
                     </span>
-                    <span className="rounded-full bg-stone-100 px-3 py-1">{challenge.options.length} options</span>
+                    <span className="rounded-full bg-stone-100 px-3 py-1">
+                      {challenge.type === "photo"
+                        ? "Camera capture"
+                        : `${challenge.acceptedAnswers?.length ?? 1} accepted answers`}
+                    </span>
                   </div>
                 </motion.div>
               );
