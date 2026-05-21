@@ -10,6 +10,7 @@ import { useSpeechRecognition } from "@/features/voice/useSpeechRecognition";
 import { sendMessage, speak, stopSpeaking, pauseSpeaking, resumeSpeaking } from "@/services/chatService";
 import knowledgeBase from "@/content/knowledge-base.json";
 import { StoryView } from "./quick-guide/StoryView";
+import { SouvenirFilter } from "./SouvenirFilter";
 import { eraScenes, type TimePeriod } from "./quick-guide/scenes";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -393,6 +394,7 @@ export function QuickGuide() {
   const [speakingEra, setSpeakingEra]         = useState<TimePeriod | null>(null);
   const [showAudioUnlock, setShowAudioUnlock] = useState(false);
   const [showQuickReplies, setShowQuickReplies] = useState(false);
+  const [souvenirOpen, setSouvenirOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastAIIdRef    = useRef<string>("");
@@ -1104,6 +1106,7 @@ export function QuickGuide() {
                 setSelectedEra(next);
               } else {
                 setStoryOpen(false);
+                setSouvenirOpen(true);
               }
             }}
             onAskLuca={(prompt, returnIndex) => {
@@ -1112,6 +1115,16 @@ export function QuickGuide() {
               setShowChat(true);
               if (prompt) setInputMessage(prompt);
             }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Souvenir portrait — the closing moment of the tour */}
+      <AnimatePresence>
+        {souvenirOpen && (
+          <SouvenirFilter
+            caption="Heritage Quick Guide · Piazza del Duomo"
+            onClose={() => setSouvenirOpen(false)}
           />
         )}
       </AnimatePresence>

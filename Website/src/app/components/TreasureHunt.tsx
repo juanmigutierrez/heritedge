@@ -298,31 +298,39 @@ export function TreasureHunt() {
 
   // ── RENDER ───────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col">
+    <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-4 py-4">
+      <div className="sticky top-0 z-20 bg-background/85 backdrop-blur-md border-b border-border px-4 py-3">
         <div className="flex items-center gap-3 mb-3">
           <button
             onClick={() => navigate(-1)}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-sm hover:bg-white/30 active:scale-95 transition-transform"
+            aria-label="Back"
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-secondary text-foreground hover:bg-muted active:scale-95 transition-all"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </button>
-          <div className="flex-1">
-            <h1 className="text-lg">Treasure Hunt</h1>
-            <p className="text-xs text-emerald-50">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg text-foreground">Treasure Hunt</h1>
+            <p className="text-xs text-muted-foreground">
               Challenge {currentIndex + 1} of {challenges.length}
             </p>
           </div>
-          <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
+          <div
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+            style={{
+              background: "color-mix(in srgb, var(--accent) 16%, transparent)",
+              color: "var(--accent-strong)",
+            }}
+          >
             <Trophy className="w-4 h-4" />
             <span className="text-sm">{totalScore}</span>
           </div>
         </div>
 
-        <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-white"
+            className="h-full"
+            style={{ background: "var(--accent)" }}
             initial={{ width: 0 }}
             animate={{ width: `${progressPct}%` }}
             transition={{ duration: 0.5 }}
@@ -358,21 +366,28 @@ export function TreasureHunt() {
               className="px-6 py-6 space-y-4"
             >
               {/* Challenge header card */}
-              <div className="bg-white rounded-2xl p-5 shadow-sm">
+              <div className="bg-card border border-border rounded-2xl p-5">
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                    style={{
+                      background: "color-mix(in srgb, var(--accent) 16%, transparent)",
+                    }}
+                  >
                     {current.type === "photo" ? "📷" : "❓"}
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-lg mb-1">{current.title}</h2>
-                    <p className="text-sm text-stone-600">{current.description}</p>
+                    <h2 className="text-lg mb-1 text-foreground">{current.title}</h2>
+                    <p className="text-sm text-muted-foreground">{current.description}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs text-stone-500">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <MapPin className="w-3.5 h-3.5" />
                   <span>{current.location}</span>
-                  <span className="ml-auto text-emerald-600">+{current.points} pts</span>
+                  <span className="ml-auto" style={{ color: "var(--accent-strong)" }}>
+                    +{current.points} pts
+                  </span>
                 </div>
               </div>
 
@@ -455,17 +470,20 @@ function PhotoChallenge(props: {
 
   return (
     <div className="space-y-3">
-      <div className="bg-stone-800 text-white rounded-2xl p-4">
-        <p className="text-sm leading-relaxed">{prompt}</p>
+      <div
+        className="bg-secondary border border-border border-l-[3px] rounded-2xl p-4"
+        style={{ borderLeftColor: "var(--accent)" }}
+      >
+        <p className="text-sm leading-relaxed text-foreground">{prompt}</p>
       </div>
 
       {preview ? (
-        <div className="relative rounded-2xl overflow-hidden bg-stone-100 aspect-[4/3]">
+        <div className="relative rounded-2xl overflow-hidden bg-muted aspect-[4/3]">
           <img src={preview} alt="Submitted" className="w-full h-full object-cover" />
           {!submitting && !isLowConf && (
             <button
               onClick={onRetake}
-              className="absolute bottom-3 left-3 right-3 py-2 bg-white/90 backdrop-blur-sm text-stone-800 rounded-xl text-sm active:scale-95 transition-transform"
+              className="absolute bottom-3 left-3 right-3 py-2 bg-card/90 backdrop-blur-sm text-foreground border border-border rounded-xl text-sm active:scale-95 transition-transform"
             >
               Retake photo
             </button>
@@ -480,35 +498,47 @@ function PhotoChallenge(props: {
       ) : (
         <button
           onClick={onPick}
-          className="w-full aspect-[4/3] border-2 border-dashed border-stone-300 rounded-2xl bg-stone-50 flex flex-col items-center justify-center gap-3 active:scale-[0.98] transition-transform"
+          className="w-full aspect-[4/3] border-2 border-dashed border-border rounded-2xl bg-secondary flex flex-col items-center justify-center gap-3 active:scale-[0.98] transition-transform"
         >
-          <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
-            <Camera className="w-8 h-8 text-emerald-600" />
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center"
+            style={{ background: "color-mix(in srgb, var(--accent) 16%, transparent)" }}
+          >
+            <Camera className="w-8 h-8" style={{ color: "var(--accent-strong)" }} />
           </div>
           <div className="text-center px-6">
-            <p className="text-base text-stone-800 mb-1">Take photo</p>
-            <p className="text-xs text-stone-500">Tap to open camera</p>
+            <p className="text-base text-foreground mb-1">Take photo</p>
+            <p className="text-xs text-muted-foreground">Tap to open camera</p>
           </div>
         </button>
       )}
 
       {isLowConf && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-3">
-          <p className="text-sm text-amber-900">{recapLowConfidence?.message}</p>
+        <div
+          className="rounded-2xl p-4 space-y-3 border"
+          style={{
+            background: "color-mix(in srgb, var(--accent) 10%, transparent)",
+            borderColor: "color-mix(in srgb, var(--accent) 35%, transparent)",
+          }}
+        >
+          <p className="text-sm text-foreground">{recapLowConfidence?.message}</p>
           {recapLowConfidence?.reason && (
-            <p className="text-xs text-amber-700">Vision model said: {recapLowConfidence.reason}</p>
+            <p className="text-xs text-muted-foreground">
+              Vision model said: {recapLowConfidence.reason}
+            </p>
           )}
           <div className="flex gap-2">
             <button
               onClick={onRetake}
-              className="flex-1 py-3 bg-white border border-amber-300 text-amber-900 rounded-xl text-sm active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+              className="flex-1 py-3 bg-card border border-border text-foreground rounded-xl text-sm active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
             >
               <RotateCcw className="w-4 h-4" />
               Retake
             </button>
             <button
               onClick={onAcceptAnyway}
-              className="flex-1 py-3 bg-amber-600 text-white rounded-xl text-sm active:scale-[0.98] transition-transform"
+              className="flex-1 py-3 rounded-xl text-sm active:scale-[0.98] transition-transform"
+              style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
             >
               Submit anyway
             </button>
@@ -519,7 +549,8 @@ function PhotoChallenge(props: {
       {preview && !isLowConf && !submitting && (
         <button
           onClick={onSubmit}
-          className="w-full py-4 bg-emerald-600 text-white rounded-2xl active:scale-[0.98] transition-transform"
+          className="w-full py-4 rounded-2xl active:scale-[0.98] transition-transform"
+          style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
         >
           Submit photo
         </button>
@@ -541,17 +572,20 @@ function QuestionChallenge(props: {
 
   return (
     <div className="space-y-3">
-      <div className="bg-stone-800 text-white rounded-2xl p-4">
-        <p className="text-sm leading-relaxed">{question}</p>
+      <div
+        className="bg-secondary border border-border border-l-[3px] rounded-2xl p-4"
+        style={{ borderLeftColor: "var(--accent)" }}
+      >
+        <p className="text-sm leading-relaxed text-foreground">{question}</p>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl p-3 flex items-center gap-2">
+      <div className="bg-card border border-border rounded-2xl p-3 flex items-center gap-2">
         <input
           type="text"
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
           placeholder="Type or speak your answer…"
-          className="flex-1 px-3 py-2 outline-none text-sm bg-transparent"
+          className="flex-1 px-3 py-2 outline-none text-sm bg-transparent text-foreground placeholder:text-muted-foreground"
           onKeyDown={(e) => {
             if (e.key === "Enter" && answer.trim() && !submitting) onSubmit();
           }}
@@ -562,8 +596,8 @@ function QuestionChallenge(props: {
           disabled={voiceListening}
           className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
             voiceListening
-              ? "bg-red-100 text-red-600"
-              : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+              ? "bg-[var(--destructive)] text-white"
+              : "bg-secondary text-foreground hover:bg-muted"
           }`}
           title={voiceListening ? "Listening…" : "Speak your answer"}
         >
@@ -574,7 +608,8 @@ function QuestionChallenge(props: {
       <button
         onClick={onSubmit}
         disabled={!answer.trim() || submitting}
-        className="w-full py-4 bg-emerald-600 text-white rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+        className="w-full py-4 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+        style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
       >
         {submitting ? (
           <>
@@ -596,21 +631,28 @@ function HintBlock(props: {
 }) {
   const { attemptCount, loading, hint, onRequest } = props;
   return (
-    <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+    <div className="bg-secondary border border-border rounded-2xl p-4">
       <div className="flex items-start gap-3">
-        <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+        <Lightbulb
+          className="w-5 h-5 flex-shrink-0 mt-0.5"
+          style={{ color: "var(--accent-strong)" }}
+        />
         <div className="flex-1">
           {hint ? (
-            <p className="text-sm text-blue-900 leading-relaxed">{hint}</p>
+            <p className="text-sm text-foreground leading-relaxed">{hint}</p>
           ) : (
-            <p className="text-sm text-blue-900">
+            <p className="text-sm text-foreground">
               Stuck? Get a nudge — we won't give the answer away.
             </p>
           )}
           <button
             onClick={onRequest}
             disabled={loading}
-            className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm disabled:opacity-50 active:scale-[0.98] transition-transform flex items-center gap-2"
+            className="mt-3 px-4 py-2 rounded-xl text-sm disabled:opacity-50 active:scale-[0.98] transition-transform flex items-center gap-2"
+            style={{
+              background: "color-mix(in srgb, var(--accent) 18%, transparent)",
+              color: "var(--accent-strong)",
+            }}
           >
             {loading ? (
               <>
@@ -646,9 +688,18 @@ function RecapCard(props: {
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
-        className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 ${
-          isCorrect ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"
-        }`}
+        className="w-24 h-24 rounded-full flex items-center justify-center mb-6"
+        style={
+          isCorrect
+            ? {
+                background: "color-mix(in srgb, var(--success) 18%, transparent)",
+                color: "var(--success)",
+              }
+            : {
+                background: "color-mix(in srgb, var(--destructive) 16%, transparent)",
+                color: "var(--destructive)",
+              }
+        }
       >
         {isCorrect ? (
           <Check className="w-12 h-12" />
@@ -657,18 +708,20 @@ function RecapCard(props: {
         )}
       </motion.div>
 
-      <h2 className="text-2xl mb-2">
+      <h2 className="text-2xl mb-2 text-foreground">
         {isCorrect ? "Nice find!" : "Not quite — try again"}
       </h2>
 
       {isCorrect && recap.pointsEarned > 0 && (
-        <p className="text-emerald-700 mb-4">+{recap.pointsEarned} pts</p>
+        <p className="mb-4" style={{ color: "var(--accent-strong)" }}>
+          +{recap.pointsEarned} pts
+        </p>
       )}
 
-      <p className="text-stone-700 mb-4 max-w-md">{recap.message}</p>
+      <p className="text-foreground mb-4 max-w-md">{recap.message}</p>
 
       {recap.reason && !isCorrect && (
-        <p className="text-xs text-stone-500 mb-4 max-w-md">Why: {recap.reason}</p>
+        <p className="text-xs text-muted-foreground mb-4 max-w-md">Why: {recap.reason}</p>
       )}
 
       {recap.source && (
@@ -676,7 +729,8 @@ function RecapCard(props: {
           href={recap.source.url}
           target="_blank"
           rel="noreferrer"
-          className="text-xs text-amber-700 underline hover:text-amber-800 mb-6"
+          className="text-xs underline underline-offset-2 mb-6"
+          style={{ color: "var(--accent-strong)" }}
         >
           📚 Source: {recap.source.label}
         </a>
@@ -686,7 +740,8 @@ function RecapCard(props: {
         {isCorrect ? (
           <button
             onClick={onNext}
-            className="w-full py-4 bg-emerald-600 text-white rounded-2xl active:scale-95 transition-transform"
+            className="w-full py-4 rounded-2xl active:scale-95 transition-transform"
+            style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
           >
             {isLast ? "View results" : "Next challenge"}
           </button>
@@ -695,14 +750,15 @@ function RecapCard(props: {
             {onRetry && (
               <button
                 onClick={onRetry}
-                className="w-full py-4 bg-emerald-600 text-white rounded-2xl active:scale-95 transition-transform flex items-center justify-center gap-2"
+                className="w-full py-4 rounded-2xl active:scale-95 transition-transform flex items-center justify-center gap-2"
+                style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
               >
                 <RotateCcw className="w-5 h-5" /> Try again
               </button>
             )}
             <button
               onClick={onNext}
-              className="w-full py-3 bg-white border border-stone-200 text-stone-700 rounded-2xl active:scale-95 transition-transform"
+              className="w-full py-3 bg-secondary border border-border text-foreground rounded-2xl active:scale-95 transition-transform"
             >
               Skip this one
             </button>
