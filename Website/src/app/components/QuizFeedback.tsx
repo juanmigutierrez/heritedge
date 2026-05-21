@@ -6,7 +6,7 @@ import { CheckCircle, XCircle, ArrowRight } from "lucide-react";
 export function QuizFeedback() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isCorrect, explanation, questionIndex, totalQuestions, answers } = location.state || {};
+  const { isCorrect, questionIndex, totalQuestions, answers = [], correctAnswer } = location.state || {};
 
   useEffect(() => {
     // Scroll to top when feedback is shown
@@ -80,22 +80,23 @@ export function QuizFeedback() {
           </p>
         </motion.div>
 
-        {/* Explanation */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white rounded-2xl p-6 shadow-sm mb-8"
-        >
-          <h2 className="text-base mb-3">Did you know?</h2>
-          <p className="text-sm text-stone-700 leading-relaxed">{explanation}</p>
-        </motion.div>
+        {!isCorrect && correctAnswer && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="mb-8 rounded-2xl border border-red-100 bg-red-50 p-5 text-center"
+          >
+            <p className="text-sm font-semibold text-red-800">Correct answer</p>
+            <p className="mt-2 text-base text-red-700">{correctAnswer}</p>
+          </motion.div>
+        )}
 
         {/* Progress */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: isCorrect ? 0.4 : 0.5 }}
           className="text-center mb-6"
         >
           <p className="text-sm text-stone-500">
@@ -123,7 +124,7 @@ export function QuizFeedback() {
         <motion.button
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
+          transition={{ delay: isCorrect ? 0.5 : 0.6 }}
           onClick={handleNext}
           className="w-full py-4 bg-stone-800 text-white rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
         >
@@ -138,7 +139,7 @@ export function QuizFeedback() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
+            transition={{ delay: 0.6 }}
             className="mt-6 text-center"
           >
             <p className="text-sm text-emerald-700">
