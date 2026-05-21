@@ -120,18 +120,6 @@ export function Home() {
             </button>
           </Link>
         </motion.div>
-
-        {/* Glanceable stat row */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="mt-8 flex items-stretch divide-x divide-border border-y border-border"
-        >
-          <Stat label="Stops" value="14" hint="along the route" />
-          <Stat label="Languages" value="6" hint="EN · IT · FR · ES · DE · ZH" />
-          <Stat label="Best time" value="Now" hint="quiet · soft light" accent />
-        </motion.div>
       </section>
 
       {/* LANDMARKS */}
@@ -221,35 +209,6 @@ export function Home() {
           Made for Polimi MITA · Piazza del Duomo, Milano
         </p>
       </section>
-    </div>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  hint,
-  accent,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  accent?: boolean;
-}) {
-  return (
-    <div className="flex-1 px-3 sm:px-4 py-3 first:pl-0 last:pr-0">
-      <div className="text-caption">{label}</div>
-      <div
-        className="mt-1 text-xl sm:text-2xl font-display font-medium leading-none"
-        style={accent ? { color: "var(--accent-strong)" } : { color: "var(--foreground)" }}
-      >
-        {value}
-      </div>
-      {hint && (
-        <div className="mt-1 text-[11px] text-muted-foreground leading-tight">
-          {hint}
-        </div>
-      )}
     </div>
   );
 }
