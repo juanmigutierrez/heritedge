@@ -40,6 +40,7 @@ interface HuntChallenge {
   description: string;
   type: "photo" | "question";
   photoPrompt?: string;
+  verifierSubject?: string;
   question?: string;
   expectedAnswer?: string;
   acceptedAnswers?: string[];
@@ -142,7 +143,7 @@ export function TreasureHunt() {
   }, [photoPreview]);
 
   const photoSubject = useMemo(() => {
-    return [current.photoPrompt, primaryFactBody(current)].filter(Boolean).join(" - ");
+    return [current.verifierSubject ?? current.photoPrompt, primaryFactBody(current)].filter(Boolean).join(" - ");
   }, [current]);
 
   function resetAttempt() {
