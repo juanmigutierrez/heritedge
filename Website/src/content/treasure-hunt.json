@@ -1,63 +1,64 @@
 {
-  "version": "0.5.0",
-  "updatedAt": "2026-05-21",
+  "version": "0.3.0",
+  "updatedAt": "2026-05-03",
+  "_consumer": "src/app/components/TreasureHunt.tsx (P5) — drop the hardcoded `challenges` array and import this file. Schema mirrors the Challenge interface defined in that component.",
   "challenges": [
     {
-      "id": "photo-madonnina",
+      "id": "1",
       "landmark": "duomo",
       "title": "The Golden Lady on Top",
       "description": "At the very top of the Duomo's tallest spire stands the golden symbol of Milan. Go outside, look up, and capture her.",
       "type": "photo",
-      "photoPrompt": "Take a photo of La Madonnina, the golden statue on top of the Duomo's tallest spire. Point your camera upward at the central spire.",
+      "photoPrompt": "Take a photo of La Madonnina — the golden statue on top of the Duomo's tallest spire. Point your camera upward at the central spire.",
       "feedback": {
-        "correct": "Well done. La Madonnina stands above Piazza Duomo and remains one of Milan's most beloved symbols.",
-        "incorrect": "The statue is La Madonnina, the golden figure at the highest central spire. Try again from the piazza and look up."
+        "correct": "Well done! La Madonnina stands 108.5 m above Piazza Duomo. Placed in 1774, she is gilded copper and stands 4.16 m tall. A Milanese tradition says no building in Milan may exceed her height — a rule respected until 1958 when the first skyscrapers rose.",
+        "incorrect": "The statue is called La Madonnina (the little Madonna). Try again — stand in the piazza and look up at the tallest central spire."
       },
-      "arHint": "Point your camera at the top of the Duomo's central facade and look for the highest spire.",
+      "arHint": "Point your camera at the top of the Duomo's central facade and look for the glowing spire marker.",
       "markerImage": "/markers/duomo-facade.jpg",
-      "location": "Duomo di Milano - central facade",
+      "location": "Duomo di Milano — central facade",
       "period": "present",
       "relatedFactIds": ["duomo-madonnina-1774", "duomo-1386-foundation"],
-      "points": 10
+      "points": 100
     },
     {
-      "id": "photo-galleria-bull",
+      "id": "2",
       "landmark": "galleria",
       "title": "The Floor That Brings Luck",
-      "description": "Hidden in the Galleria's mosaic floor is a tradition that visitors travel from all over the world to perform.",
+      "description": "Hidden in the Galleria's mosaic floor is a tradition that tourists travel from all over the world to perform.",
       "type": "photo",
-      "photoPrompt": "Find the mosaic bull emblem on the Galleria floor and take a photo of it. Look near the centre of the octagonal crossing.",
+      "photoPrompt": "Find the mosaic bull emblem on the Galleria floor and take a photo of it. Tip: look near the centre of the octagonal crossing.",
       "feedback": {
-        "correct": "Well spotted. The bull is the emblem of Turin, and the worn mosaic shows how many visitors have spun there for luck.",
-        "incorrect": "The mosaic bull represents Turin. Head to the central octagon of the Galleria and look down."
+        "correct": "Well spotted! The bull is the emblem of Turin. Spinning on its heel three times is said to bring good luck — the mosaic is worn down from centuries of heel-spins.",
+        "incorrect": "The mosaic bull represents Turin, one of the four Italian cities whose crests decorate the floor. The other three are Milan, Florence, and Rome. Head to the centre of the octagonal crossing and look down."
       },
-      "arHint": "Look for the centre of the octagonal crossing, where the four city crests meet.",
+      "arHint": "Enter AR view and look for a highlighted circle at the centre of the octagonal crossing — the bull mosaic will be outlined.",
       "markerImage": "/markers/galleria-crossing.jpg",
-      "location": "Galleria Vittorio Emanuele II - central octagon",
+      "location": "Galleria Vittorio Emanuele II — central octagon",
       "period": "present",
       "relatedFactIds": ["galleria-mosaic-floor", "galleria-mengoni-1865"],
-      "points": 10
+      "points": 120
     },
     {
-      "id": "photo-palazzo-ballroom",
+      "id": "3",
       "landmark": "palazzo",
       "title": "The Ballroom That Was Never Rebuilt",
-      "description": "Inside Palazzo Reale there is a room bombed in 1943 and deliberately left in ruins as a war memorial.",
+      "description": "Inside Palazzo Reale there is a room that was bombed in 1943 and deliberately left in ruins as a war memorial. Find it.",
       "type": "photo",
-      "photoPrompt": "Find the Sala delle Cariatidi, the bombed ballroom left unrestored after 1943, and take a photo of the room.",
+      "photoPrompt": "Enter Palazzo Reale and find the Sala delle Cariatidi — the bombed ballroom left unrestored since 1943. Take a photo of the room.",
       "feedback": {
-        "correct": "Exactly. The Sala delle Cariatidi was left scarred as a memorial to wartime destruction.",
-        "incorrect": "The room is called the Sala delle Cariatidi. Ask staff for directions or look for the unrestored ballroom space."
+        "correct": "Exactly! The Sala delle Cariatidi was the royal ballroom, destroyed by fire after the 1943 bombing and deliberately left unrestored as a permanent war memorial. Today Palazzo Reale is one of Italy's most visited exhibition venues, with over 600,000 visitors a year.",
+        "incorrect": "The room is called the Sala delle Cariatidi. Ask staff at the entrance for directions — it is one of the most striking spaces in the building."
       },
-      "arHint": "Stand facing Palazzo Reale and look for clues about its wartime damage and restoration.",
+      "arHint": "Stand facing the Palazzo and activate AR — the facade will reveal layers showing its transformation across Medieval, Neoclassical, and present-day phases.",
       "markerImage": "/markers/palazzo-reale-facade.jpg",
-      "location": "Palazzo Reale",
-      "period": "postwar",
+      "location": "Palazzo Reale — main facade on Piazza del Duomo",
+      "period": "present",
       "relatedFactIds": ["palazzo-reale-history", "palazzo-reale-postwar-restoration"],
-      "points": 10
+      "points": 100
     },
     {
-      "id": "duomo-1386",
+      "id": "4",
       "landmark": "duomo",
       "title": "When the First Stone Was Laid",
       "description": "Standing in front of the Duomo, you are looking at six centuries of construction. Tell us when it began.",
@@ -66,89 +67,35 @@
       "expectedAnswer": "1386",
       "acceptedAnswers": ["1386", "thirteen eighty-six", "1386 ad", "in 1386", "year 1386"],
       "feedback": {
-        "correct": "Correct: 1386. Construction continued for nearly six centuries.",
-        "incorrect": "Not quite. The first stone was laid in 1386."
+        "correct": "Correct — 1386, under Archbishop Antonio da Saluzzo. Construction continued for nearly six centuries, spanning Milan's evolution from medieval commune to modern metropolis.",
+        "incorrect": "Not quite. The first stone was laid in 1386. The building took almost 600 years to finish."
       },
-      "arHint": "Stand facing the cathedral's main facade and think about its medieval origins.",
+      "arHint": "Stand facing the cathedral's main facade — the layers you see span medieval, renaissance, and 19th-century work.",
       "markerImage": "/markers/duomo-facade.jpg",
-      "location": "Duomo di Milano - central facade",
+      "location": "Duomo di Milano — central facade",
       "period": "medieval",
       "relatedFactIds": ["duomo-1386-foundation"],
-      "points": 10
+      "points": 80
     },
     {
-      "id": "galleria-mengoni",
+      "id": "5",
       "landmark": "galleria",
       "title": "The Architect of the Arcade",
       "description": "The Galleria's iron-and-glass roof was a marvel of its century. Who designed it?",
       "type": "question",
-      "question": "Who designed the Galleria Vittorio Emanuele II?",
+      "question": "Who is the architect that designed the Galleria Vittorio Emanuele II?",
       "expectedAnswer": "Giuseppe Mengoni",
       "acceptedAnswers": ["mengoni", "giuseppe mengoni", "mengoni giuseppe", "g. mengoni"],
       "feedback": {
-        "correct": "Right: Giuseppe Mengoni designed the Galleria between 1865 and 1877.",
-        "incorrect": "The architect was Giuseppe Mengoni."
+        "correct": "Right — Giuseppe Mengoni. He designed it between 1865 and 1877; it is one of the world's oldest shopping arcades and forms the northern edge of Piazza del Duomo.",
+        "incorrect": "The architect was Giuseppe Mengoni. He worked on the Galleria from 1865 until its completion in 1877."
       },
-      "arHint": "Look up at the iron-and-glass dome and the way the four arms meet at the octagon.",
+      "arHint": "Look up at the iron-and-glass dome — Mengoni's signature is the way the four arms meet at this octagon.",
       "markerImage": "/markers/galleria-crossing.jpg",
-      "location": "Galleria Vittorio Emanuele II - central octagon",
+      "location": "Galleria Vittorio Emanuele II — central octagon",
       "period": "present",
       "relatedFactIds": ["galleria-mengoni-1865"],
-      "points": 10
-    },
-    {
-      "id": "audio-saffron",
-      "landmark": "duomo",
-      "title": "Saffron Sensation",
-      "description": "A Milanese classic gets its golden colour from one unmistakable seasoning.",
-      "type": "question",
-      "question": "Which yellow seasoning is used in traditional risotto alla Milanese?",
-      "expectedAnswer": "Saffron",
-      "acceptedAnswers": ["saffron", "zafferano", "saffron threads"],
-      "feedback": {
-        "correct": "Correct. Saffron gives risotto alla Milanese its golden colour.",
-        "incorrect": "The answer is saffron."
-      },
-      "location": "Milan food clue",
-      "period": "present",
-      "relatedFactIds": [],
-      "points": 10
-    },
-    {
-      "id": "palazzo-war",
-      "landmark": "palazzo",
-      "title": "Palazzo Reale Memorial",
-      "description": "One damaged room in Palazzo Reale still tells the story of wartime Milan.",
-      "type": "question",
-      "question": "Palazzo Reale left a ballroom unrepaired as a memorial after what major event?",
-      "expectedAnswer": "World War II",
-      "acceptedAnswers": ["world war ii", "wwii", "second world war", "world war 2", "the 1943 bombing", "bombing raids"],
-      "feedback": {
-        "correct": "Correct. The wartime bombing left scars that became part of the palace's memory.",
-        "incorrect": "The answer is World War II, specifically the wartime bombing damage."
-      },
-      "location": "Palazzo Reale",
-      "period": "postwar",
-      "relatedFactIds": ["palazzo-reale-postwar-restoration"],
-      "points": 10
-    },
-    {
-      "id": "video-gallery",
-      "landmark": "galleria",
-      "title": "Galleria Vision",
-      "description": "The Galleria floor carries emblems of Italian cities. One famous mosaic shows a bull.",
-      "type": "question",
-      "question": "Which city is represented by the bull mosaic on the Galleria floor?",
-      "expectedAnswer": "Turin",
-      "acceptedAnswers": ["turin", "torino", "city of turin"],
-      "feedback": {
-        "correct": "Correct. The bull represents Turin.",
-        "incorrect": "The answer is Turin."
-      },
-      "location": "Galleria Vittorio Emanuele II - central octagon",
-      "period": "present",
-      "relatedFactIds": ["galleria-mosaic-floor"],
-      "points": 10
+      "points": 80
     }
   ]
 }
