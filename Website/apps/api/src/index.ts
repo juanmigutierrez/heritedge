@@ -27,18 +27,17 @@ app.use(
 );
 app.use(express.json({ limit: "1mb" }));
 
-app.get("/health", (_req, res) => res.json({ ok: true }));
+const router = express.Router();
 
-app.get("/", (_req, res) => res.json({
-  message: "HeritEdge API",
-  endpoints: ["/health", "/chat", "/transcribe", "/verify-photo", "/hunt-grade", "/hunt-hint"]
-}));
+router.get("/health", (_req, res) => res.json({ ok: true }));
+router.use("/chat", chatRouter);
+router.use("/transcribe", transcribeRouter);
+router.use("/verify-photo", verifyPhotoRouter);
+router.use("/hunt-grade", huntGradeRouter);
+router.use("/hunt-hint", huntHintRouter);
 
-app.use("/chat", chatRouter);                // P1
-app.use("/transcribe", transcribeRouter);    // P2
-app.use("/verify-photo", verifyPhotoRouter); // P5
-app.use("/hunt-grade", huntGradeRouter);     // P5
-app.use("/hunt-hint", huntHintRouter);       // P5
+app.use("/", router);
+app.use("/api", router);
 
 app.listen(port, () => {
   console.log(`[api] listening on http://localhost:${port}`);
