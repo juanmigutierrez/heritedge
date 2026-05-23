@@ -8,9 +8,9 @@ import galleriaImg from "../../assets/galleria.png";
 import palazzoImg from "../../assets/palazzo.png";
 
 const landmarks = [
-  { name: "Duomo", img: duomoImg, path: "/ar-overview", desc: "135 spires, 600 years of stone." },
-  { name: "Galleria", img: galleriaImg, path: "/ar-overview", desc: "Milan's iron-and-glass salon." },
-  { name: "Palazzo", img: palazzoImg, path: "/ar-overview", desc: "Royal halls turned modern museum." },
+  { name: "Duomo", img: duomoImg, path: "/ar-overview?landmark=duomo", desc: "135 spires, 600 years of stone." },
+  { name: "Galleria", img: galleriaImg, path: "/ar-overview?landmark=galleria", desc: "Milan's iron-and-glass salon." },
+  { name: "Palazzo", img: palazzoImg, path: "/ar-overview?landmark=palazzo", desc: "Royal halls turned modern museum." },
 ];
 
 const experiences = [
