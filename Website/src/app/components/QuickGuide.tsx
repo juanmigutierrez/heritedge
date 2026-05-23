@@ -384,6 +384,10 @@ export function QuickGuide() {
   const [showChat, setShowChat]               = useState(false);
   const [storyOpen, setStoryOpen]             = useState(false);
   const [storyIndex, setStoryIndex]           = useState(0);
+  // True when the user opened the chat via an "Ask Luca" button inside the
+  // StoryView. Lets the chat's Back button return the user to the same scene
+  // they were on instead of dropping them on the era cards.
+  const [cameFromStory, setCameFromStory]     = useState(false);
   const [chatMessages, setChatMessages]       = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage]       = useState("");
   const [isListening, setIsListening]         = useState(false);
@@ -650,7 +654,15 @@ export function QuickGuide() {
                 <p className="text-xs text-muted-foreground">Ask me anything — I love a good story.</p>
               </div>
               <button
-                onClick={() => setShowChat(false)}
+                onClick={() => {
+                  setShowChat(false);
+                  // If the user opened the chat from inside the StoryView,
+                  // drop them back into the same scene instead of the era cards.
+                  if (cameFromStory) {
+                    setStoryOpen(true);
+                    setCameFromStory(false);
+                  }
+                }}
                 aria-label="Back to journey"
                 className="w-9 h-9 rounded-full bg-secondary text-muted-foreground hover:text-foreground flex items-center justify-center active:scale-95 transition-all"
               >
@@ -1110,6 +1122,7 @@ export function QuickGuide() {
               if (typeof returnIndex === "number") setStoryIndex(returnIndex);
               setStoryOpen(false);
               setShowChat(true);
+              setCameFromStory(true);
               if (prompt) setInputMessage(prompt);
             }}
           />

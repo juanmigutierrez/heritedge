@@ -17,7 +17,7 @@ function PeriodBadge({ periodId }: { periodId: ARPeriodId }) {
       display: "inline-flex", alignItems: "center", gap: 5,
       padding: "3px 10px", borderRadius: 999,
       background: period.accent + "22", color: period.accent,
-      fontSize: 9, fontFamily: MONO, letterSpacing: "0.12em", fontWeight: 600,
+      fontSize: 12, fontFamily: MONO, letterSpacing: "0.12em", fontWeight: 600,
     }}>
       <span style={{ width: 5, height: 5, borderRadius: "50%", background: period.accent, flexShrink: 0 }} />
       {period.label} · {period.years}
@@ -47,7 +47,7 @@ function YouTubeBlock({ media }: { media: ARMedia }) {
               position: "absolute", bottom: 8, right: 8,
               padding: "4px 10px", borderRadius: 999,
               background: "rgba(0,0,0,0.75)", border: "none",
-              color: "#fff", fontSize: 11, fontFamily: SANS,
+              color: "#fff", fontSize: 12, fontFamily: SANS,
               cursor: "pointer", display: "flex", alignItems: "center", gap: 5,
             }}
           >
@@ -56,7 +56,135 @@ function YouTubeBlock({ media }: { media: ARMedia }) {
         )}
       </div>
       {media.caption && (
-        <p style={{ margin: "5px 0 0", fontSize: 10, fontFamily: MONO, color: SUBTLE }}>{media.caption}</p>
+        <p style={{ margin: "5px 0 0", fontSize: 12, fontFamily: MONO, color: SUBTLE }}>{media.caption}</p>
+      )}
+    </div>
+  );
+}
+
+// ─── Image block ──────────────────────────────────────────────────────────────
+// Full-width image shown above the body text. Used for image-type hotspots so
+// the picture is large enough to read clearly; the small left source card
+// stays for attribution.
+
+function ImageBlock({ media }: { media: ARMedia }) {
+  const [slide, setSlide] = useState(0);
+
+  // Slideshow mode: array of images with prev/next navigation.
+  if (media.srcs && media.srcs.length > 1) {
+    const srcs = media.srcs;
+    const total = srcs.length;
+    return (
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", background: "#0a0a0a" }}>
+          <img
+            src={srcs[slide]}
+            alt={media.altText ?? ""}
+            style={{ width: "100%", maxHeight: 260, display: "block", objectFit: media.objectFit ?? "cover", objectPosition: media.objectPosition ?? "center 15%" }}
+          />
+          <button
+            onClick={() => setSlide(i => (i - 1 + total) % total)}
+            style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%", width: 32, height: 32, color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+          >‹</button>
+          <button
+            onClick={() => setSlide(i => (i + 1) % total)}
+            style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%", width: 32, height: 32, color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+          >›</button>
+          <div style={{ position: "absolute", bottom: 8, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 4 }}>
+            {srcs.map((_, i) => (
+              <div key={i} onClick={() => setSlide(i)} style={{ width: 6, height: 6, borderRadius: "50%", background: i === slide ? "#fff" : "rgba(255,255,255,0.35)", cursor: "pointer" }} />
+            ))}
+          </div>
+        </div>
+        {(media.caption || media.source) && <MediaCredit media={media} />}
+      </div>
+    );
+  }
+
+  // Diptych mode: when a second image is provided, show both side-by-side
+  // so the viewer can compare two angles of the same moment.
+  if (media.src2) {
+    return (
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+          {([media.src, media.src2] as string[]).map((src, i) => {
+            const caption = i === 0 ? media.caption : media.caption2;
+            return (
+              <div key={i}>
+                <div style={{ borderRadius: 10, overflow: "hidden", background: "#0a0a0a", aspectRatio: "4/3" }}>
+                  <img
+                    src={src}
+                    alt={(i === 0 ? media.altText : media.altText2) ?? ""}
+                    style={{
+                      width: "100%", height: "100%", display: "block",
+                      objectFit: "cover", objectPosition: i === 0 ? (media.objectPosition ?? "center 30%") : (media.objectPosition2 ?? "center 30%"),
+                    }}
+                  />
+                </div>
+                {caption && (
+                  <p style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontFamily: "monospace", marginTop: 4, lineHeight: 1.3 }}>
+                    {caption}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {media.source && <MediaCredit media={{ ...media, caption: undefined }} />}
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ borderRadius: 10, overflow: "hidden", background: "#0a0a0a" }}>
+        <img
+          src={media.src}
+          alt={media.altText ?? ""}
+          style={{
+            width: "100%", height: "auto", display: "block",
+            // Cap at 260 to keep the sheet from getting too tall.
+            // Anchor the crop to the top so portraits keep the subject's head
+            // visible (e.g. Mengoni). No effect on landscape-ratio images.
+            maxHeight: 260, objectFit: media.objectFit ?? "cover", objectPosition: media.objectPosition ?? "center 15%",
+          }}
+        />
+      </div>
+      {(media.caption || media.source) && <MediaCredit media={media} />}
+    </div>
+  );
+}
+
+// Caption + optional image-source credit. Kept in one component so YouTube,
+// Audio, and Image blocks render attribution the same way.
+function MediaCredit({ media }: { media: ARMedia }) {
+  return (
+    <div style={{ margin: "5px 0 0" }}>
+      {media.caption && (
+        <p style={{ margin: 0, fontSize: 12, fontFamily: MONO, color: SUBTLE }}>{media.caption}</p>
+      )}
+      {media.source && (
+        media.sourceUrl ? (
+          <a
+            href={media.sourceUrl}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              fontSize: 10, fontFamily: MONO, color: SUBTLE, opacity: 0.75,
+              marginTop: 3, display: "inline-block", textDecoration: "none",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            ↗ Image: {media.source}
+          </a>
+        ) : (
+          <span style={{
+            fontSize: 10, fontFamily: MONO, color: SUBTLE, opacity: 0.75,
+            marginTop: 3, display: "block",
+          }}>
+            Image: {media.source}
+          </span>
+        )
       )}
     </div>
   );
@@ -90,7 +218,7 @@ function AudioBlock({ media, accent }: { media: ARMedia; accent: string }) {
           <img
             src={media.staticImage}
             alt={media.altText ?? ""}
-            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.45 }}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: media.objectFit ?? "cover", objectPosition: media.objectPosition ?? "center center", opacity: 0.45 }}
           />
         )}
         <div style={{
@@ -122,9 +250,7 @@ function AudioBlock({ media, accent }: { media: ARMedia; accent: string }) {
         </div>
         <audio ref={audioRef} src={media.src} loop={media.looped ?? false} />
       </div>
-      {media.caption && (
-        <p style={{ margin: "5px 0 0", fontSize: 10, fontFamily: MONO, color: SUBTLE }}>{media.caption}</p>
-      )}
+      {(media.caption || media.source) && <MediaCredit media={media} />}
       <style>{`
         @keyframes audioWave {
           from { height: 4px; }
@@ -180,20 +306,27 @@ function BeforeAfterSlider({ data }: { data: ARBeforeAfter }) {
             width: 26, height: 26, borderRadius: "50%",
             background: "#fff", boxShadow: "0 0 8px rgba(0,0,0,0.4)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 11, color: "#444",
+            fontSize: 12, color: "#444",
           }}>⇔</div>
         </div>
         <div style={{
-          position: "absolute", bottom: 6, left: 6, fontSize: 9, fontFamily: MONO, color: "#fff",
+          position: "absolute", bottom: 6, left: 6, fontSize: 12, fontFamily: MONO, color: "#fff",
           background: "rgba(0,0,0,0.65)", padding: "2px 6px", borderRadius: 4,
         }}>{data.beforeLabel}</div>
         <div style={{
-          position: "absolute", bottom: 6, right: 6, fontSize: 9, fontFamily: MONO, color: "#fff",
+          position: "absolute", bottom: 6, right: 6, fontSize: 12, fontFamily: MONO, color: "#fff",
           background: "rgba(0,0,0,0.65)", padding: "2px 6px", borderRadius: 4,
         }}>{data.afterLabel}</div>
       </div>
       {data.caption && (
-        <p style={{ margin: "5px 0 0", fontSize: 10, fontFamily: MONO, color: SUBTLE }}>{data.caption}</p>
+        <p style={{ margin: "5px 0 0", fontSize: 12, fontFamily: MONO, color: SUBTLE }}>{data.caption}</p>
+      )}
+      {data.source && (
+        <p style={{ margin: "3px 0 0", fontSize: 11, fontFamily: MONO, color: SUBTLE }}>
+          {data.sourceUrl
+            ? <a href={data.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ color: SUBTLE }}>↗ Image: {data.source}</a>
+            : <>↗ Image: {data.source}</>}
+        </p>
       )}
     </div>
   );
@@ -203,33 +336,12 @@ function BeforeAfterSlider({ data }: { data: ARBeforeAfter }) {
 // Image thumbnail for image-type hotspots; source reference card for all others.
 
 function LeftCard({ hotspot, accent }: { hotspot: ARHotspot; accent: string }) {
+  // Image-type hotspots now render the picture full-width above the body
+  // (see ImageBlock). The small left card always shows the source attribution.
   const base: React.CSSProperties = {
     flexShrink: 0, width: 118, height: 112,
     borderRadius: 10, overflow: "hidden",
   };
-
-  if (hotspot.media?.type === "image") {
-    return (
-      <div style={{ ...base, position: "relative" }}>
-        <img
-          src={hotspot.media.src}
-          alt={hotspot.media.altText ?? ""}
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-        />
-        {hotspot.media.caption && (
-          <div style={{
-            position: "absolute", bottom: 0, left: 0, right: 0,
-            padding: "18px 6px 5px",
-            background: "linear-gradient(transparent, rgba(0,0,0,0.80))",
-            fontSize: 8, fontFamily: MONO, color: "rgba(255,255,255,0.85)",
-            lineHeight: 1.3,
-          }}>
-            {hotspot.media.caption}
-          </div>
-        )}
-      </div>
-    );
-  }
 
   return (
     <div style={{
@@ -239,10 +351,10 @@ function LeftCard({ hotspot, accent }: { hotspot: ARHotspot; accent: string }) {
       display: "flex", flexDirection: "column",
       justifyContent: "flex-end", padding: "8px 9px",
     }}>
-      <div style={{ fontSize: 8, fontFamily: MONO, color: accent, letterSpacing: "0.1em", marginBottom: 3 }}>
+      <div style={{ fontSize: 10, fontFamily: MONO, color: accent, letterSpacing: "0.1em", marginBottom: 3 }}>
         SOURCE
       </div>
-      <div style={{ fontSize: 9, fontFamily: MONO, color: SUBTLE, lineHeight: 1.45 }}>
+      <div style={{ fontSize: 12, fontFamily: MONO, color: SUBTLE, lineHeight: 1.45 }}>
         {hotspot.source}
       </div>
       {hotspot.sourceUrl && (
@@ -250,7 +362,7 @@ function LeftCard({ hotspot, accent }: { hotspot: ARHotspot; accent: string }) {
           href={hotspot.sourceUrl}
           target="_blank"
           rel="noreferrer"
-          style={{ fontSize: 8, color: accent, fontFamily: MONO, marginTop: 5, display: "block" }}
+          style={{ fontSize: 10, color: accent, fontFamily: MONO, marginTop: 5, display: "block" }}
           onClick={(e) => e.stopPropagation()}
         >
           ↗ view
@@ -319,7 +431,10 @@ export function HotspotSheet({ hotspot, onClose, onPhotoChallenge }: HotspotShee
 
   if (!hotspot || !period) return null;
 
-  const isFullWidthMedia = hotspot.media?.type === "youtube" || hotspot.media?.type === "audio";
+  const isFullWidthMedia =
+    hotspot.media?.type === "youtube" ||
+    hotspot.media?.type === "audio" ||
+    hotspot.media?.type === "image";
   const pts = hotspot.photoChallenge?.points;
 
   return (
@@ -356,14 +471,14 @@ export function HotspotSheet({ hotspot, onClose, onPhotoChallenge }: HotspotShee
           <div style={{ flex: 1, minWidth: 0 }}>
             <PeriodBadge periodId={hotspot.period} />
             {hotspot.eyebrow && (
-              <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginTop: 6, letterSpacing: "0.08em" }}>
+              <div style={{ fontSize: 12, fontFamily: MONO, color: SUBTLE, marginTop: 6, letterSpacing: "0.08em" }}>
                 {hotspot.eyebrow}
               </div>
             )}
             <h2 style={{
               margin: "3px 0 0",
               fontFamily: SERIF, fontWeight: 400,
-              fontSize: 22, lineHeight: 1.2,
+              fontSize: 28, lineHeight: 1.2,
               fontStyle: "italic", color: FG,
             }}>
               {hotspot.title}.
@@ -383,11 +498,12 @@ export function HotspotSheet({ hotspot, onClose, onPhotoChallenge }: HotspotShee
           </button>
         </div>
 
-        {/* Full-width media: YouTube or Audio (remounts on hotspot change) */}
+        {/* Full-width media: YouTube, Audio, or Image (remounts on hotspot change) */}
         {isFullWidthMedia && (
           <div key={hotspot.id}>
             {hotspot.media!.type === "youtube" && <YouTubeBlock media={hotspot.media!} />}
             {hotspot.media!.type === "audio"   && <AudioBlock  media={hotspot.media!} accent={period.accent} />}
+            {hotspot.media!.type === "image"   && <ImageBlock  media={hotspot.media!} />}
           </div>
         )}
 
@@ -397,7 +513,7 @@ export function HotspotSheet({ hotspot, onClose, onPhotoChallenge }: HotspotShee
         {/* Two-column: [image thumbnail / source card] + [body text] */}
         <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 12 }}>
           <LeftCard hotspot={hotspot} accent={period.accent} />
-          <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: FG, flex: 1 }}>
+          <p style={{ margin: 0, fontSize: 16, lineHeight: 1.65, color: FG, flex: 1 }}>
             {hotspot.body}
           </p>
         </div>
@@ -409,7 +525,7 @@ export function HotspotSheet({ hotspot, onClose, onPhotoChallenge }: HotspotShee
             padding: "10px 12px", borderRadius: 10,
             background: "rgba(255,255,255,0.04)",
             borderLeft: `2px solid ${period.accent}55`,
-            fontSize: 12, lineHeight: 1.7,
+            fontSize: 14, lineHeight: 1.7,
             color: "rgba(244,242,236,0.80)",
             animation: "detailFade 0.25s ease",
           }}>
@@ -430,7 +546,7 @@ export function HotspotSheet({ hotspot, onClose, onPhotoChallenge }: HotspotShee
               background: isSpeaking ? period.accent + "22" : "rgba(255,255,255,0.07)",
               border: `1px solid ${isSpeaking ? period.accent + "66" : "rgba(255,255,255,0.10)"}`,
               color: isSpeaking ? period.accent : FG,
-              fontFamily: SANS, fontSize: 12, fontWeight: 500,
+              fontFamily: SANS, fontSize: 14, fontWeight: 500,
               cursor: "pointer", transition: "all 0.2s",
             }}
           >
@@ -447,7 +563,7 @@ export function HotspotSheet({ hotspot, onClose, onPhotoChallenge }: HotspotShee
               padding: "10px 0", borderRadius: 12,
               background: period.accent, border: "none",
               color: "#1a1612",
-              fontFamily: SANS, fontSize: 12, fontWeight: 600,
+              fontFamily: SANS, fontSize: 14, fontWeight: 600,
               cursor: "pointer",
             }}
           >
@@ -467,12 +583,12 @@ export function HotspotSheet({ hotspot, onClose, onPhotoChallenge }: HotspotShee
                 background: "rgba(255,255,255,0.07)",
                 border: "1px solid rgba(255,255,255,0.10)",
                 color: FG,
-                fontFamily: SANS, fontSize: 12, fontWeight: 500,
+                fontFamily: SANS, fontSize: 14, fontWeight: 500,
                 cursor: "pointer",
               }}
             >
               <Camera size={13} />
-              {pts && <span style={{ fontSize: 10, color: period.accent, fontWeight: 600 }}>+{pts}</span>}
+              {pts && <span style={{ fontSize: 12, color: period.accent, fontWeight: 600 }}>+{pts}</span>}
             </button>
           )}
         </div>

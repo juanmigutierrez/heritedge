@@ -67,12 +67,32 @@ export function StoryView({
     return () => window.removeEventListener("keydown", onKey);
   }, [next, prev, onClose]);
 
-  // Lock body scroll while open
+  // Lock body scroll while open. iOS Safari/Chrome ignore `overflow: hidden`
+  // for touch rubber-band, so we also pin the body with `position: fixed` and
+  // offset by the current scroll position — the only reliable lock on iOS.
+  // Restored on unmount with the original scroll position so the underlying
+  // page doesn't jump.
   useEffect(() => {
-    const prevOverflow = document.body.style.overflow;
+    const scrollY = window.scrollY;
+    const prev = {
+      overflow: document.body.style.overflow,
+      position: document.body.style.position,
+      top: document.body.style.top,
+      width: document.body.style.width,
+      overscrollBehavior: document.body.style.overscrollBehavior,
+    };
     document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = "100%";
+    document.body.style.overscrollBehavior = "none";
     return () => {
-      document.body.style.overflow = prevOverflow;
+      document.body.style.overflow = prev.overflow;
+      document.body.style.position = prev.position;
+      document.body.style.top = prev.top;
+      document.body.style.width = prev.width;
+      document.body.style.overscrollBehavior = prev.overscrollBehavior;
+      window.scrollTo(0, scrollY);
     };
   }, []);
 
@@ -158,7 +178,7 @@ export function StoryView({
       </div>
 
       {/* Scene content */}
-      <main className="flex-1 min-h-0 overflow-y-auto px-5 sm:px-8 py-6 sm:py-10 flex items-center justify-center">
+      <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 sm:px-8 py-6 sm:py-10 flex items-center justify-center">
         <AnimatePresence mode="wait">
           <motion.div
             key={index}
