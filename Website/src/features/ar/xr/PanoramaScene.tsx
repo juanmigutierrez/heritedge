@@ -8,7 +8,7 @@
 import { useRef, useState, useEffect, useCallback, useMemo, Suspense } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Sky, Html } from "@react-three/drei";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Compass, Camera, CameraOff, ImageDown } from "lucide-react";
 import * as THREE from "three";
@@ -596,6 +596,9 @@ type IOSDeviceOrientation = typeof DeviceOrientationEvent & {
 
 export function PanoramaScene() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const focusLandmarkId = searchParams.get("landmark");
+
   // Restore the last era the user picked this session so back-navigating
   // from a detail page doesn't reset to "present".
   const [era,     setEra]     = useState<EraId>(() => {
@@ -615,7 +618,13 @@ export function PanoramaScene() {
   // Restore the last camera orientation on mount so navigating back from a
   // detail view drops the user where they were, not at the default Duomo
   // pose. Read once (useState initializer) so re-renders don't re-read.
+  // When entering from the Home landmark cards, face that specific landmark
+  // instead of the saved orientation.
   const [initialView] = useState<{ yaw: number; pitch: number } | undefined>(() => {
+    if (focusLandmarkId) {
+      const lm = LANDMARKS.find(l => l.id === focusLandmarkId);
+      if (lm) return { yaw: landmarkYaw(lm.pos), pitch: 0 };
+    }
     if (typeof window === "undefined" || !window.sessionStorage) return undefined;
     const raw = window.sessionStorage.getItem(VIEW_STORAGE_KEY);
     if (!raw) return undefined;
