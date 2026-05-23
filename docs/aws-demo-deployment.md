@@ -12,7 +12,7 @@ Before starting, collect these values and keep them handy. You will substitute t
 |---|---|---|
 | `<AWS_ACCOUNT_ID>` | 12-digit AWS account number | AWS Console → top-right corner → your account name |
 | `<AWS_REGION>` | Region you deploy into | AWS Console → top-right corner (e.g. `eu-north-1`) |
-| `<EC2_PUBLIC_IP>` | Public IP of your EC2 instance | EC2 → Instances → your instance → Public IPv4 address |
+| `<EC2_PUBLIC_IP>` | Public IP of your EC2 instance — use the Elastic IP allocated in Step 2.3 | EC2 → Instances → your instance → Public IPv4 address |
 | `<EC2_PUBLIC_DNS>` | Public DNS of your EC2 instance | EC2 → Instances → your instance → Public IPv4 DNS |
 | `<CLOUDFRONT_DOMAIN>` | CloudFront distribution domain | CloudFront → your distribution → Distribution domain name |
 | `<CLOUDFRONT_DISTRIBUTION_ID>` | CloudFront distribution ID | CloudFront → your distribution → ID column |
@@ -52,8 +52,9 @@ Browser
         └── /api/* → EC2:<EC2_PUBLIC_DNS>:3001 (Express API)
 
 EC2 t3.micro (free tier)
-  ├── heritedge-api container  (port 3001, pulled from ECR)
-  └── chromadb/chroma container (port 8000, local only)
+  └── Docker user-defined network "heritedge"
+        ├── heritedge-api container  (port 3001, pulled from ECR)
+        └── chroma container         (reached by the API as http://chroma:8000)
 ```
 
 Everything runs over HTTPS via CloudFront, which is required for WebXR camera and gyroscope access.
@@ -68,8 +69,10 @@ All commands in this step run on your **local machine**.
 
 ```cmd
 cd <project-root>\Website\apps\api
-docker build -t heritedge-api .
+docker build --platform linux/amd64 -t heritedge-api .
 ```
+
+The `--platform linux/amd64` flag forces the image to match the EC2 `t3.micro` architecture (x86-64). It is required if you build on an Apple Silicon Mac and harmless on Windows/Intel.
 
 The Dockerfile uses a multi-stage build: TypeScript is compiled in a builder stage, and only the compiled `dist/` and production `node_modules` are copied to the runtime image. `sharp` is reinstalled from scratch in the runtime stage because it links native binaries at install time.
 
@@ -110,10 +113,12 @@ All actions in this step are in the **AWS Console**.
   | Type | Port | Source |
   |---|---|---|
   | SSH | 22 | My IP |
-  | Custom TCP | 3001 | Anywhere (0.0.0.0/0) |
+  | Custom TCP | 3001 | Anywhere (0.0.0.0/0) — tighten later, see note |
 
 - **Storage:** leave default (8 GB gp3)
 - Click **Launch instance**
+
+> **Security note:** `0.0.0.0/0` on port 3001 lets anyone reach the API directly over plain HTTP, bypassing CloudFront. It is fine while you are setting up and testing. Once the demo works, harden it: go to **EC2 → Security Groups → your group → Inbound rules → Edit**, and change the source of the port 3001 rule to the AWS-managed prefix list **`com.amazonaws.global.cloudfront.origin-facing`** (choose **Custom** as the source type and search for it by name). Only CloudFront will then be able to reach the API.
 
 ### 2.2 Attach an IAM role for ECR access
 
@@ -135,6 +140,16 @@ Verify it worked by SSHing in (see next step) and running:
 aws sts get-caller-identity
 ```
 It should return your account info, not an error.
+
+### 2.3 Allocate an Elastic IP
+
+By default, an instance's public IP and public DNS change every time it is stopped and started — which would silently break the CloudFront origin you configure in Step 5. Pin them with an Elastic IP:
+
+1. Go to **EC2 → Elastic IPs → Allocate Elastic IP address** → **Allocate**
+2. Select the new address → **Actions → Associate Elastic IP address**
+3. Choose the `heritedge-demo` instance → **Associate**
+
+An Elastic IP adds no extra cost while it is associated with a running instance. Use this address — and the matching public DNS — for `<EC2_PUBLIC_IP>` and `<EC2_PUBLIC_DNS>` everywhere below.
 
 ---
 
@@ -172,7 +187,33 @@ docker ps
 ```
 Should return an empty list with no permission errors.
 
-### 3.3 Authenticate Docker to ECR
+### 3.3 Add a swap file
+
+A `t3.micro` has only 1 GB of RAM, shared by the API and Chroma containers. Add a 2 GB swap file so the instance does not run out of memory under load:
+
+```bash
+sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+Confirm it is active:
+```bash
+free -h
+```
+The `Swap` row should show roughly `2.0Gi`.
+
+### 3.4 Create the Docker network
+
+Both containers must share a user-defined Docker network so the API can reach Chroma by container name. On the default bridge network, `localhost` inside the API container points at the API container itself — not Chroma — so retrieval would silently fail.
+
+```bash
+docker network create heritedge
+```
+
+### 3.5 Authenticate Docker to ECR
 
 ```bash
 aws ecr get-login-password --region <AWS_REGION> | \
@@ -180,25 +221,28 @@ aws ecr get-login-password --region <AWS_REGION> | \
   <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com
 ```
 
-### 3.4 Start Chroma
+### 3.6 Start Chroma
 
 ```bash
 docker run -d --name chroma \
+  --network heritedge \
+  --restart unless-stopped \
   -v chroma-data:/chroma/chroma \
   -p 8000:8000 \
   chromadb/chroma
 ```
 
-The `-v chroma-data:/chroma/chroma` flag persists vector data in a named Docker volume so it survives container restarts.
+`--network heritedge` puts Chroma on the shared network so the API can reach it as `http://chroma:8000`. `--restart unless-stopped` makes Chroma come back automatically after an instance reboot — the API has the same flag, and without it the API would restart while Chroma stayed down, silently breaking retrieval. The `-v chroma-data:/chroma/chroma` flag persists vector data in a named Docker volume so it survives container restarts.
 
-### 3.5 Start the API
+### 3.7 Start the API
 
 ```bash
 docker run -d --name heritedge-api \
+  --network heritedge \
   --restart unless-stopped \
   -p 3001:3001 \
   -e GITHUB_TOKEN=<GITHUB_TOKEN> \
-  -e CHROMA_URL=http://localhost:8000 \
+  -e CHROMA_URL=http://chroma:8000 \
   -e WEB_ORIGIN=https://<CLOUDFRONT_DOMAIN> \
   <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/heritedge-api:latest
 ```
@@ -318,7 +362,10 @@ Click **Create distribution**. It will take 5–10 minutes to deploy. Wait until
 - **Origin:** select the EC2 origin created in 5.3
 - **Allowed HTTP methods:** `GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE`
 - **Cache policy:** `CachingDisabled` (API responses must not be cached)
+- **Origin request policy:** `AllViewerExceptHostHeader` (AWS-managed)
 - Save
+
+> **Important:** The origin request policy is required, not optional. Without it, CloudFront forwards almost no viewer headers to the EC2 origin — including `Content-Type`. The API's `express.json()` parser only reads a request body when `Content-Type: application/json` is present, so `POST /api/chat` would arrive with an empty body and return `400 "Message is required"`. The `/transcribe` and `/verify-photo` uploads break the same way, because their `multipart/form-data` boundary header is dropped. `AllViewerExceptHostHeader` forwards every viewer header while still letting CloudFront send the EC2 origin's own hostname as the `Host` header.
 
 ### 5.5 Configure error pages for client-side routing
 
@@ -368,18 +415,20 @@ scp -i "C:\path\to\heritedge-key.pem" "<project-root>\Website\src\content\knowle
 On the **EC2 instance**:
 ```bash
 docker run --rm \
-  --network host \
+  --network heritedge \
   -v /home/ec2-user/knowledge-base.json:/src/content/knowledge-base.json \
   -e GITHUB_TOKEN=<GITHUB_TOKEN> \
-  -e CHROMA_URL=http://localhost:8000 \
+  -e CHROMA_URL=http://chroma:8000 \
   <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/heritedge-api:latest \
   node dist/scripts/ingest-kb.js
 ```
 
+The ingestion container joins the same `heritedge` network as the running Chroma container, so `http://chroma:8000` resolves correctly.
+
 Successful output looks like:
 ```
 🚀 Starting knowledge base ingestion...
-✓ Chroma URL: http://localhost:8000
+✓ Chroma URL: http://chroma:8000
 ✓ Embedding model: OpenAI text-embedding-3-small
 📖 Loaded knowledge base v...
 ⏳ Creating embeddings...
@@ -396,13 +445,21 @@ The ingestion script is idempotent — safe to run multiple times. Re-run it whe
 
 ## Step 8 — Verify the deployment
 
-Open `https://<CLOUDFRONT_DOMAIN>` in a browser.
+First, smoke-test the API path on its own:
+
+```cmd
+curl https://<CLOUDFRONT_DOMAIN>/api/health
+```
+This should return `{"ok":true}`. If it fails, the problem is in the API / CloudFront wiring (Steps 2–5), not the frontend.
+
+Then open `https://<CLOUDFRONT_DOMAIN>` in a browser.
 
 To confirm the full stack is working:
 1. Open browser dev tools → **Network tab**
 2. Send a message in the chat
 3. Confirm the request goes to `https://<CLOUDFRONT_DOMAIN>/api/chat` (not `localhost`)
 4. Confirm the response is a 200 with an answer
+5. Confirm the answer cites knowledge-base sources. If answers come back but with no sources, the API cannot reach Chroma — recheck `CHROMA_URL` and the `heritedge` network in Step 3, and that ingestion (Step 7) succeeded.
 
 ---
 
@@ -413,7 +470,7 @@ To confirm the full stack is working:
 On your **local machine**:
 ```cmd
 cd <project-root>\Website\apps\api
-docker build -t heritedge-api .
+docker build --platform linux/amd64 -t heritedge-api .
 docker tag heritedge-api:latest <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/heritedge-api:latest
 docker push <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/heritedge-api:latest
 ```
@@ -423,10 +480,11 @@ On the **EC2 instance**:
 docker pull <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/heritedge-api:latest
 docker stop heritedge-api && docker rm heritedge-api
 docker run -d --name heritedge-api \
+  --network heritedge \
   --restart unless-stopped \
   -p 3001:3001 \
   -e GITHUB_TOKEN=<GITHUB_TOKEN> \
-  -e CHROMA_URL=http://localhost:8000 \
+  -e CHROMA_URL=http://chroma:8000 \
   -e WEB_ORIGIN=https://<CLOUDFRONT_DOMAIN> \
   <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/heritedge-api:latest
 ```
@@ -452,6 +510,7 @@ aws cloudfront create-invalidation --distribution-id <CLOUDFRONT_DISTRIBUTION_ID
 | ECR | 50 GB storage/month (always free) | ~200 MB image |
 | S3 | 5 GB storage, 20K GET requests/month for 12 months | Frontend static assets |
 | CloudFront | 1 TB transfer + 10M requests/month (always free) | Frontend + API proxy |
+| Elastic IP | No extra charge while associated with a running instance | One address pinned to the instance |
 | ALB | 750 hrs/month for 12 months | Not used — CloudFront proxies to EC2 directly |
 
 **Total cost: $0** within the 12-month free tier window.
