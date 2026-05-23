@@ -837,7 +837,7 @@ export function PanoramaScene() {
   }, [era, switchEra, commitIntent]);
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-black touch-none select-none">
+    <div className="relative w-screen h-[100dvh] overflow-hidden bg-black touch-none select-none">
 
       {/* ── Live camera feed (behind the 3-D canvas) ──────────────────────── */}
       {cameraMode && camera.status === "live" && (
@@ -997,7 +997,7 @@ export function PanoramaScene() {
               border: `1px solid ${era_.accent}55`,
               color: era_.accent,
               fontFamily: MONO,
-              fontSize: 10,
+              fontSize: 12,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
               fontWeight: 600,
@@ -1009,7 +1009,7 @@ export function PanoramaScene() {
               className="inline-block w-1.5 h-1.5 rounded-full"
               style={{ background: era_.accent, boxShadow: `0 0 6px ${era_.accent}` }}
             />
-            {era_.label} · {era_.year}
+            {era_.label} · <span style={{ textTransform: "none" }}>{era_.year}</span>
           </div>
 
           <motion.p
@@ -1019,7 +1019,7 @@ export function PanoramaScene() {
             className="mt-2 max-w-md text-white/90 italic"
             style={{
               fontFamily: SERIF,
-              fontSize: 13,
+              fontSize: 16,
               lineHeight: 1.35,
               textShadow: "0 2px 8px rgba(0,0,0,0.7), 0 0 2px rgba(0,0,0,0.55)",
             }}
@@ -1030,7 +1030,10 @@ export function PanoramaScene() {
       </div>
 
       {/* ── Bottom controls ────────────────────────────────────────────────── */}
-      <div className="absolute bottom-0 inset-x-0 px-5 pb-8 pt-6 bg-gradient-to-t from-black/80 to-transparent z-10">
+      <div
+        className="absolute bottom-0 inset-x-0 px-5 pt-6 bg-gradient-to-t from-black/80 to-transparent z-10"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 2rem)" }}
+      >
 
         {/* Snap-to-landmark chips — no-gyro fallback only.
             On a phone with gyro, manual yaw snaps would break the
@@ -1045,7 +1048,7 @@ export function PanoramaScene() {
                 aria-label={`Look at ${lm.name}`}
                 data-vt-name={!landmarksOpen ? landmarkVT(lm.id) : undefined}
                 style={{
-                  fontFamily: SERIF, fontStyle: "italic", fontSize: 13,
+                  fontFamily: SERIF, fontStyle: "italic", fontSize: 16,
                   // Shared-element source: when a follow-up sphere tap fires
                   // a navigation, this chip morphs into the detail image.
                   // Suppressed while the landmarks sheet is open so the sheet
@@ -1147,10 +1150,10 @@ export function PanoramaScene() {
           >
             <div style={{ width: 36, height: 4, background: "rgba(255,255,255,0.2)", borderRadius: 2, margin: "0 auto 12px" }} />
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
-              <div style={{ fontSize: 10, fontFamily: MONO, letterSpacing: "0.14em", color: era_.accent, textTransform: "uppercase", fontWeight: 600 }}>
+              <div style={{ fontSize: 12, fontFamily: MONO, letterSpacing: "0.14em", color: era_.accent, textTransform: "uppercase", fontWeight: 600 }}>
                 Landmarks · {allLandmarks.length}
               </div>
-              <div style={{ fontSize: 10, fontFamily: MONO, color: "rgba(244,242,236,0.55)" }}>{era_.label}</div>
+              <div style={{ fontSize: 12, fontFamily: MONO, color: "rgba(244,242,236,0.55)" }}>{era_.label}</div>
             </div>
             <div style={{ display: "grid", gap: 8 }}>
               {allLandmarks.map((l) => (
@@ -1184,12 +1187,12 @@ export function PanoramaScene() {
                     <span style={{
                       display: "block",
                       fontFamily: SERIF, fontStyle: "italic",
-                      fontSize: 16, color: FG,
+                      fontSize: 18, color: FG,
                       marginBottom: 2,
                     }}>
                       {l.shortName}
                     </span>
-                    <span style={{ display: "block", fontSize: 10, color: "rgba(244,242,236,0.6)", fontFamily: MONO, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                    <span style={{ display: "block", fontSize: 12, color: "rgba(244,242,236,0.6)", fontFamily: MONO, letterSpacing: "0.06em", textTransform: "uppercase" }}>
                       {l.kicker}
                     </span>
                   </span>

@@ -103,7 +103,7 @@ function HotspotRow({
       <span style={{
         flexShrink: 0, padding: "2px 7px", borderRadius: 999,
         background: accent + "18", color: accent,
-        fontFamily: MONO, fontSize: 9, letterSpacing: "0.1em", fontWeight: 700,
+        fontFamily: MONO, fontSize: 12, letterSpacing: "0.1em", fontWeight: 700,
       }}>
         {hotspot.year}
       </span>
@@ -112,7 +112,7 @@ function HotspotRow({
       <span style={{
         flex: 1, minWidth: 0,
         fontFamily: SERIF, fontStyle: "italic",
-        fontSize: 14, color: visited ? SUBTLE : FG,
+        fontSize: 18, color: visited ? SUBTLE : FG,
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
         transition: "color 0.2s",
       }}>
@@ -123,7 +123,7 @@ function HotspotRow({
       {mediaType && <MediaIcon type={mediaType} accent={accent} />}
 
       {/* Chevron */}
-      <span style={{ color: SUBTLE, fontSize: 16, lineHeight: 1, flexShrink: 0 }}>›</span>
+      <span style={{ color: SUBTLE, fontSize: 18, lineHeight: 1, flexShrink: 0 }}>›</span>
     </button>
   );
 }
@@ -268,22 +268,22 @@ export function ARArtifactDetail() {
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full backdrop-blur-sm"
             style={{
               background: "rgba(0,0,0,0.55)", border: `1px solid ${era.accent}55`,
-              color: era.accent, fontFamily: MONO, fontSize: 10,
+              color: era.accent, fontFamily: MONO, fontSize: 12,
               letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 600,
               textShadow: "0 1px 4px rgba(0,0,0,0.85)", boxShadow: "0 4px 14px rgba(0,0,0,0.45)",
             }}
           >
             <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ background: era.accent, boxShadow: `0 0 6px ${era.accent}` }} />
-            {era.label} · {era.year}
+            {era.label} · <span style={{ textTransform: "none" }}>{era.year}</span>
           </div>
           <h1 style={{
             margin: "10px 0 0", fontFamily: SERIF, fontWeight: 400, fontStyle: "italic",
-            fontSize: 22, lineHeight: 1.1, color: FG,
+            fontSize: 28, lineHeight: 1.1, color: FG,
             textShadow: "0 2px 8px rgba(0,0,0,0.7), 0 0 2px rgba(0,0,0,0.55)",
           }}>
             {landmark.name}
           </h1>
-          <p style={{ margin: "4px 0 0", fontFamily: MONO, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase", color: SUBTLE }}>
+          <p style={{ margin: "4px 0 0", fontFamily: MONO, fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: SUBTLE }}>
             {landmark.kicker}
           </p>
         </div>
@@ -297,7 +297,7 @@ export function ARArtifactDetail() {
           boxShadow: "0 12px 32px rgba(0,0,0,0.4)", border: `1px solid ${era.accent}44`,
         }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-            <div style={{ fontSize: 10, fontFamily: MONO, letterSpacing: "0.14em", color: era.accent, textTransform: "uppercase", fontWeight: 600 }}>Ways to explore</div>
+            <div style={{ fontSize: 12, fontFamily: MONO, letterSpacing: "0.14em", color: era.accent, textTransform: "uppercase", fontWeight: 600 }}>Ways to explore</div>
             <button onClick={() => setHintsOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: SUBTLE, lineHeight: 1 }}>×</button>
           </div>
           {[
@@ -306,10 +306,10 @@ export function ARArtifactDetail() {
             { icon: "🎤", t: "Voice", d: 'Say "take me to Galleria" or "switch to crown" to navigate hands-free.' },
           ].map(r => (
             <div key={r.t} style={{ display: "flex", gap: 10, padding: "8px 0", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
-              <div style={{ fontSize: 16, lineHeight: 1, flexShrink: 0, width: 22, textAlign: "center" }}>{r.icon}</div>
+              <div style={{ fontSize: 18, lineHeight: 1, flexShrink: 0, width: 22, textAlign: "center" }}>{r.icon}</div>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 2 }}>{r.t}</div>
-                <div style={{ fontSize: 11, color: SUBTLE, lineHeight: 1.4 }}>{r.d}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>{r.t}</div>
+                <div style={{ fontSize: 12, color: SUBTLE, lineHeight: 1.4 }}>{r.d}</div>
               </div>
             </div>
           ))}
@@ -342,11 +342,11 @@ export function ARArtifactDetail() {
           borderBottom: "1px solid rgba(255,255,255,0.08)",
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
-          <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.14em", color: era.accent, textTransform: "uppercase", fontWeight: 600 }}>
+          <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.14em", color: era.accent, textTransform: "uppercase", fontWeight: 600 }}>
             Stories
           </span>
           {hotspots.length > 0 && (
-            <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.1em", color: SUBTLE }}>
+            <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.1em", color: SUBTLE }}>
               {visitedCount} / {hotspots.length} explored
             </span>
           )}
@@ -355,7 +355,7 @@ export function ARArtifactDetail() {
         {hotspots.length === 0 ? (
           <div style={{
             padding: 32, textAlign: "center",
-            color: SUBTLE, fontFamily: MONO, fontSize: 11, letterSpacing: "0.1em",
+            color: SUBTLE, fontFamily: MONO, fontSize: 12, letterSpacing: "0.1em",
           }}>
             No stories for this period yet.
           </div>
@@ -397,10 +397,10 @@ export function ARArtifactDetail() {
           }}>
             <div style={{ width: 36, height: 4, background: "rgba(255,255,255,0.2)", borderRadius: 2, margin: "0 auto 12px" }} />
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
-              <div style={{ fontSize: 10, fontFamily: MONO, letterSpacing: "0.14em", color: era.accent, textTransform: "uppercase", fontWeight: 600 }}>
+              <div style={{ fontSize: 12, fontFamily: MONO, letterSpacing: "0.14em", color: era.accent, textTransform: "uppercase", fontWeight: 600 }}>
                 Landmarks · {allLandmarks.length}
               </div>
-              <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE }}>{era.label}</div>
+              <div style={{ fontSize: 12, fontFamily: MONO, color: SUBTLE }}>{era.label}</div>
             </div>
             <div style={{ display: "grid", gap: 8 }}>
               {allLandmarks.map(l => {
@@ -425,14 +425,14 @@ export function ARArtifactDetail() {
                       {l.emoji}
                     </span>
                     <span style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ display: "block", fontFamily: SERIF, fontStyle: "italic", fontSize: 16, fontWeight: 400, color: active ? era.accent : FG, marginBottom: 2 }}>
+                      <span style={{ display: "block", fontFamily: SERIF, fontStyle: "italic", fontSize: 18, fontWeight: 400, color: active ? era.accent : FG, marginBottom: 2 }}>
                         {l.shortName}
                       </span>
-                      <span style={{ display: "block", fontSize: 10, color: SUBTLE, fontFamily: MONO, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                      <span style={{ display: "block", fontSize: 12, color: SUBTLE, fontFamily: MONO, letterSpacing: "0.06em", textTransform: "uppercase" }}>
                         {l.kicker}
                       </span>
                     </span>
-                    {active && <span style={{ fontSize: 10, fontFamily: MONO, color: era.accent, letterSpacing: "0.1em" }}>VIEWING</span>}
+                    {active && <span style={{ fontSize: 12, fontFamily: MONO, color: era.accent, letterSpacing: "0.1em" }}>VIEWING</span>}
                   </button>
                 );
               })}
