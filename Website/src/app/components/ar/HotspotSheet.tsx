@@ -55,9 +55,7 @@ function YouTubeBlock({ media }: { media: ARMedia }) {
           </button>
         )}
       </div>
-      {media.caption && (
-        <p style={{ margin: "5px 0 0", fontSize: 12, fontFamily: MONO, color: SUBTLE }}>{media.caption}</p>
-      )}
+      {(media.caption || media.source) && <MediaCredit media={media} />}
     </div>
   );
 }
@@ -83,16 +81,27 @@ function ImageBlock({ media }: { media: ARMedia }) {
             style={{ width: "100%", maxHeight: 260, display: "block", objectFit: media.objectFit ?? "cover", objectPosition: media.objectPosition ?? "center 15%" }}
           />
           <button
+            type="button"
+            aria-label="Previous image"
             onClick={() => setSlide(i => (i - 1 + total) % total)}
             style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%", width: 32, height: 32, color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
           >‹</button>
           <button
+            type="button"
+            aria-label="Next image"
             onClick={() => setSlide(i => (i + 1) % total)}
             style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%", width: 32, height: 32, color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
           >›</button>
           <div style={{ position: "absolute", bottom: 8, left: 0, right: 0, display: "flex", justifyContent: "center", gap: 4 }}>
             {srcs.map((_, i) => (
-              <div key={i} onClick={() => setSlide(i)} style={{ width: 6, height: 6, borderRadius: "50%", background: i === slide ? "#fff" : "rgba(255,255,255,0.35)", cursor: "pointer" }} />
+              <button
+                key={i}
+                type="button"
+                aria-label={`Go to image ${i + 1}`}
+                aria-current={i === slide ? "true" : undefined}
+                onClick={() => setSlide(i)}
+                style={{ width: 6, height: 6, borderRadius: "50%", background: i === slide ? "#fff" : "rgba(255,255,255,0.35)", cursor: "pointer", border: "none", padding: 0 }}
+              />
             ))}
           </div>
         </div>
@@ -122,7 +131,7 @@ function ImageBlock({ media }: { media: ARMedia }) {
                   />
                 </div>
                 {caption && (
-                  <p style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontFamily: "monospace", marginTop: 4, lineHeight: 1.3 }}>
+                  <p style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontFamily: MONO, marginTop: 4, lineHeight: 1.3 }}>
                     {caption}
                   </p>
                 )}
@@ -158,6 +167,7 @@ function ImageBlock({ media }: { media: ARMedia }) {
 // Caption + optional image-source credit. Kept in one component so YouTube,
 // Audio, and Image blocks render attribution the same way.
 function MediaCredit({ media }: { media: ARMedia }) {
+  const label = media.type === "audio" ? "Audio" : media.type === "youtube" ? "Video" : "Image";
   return (
     <div style={{ margin: "5px 0 0" }}>
       {media.caption && (
@@ -175,14 +185,14 @@ function MediaCredit({ media }: { media: ARMedia }) {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            ↗ Image: {media.source}
+            ↗ {label}: {media.source}
           </a>
         ) : (
           <span style={{
             fontSize: 10, fontFamily: MONO, color: SUBTLE, opacity: 0.75,
             marginTop: 3, display: "block",
           }}>
-            Image: {media.source}
+            {label}: {media.source}
           </span>
         )
       )}
