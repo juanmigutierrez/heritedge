@@ -132,7 +132,7 @@ export function VoiceConfirmToast({ message, accent, prefix = "Taking you to", o
           boxShadow: `0 0 8px ${accent}`,
         }}
       />
-      <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.1em", color: FG }}>
+      <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.1em", color: FG }}>
         {prefix}{" "}
         <span style={{ color: accent, fontWeight: 700 }}>{message}</span>
       </span>
@@ -187,8 +187,8 @@ export function VoiceAlreadyHereToast({ message, accent, onDismiss }: VoiceAlrea
         animation: "vcToastIn 0.22s cubic-bezier(0.34,1.56,0.64,1)",
       }}
     >
-      <span style={{ fontSize: 13, lineHeight: 1 }}>📍</span>
-      <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.1em", color: "rgba(244,242,236,0.7)" }}>
+      <span style={{ fontSize: 16, lineHeight: 1 }}>📍</span>
+      <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.1em", color: "rgba(244,242,236,0.7)" }}>
         Already here ·{" "}
         <span style={{ color: accent, fontWeight: 600 }}>{message}</span>
       </span>
@@ -204,12 +204,12 @@ export function EraBadge({ era }: { era: Era }) {
       display: "inline-flex", alignItems: "center", gap: 6,
       padding: "5px 11px", borderRadius: 999,
       background: era.accent + "22", color: era.accent,
-      fontSize: 10, fontFamily: MONO, letterSpacing: "0.14em",
+      fontSize: 12, fontFamily: MONO, letterSpacing: "0.14em",
       textTransform: "uppercase", fontWeight: 600,
       transition: "all 0.4s",
     }}>
       <span style={{ width: 5, height: 5, borderRadius: "50%", background: era.accent }} />
-      {era.label} · {era.year}
+      {era.label} · <span style={{ textTransform: "none" }}>{era.year}</span>
     </div>
   );
 }
@@ -260,10 +260,10 @@ export function EraScrub({ value, onChange, accent }: EraScrubProps) {
 
   return (
     <div style={{ width: "100%", userSelect: "none" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: SUBTLE, marginBottom: 10, fontWeight: 500, fontFamily: MONO }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: SUBTLE, marginBottom: 10, fontWeight: 500, fontFamily: MONO }}>
         <span>Drag through time</span>
         <span style={{ color: accent, fontWeight: 600 }}>
-          {ERAS[idx].label} · {ERAS[idx].year}
+          {ERAS[idx].label} · <span style={{ textTransform: "none" }}>{ERAS[idx].year}</span>
         </span>
       </div>
       <div
@@ -295,7 +295,7 @@ export function EraScrub({ value, onChange, accent }: EraScrubProps) {
           );
         })}
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, fontSize: 10, fontFamily: MONO }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, fontSize: 12, fontFamily: MONO }}>
         {ERAS.map((e, i) => (
           <span key={e.id} style={{
             color: i === idx ? accent : SUBTLE,
@@ -305,7 +305,7 @@ export function EraScrub({ value, onChange, accent }: EraScrubProps) {
           }}>
             {e.label}
             <br />
-            <span style={{ fontSize: 9, opacity: 0.7 }}>{e.year}</span>
+            <span style={{ fontSize: 12, opacity: 0.7 }}>{e.year}</span>
           </span>
         ))}
       </div>
@@ -416,11 +416,11 @@ export function VoicePill({ era, onCommand, hint }: VoicePillProps) {
     }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         {listening ? (
-          <div key="listening" style={{ fontSize: 13, fontFamily: SERIF, fontStyle: "italic", color: era.accent, animation: "vpFade 0.35s ease-out" }}>
+          <div key="listening" style={{ fontSize: 16, fontFamily: SERIF, fontStyle: "italic", color: era.accent, animation: "vpFade 0.35s ease-out" }}>
             listening…
           </div>
         ) : (
-          <div key="hint" style={{ fontSize: 11, color: SUBTLE, fontFamily: MONO, letterSpacing: "0.04em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", animation: "vpFade 0.35s ease-out" }}>
+          <div key="hint" style={{ fontSize: 12, color: SUBTLE, fontFamily: MONO, letterSpacing: "0.04em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", animation: "vpFade 0.35s ease-out" }}>
             {isSupported ? hint : "voice not supported"}
           </div>
         )}
@@ -466,7 +466,7 @@ export function HotspotMarker({ index, visited, open, accent, onClick, label, si
             ? `0 0 0 ${ringSize}px ${accent}22`
             : `0 0 0 ${ringSize}px ${accent}33`,
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 10, fontWeight: 700, color: "#0a0a0a", fontFamily: MONO,
+        fontSize: 12, fontWeight: 700, color: "#0a0a0a", fontFamily: MONO,
         cursor: "pointer", border: "none", padding: 0,
         animation: open || visited ? "none" : "hotspotPulse 2s ease-in-out infinite",
         transition: "all 0.25s",
@@ -538,11 +538,11 @@ export function HotspotSheet({ hotspot, era, index, onClose }: HotspotSheetProps
               width: 28, height: 28, borderRadius: "50%",
               background: era.accent, color: "#0a0a0a",
               display: "inline-flex", alignItems: "center", justifyContent: "center",
-              fontFamily: MONO, fontSize: 12, fontWeight: 700,
+              fontFamily: MONO, fontSize: 14, fontWeight: 700,
             }}>{index}</span>
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 9, fontFamily: MONO, letterSpacing: "0.14em", color: era.accent, textTransform: "uppercase", fontWeight: 600 }}>
+            <div style={{ fontSize: 12, fontFamily: MONO, letterSpacing: "0.14em", color: era.accent, textTransform: "uppercase", fontWeight: 600 }}>
               {hotspot.label}
             </div>
             <h2 style={{ margin: "2px 0 0", fontFamily: SERIF, fontWeight: 400, fontSize: 20, lineHeight: 1.15, fontStyle: "italic" }}>
@@ -552,15 +552,15 @@ export function HotspotSheet({ hotspot, era, index, onClose }: HotspotSheetProps
           <button
             onClick={onClose}
             aria-label="Close"
-            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 22, color: SUBTLE, lineHeight: 1, marginTop: -4 }}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 28, color: SUBTLE, lineHeight: 1, marginTop: -4 }}
           >×</button>
         </div>
 
-        <p style={{ margin: "6px 0 10px", fontSize: 14, lineHeight: 1.5, color: FG }}>
+        <p style={{ margin: "6px 0 10px", fontSize: 18, lineHeight: 1.5, color: FG }}>
           {hotspot.body}
         </p>
 
-        <div style={{ fontSize: 10, fontFamily: MONO, color: SUBTLE, marginBottom: 14 }}>
+        <div style={{ fontSize: 12, fontFamily: MONO, color: SUBTLE, marginBottom: 14 }}>
           source:{" "}
           {hotspot.source.url ? (
             <a href={hotspot.source.url} target="_blank" rel="noreferrer" style={{ color: era.accent }}>
@@ -578,7 +578,7 @@ export function HotspotSheet({ hotspot, era, index, onClose }: HotspotSheetProps
             padding: "8px 14px", borderRadius: 999,
             background: era.accent, color: "#0a0a0a",
             border: "none", cursor: "pointer",
-            fontFamily: SANS, fontSize: 12, fontWeight: 700,
+            fontFamily: SANS, fontSize: 14, fontWeight: 700,
           }}
         >
           <Play size={12} fill="#0a0a0a" />

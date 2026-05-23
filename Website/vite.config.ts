@@ -38,6 +38,7 @@ export default defineConfig({
     host: true,
     allowedHosts: [
       '.ngrok-free.app',
+      '.ngrok-free.dev',
       '.ngrok.app',
       '.ngrok.io',
       '.trycloudflare.com',
