@@ -102,8 +102,10 @@ HeritEdge/
 │   ├── src/            # React app — tour, AR, hunt, chat, content
 │   ├── apps/api/       # Node.js + Express backend API
 │   └── ...
-├── Conceptual_Design/  # storyboards, specs, mockups
-└── docs/               # diagrams and screenshots
+├── docs/
+│   ├── Conceptual Design/  # experience spec, research, mockups
+│   ├── diagrams/           # architecture and flow diagrams
+│   └── screenshots/        # demo screenshots
 ```
 
 ---
@@ -131,4 +133,4 @@ Politecnico di Milano — MITA, A.Y. 2025/2026.
 
 ## Credits
 
-UI components from [shadcn/ui](https://ui.shadcn.com/) (MIT licence). Reference photography from [Unsplash](https://unsplash.com). Full attributions in [`Website/ATTRIBUTIONS.md`](Website/ATTRIBUTIONS.md).
+UI components from [shadcn/ui](https://ui.shadcn.com/) (MIT licence). Full attributions in [`Website/ATTRIBUTIONS.md`](Website/ATTRIBUTIONS.md).

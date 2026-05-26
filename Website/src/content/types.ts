@@ -29,7 +29,7 @@ export interface HeritageFact {
 }
 
 export interface KnowledgeBase {
-  version: string;             // bump when P5 updates; P1 re-ingests to Chroma
+  version: string;             // bump when updated; re-run ingest-kb to sync Chroma
   updatedAt: string;           // ISO
   domain: {
     id: string;                // "piazza-del-duomo"

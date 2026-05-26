@@ -1,12 +1,12 @@
 # HeritEdge API
 
-Backend for the HeritEdge web app. Owner: **P1** (with P2 on `/transcribe`, P6 on plumbing).
+Node.js + Express backend for the HeritEdge web app.
 
 ## Run locally
 
 ```bash
 cd apps/api
-cp .env.example .env      # fill in API keys from the shared vault
+cp .env.example .env      # Windows: copy .env.example .env
 npm install
 npm run dev               # http://localhost:3001
 ```
@@ -21,13 +21,12 @@ To enable real answers grounded in Piazza Duomo facts:
    ```
    If Docker is not installed, see [Chroma installation docs](https://docs.trychroma.com/guides).
 
-2. **Ingest the knowledge base** (in the api terminal):
+2. **Ingest the knowledge base**:
    ```bash
    npm run ingest-kb
    ```
-   
-   This reads `src/content/knowledge-base.json`, creates embeddings using OpenAI, and stores them in Chroma.
-   
+   This reads `src/content/knowledge-base.json`, creates embeddings via OpenAI, and stores them in Chroma.
+
    **Requirements:**
    - `CHROMA_URL` set in `.env` (default: `http://localhost:8000`)
    - `OPENAI_API_KEY` or `GITHUB_TOKEN` for embeddings
@@ -36,23 +35,17 @@ To enable real answers grounded in Piazza Duomo facts:
    ```bash
    curl http://localhost:8000/api/v1/heartbeat
    ```
-   Should return `{"ok": true}`.
+   Should return `{"nanosecond heartbeat": ...}`.
 
-Done! The `/chat` endpoint now retrieves facts from your knowledge base.
+The ingestion script is idempotent — safe to re-run whenever `knowledge-base.json` changes.
 
 ## Routes
 
-| Route | Method | Owner | Purpose |
-|---|---|---|---|
-| `/health` | GET | P6 | Liveness for Vercel / Render |
-| `/chat` | POST | P1 | RAG-grounded answer on Piazza Duomo |
-| `/transcribe` | POST | P2 | Whisper fallback for voice |
-
-See `src/types/api.ts` in the web app for the shared request/response shapes.
-
-## Week-by-week
-
-- **Week 1:** run the stub, deploy to Render/Railway, connect FE via `VITE_API_URL`.
-- **Week 2 (P1):** ingest `src/content/knowledge-base.json` into Chroma, implement real RAG in `routes/chat.ts`.
-- **Week 2 (P2):** wire Whisper in `routes/transcribe.ts`.
-- **Week 3 (P1):** add citation rendering, low-confidence clarification paths, evals.
+| Route | Method | Purpose |
+|---|---|---|
+| `/health` | GET | Liveness check |
+| `/chat` | POST | RAG-grounded answer about Piazza Duomo |
+| `/transcribe` | POST | Whisper fallback for voice input |
+| `/hunt-grade` | POST | Grade a free-form treasure hunt answer |
+| `/hunt-hint` | POST | Return a laddered hint for a stuck challenge |
+| `/verify-photo` | POST | Vision-model check for treasure hunt photo challenges |

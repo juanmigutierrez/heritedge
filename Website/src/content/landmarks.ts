@@ -10,8 +10,7 @@
 // Schema rationale:
 //   - "Era" metadata (color, label, year) is presentational — stays here.
 //   - "Landmark meta" (name, kicker) and didYouKnow / quiz are content the
-//     view always needs upfront. Today seeded statically; long-term comes
-//     from /api/landmarks (P5/P6 owns that endpoint).
+//     view always needs upfront. Seeded statically here.
 //   - "Hotspot" data is per-era because the visual elements you point at
 //     differ by period (e.g. the Galleria's glass dome doesn't exist
 //     medievally). Each hotspot REQUIRES a source — the professor cares
@@ -19,7 +18,7 @@
 //   - "EraContent" (headline + blurb per landmark+period) is the only piece
 //     that overlaps with knowledge-base.json. getEraContent() falls back to
 //     the curated KB entry when no landmark-specific override exists, so
-//     P5's edits to knowledge-base.json show up in this view automatically.
+//     edits to knowledge-base.json show up in this view automatically.
 
 import type { Landmark, Period } from "../types/api";
 import knowledgeBase from "./knowledge-base.json";
@@ -147,9 +146,6 @@ const COMUNE:   Source = { label: "Comune di Milano", url: "https://www.comune.m
 const ARCHIVIO: Source = { label: "Archivio Storico Civico di Milano" };
 
 // ─── Landmark metadata (seed content) ─────────────────────────────────────────
-// TODO(P5+P6): move this into /api/landmarks once the endpoint exists. The
-// view only reads it through getLandmark() / listLandmarks() / getHotspots(),
-// so swapping the source is local.
 
 const LANDMARK_META: Record<LandmarkId, LandmarkMeta> = {
   duomo: {
@@ -440,8 +436,7 @@ export const getEraContent = (
   const curated = ERA_BLURBS[landmarkId]?.[eraId];
   if (curated) return curated;
 
-  // Fallback: pull the first matching curated fact from knowledge-base.json
-  // so P5's content edits show up here automatically.
+  // Fallback: pull the first matching curated fact from knowledge-base.json.
   const kb = knowledgeBase as KnowledgeBase;
   const fact = kb.facts.find(
     (f) => f.landmark === landmarkId && (f.period === eraId || f.period === "all")

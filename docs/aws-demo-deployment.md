@@ -282,11 +282,17 @@ Disable public access block (required for static website hosting):
 - Go to **S3 → heritedge-demo → Permissions → Block public access**
 - Click **Edit** → uncheck all four options → **Save**
 
-Add a bucket policy to allow public reads. Save this to a file first (CMD doesn't handle inline JSON well):
+Add a bucket policy to allow public reads. Save the JSON below to a temporary file and apply it:
 
-Create a file called `bucket-policy.json` with this content:
-```json
-{
+```cmd
+echo {"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":"s3:GetObject","Resource":"arn:aws:s3:::heritedge-demo/*"}]} > bucket-policy.json
+aws s3api put-bucket-policy --bucket heritedge-demo --policy file://bucket-policy.json
+del bucket-policy.json
+```
+
+Or on macOS/Linux:
+```bash
+aws s3api put-bucket-policy --bucket heritedge-demo --policy '{
   "Version": "2012-10-17",
   "Statement": [{
     "Effect": "Allow",
@@ -294,12 +300,7 @@ Create a file called `bucket-policy.json` with this content:
     "Action": "s3:GetObject",
     "Resource": "arn:aws:s3:::heritedge-demo/*"
   }]
-}
-```
-
-Then apply it:
-```cmd
-aws s3api put-bucket-policy --bucket heritedge-demo --policy file://bucket-policy.json
+}'
 ```
 
 ### 4.3 Enable static website hosting

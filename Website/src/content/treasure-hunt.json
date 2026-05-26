@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "updatedAt": "2026-05-21",
-  "_consumer": "src/app/components/TreasureHunt.tsx — challenges drive the in-context hunt. Schema mirrors the HuntChallenge interface. Content aligned to Conceptual_Design/Experience-Spec.md (TREASURE HUNT section).",
+  "_consumer": "src/app/components/TreasureHunt.tsx — challenges drive the in-context hunt. Schema mirrors the HuntChallenge interface. Content aligned to docs/Conceptual Design/Experience-Spec.md (TREASURE HUNT section).",
   "challenges": [
     {
       "id": "1",

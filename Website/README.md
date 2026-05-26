@@ -1,11 +1,9 @@
-# Duomo Heritage Mobile Website
+# HeritEdge — Website
 
-HeritEdge — a multimodal AR + chat + voice heritage experience for Piazza del Duomo, Milan.
+A multimodal AR + chat + voice heritage experience for Piazza del Duomo, Milan.
 Polimi MITA course project.
 
 Original Figma design: https://www.figma.com/design/TY0IjSRgLUGwilabm3olrD/Duomo-Heritage-Mobile-Website
-
-See [`OWNERS.md`](./OWNERS.md) for who owns which zone of the codebase.
 
 ---
 
@@ -23,7 +21,7 @@ See [`OWNERS.md`](./OWNERS.md) for who owns which zone of the codebase.
 
 ## Install and run — web app
 
-From the repo root (this folder):
+From the `Website/` folder:
 
 ```bash
 npm install
@@ -83,7 +81,6 @@ Should print `ngrok version 3.20.0` or higher. If it says you need to update, ru
 ### 3. Run the dev server (Terminal 1)
 
 ```bash
-cd Website
 npm install        # only needed the first time
 npm run dev
 ```
@@ -122,9 +119,9 @@ Copy that `https://...ngrok-free.app` URL.
 - On **iOS**: tap the compass icon in the top-right of the AR scene → tap **"Allow"** when iOS asks for motion-sensor permission. Now tilting the phone moves the view.
 - On **Android Chrome**: gyroscope auto-enables.
 
-### 6. (Optional) Share with teammates
+### 6. (Optional) Share the URL
 
-Send them the same `https://...ngrok-free.app` URL. As long as your dev server + ngrok tunnel are running, anyone with the URL can hit your laptop. The free tier supports 1 tunnel and shows that warning page on first visit per device — both fine for demos.
+Send anyone the same `https://...ngrok-free.app` URL. As long as your dev server + ngrok tunnel are running, anyone with the URL can reach your laptop. The free tier supports 1 tunnel and shows a warning page on first visit per device — both fine for demos.
 
 ### 7. Stopping
 
@@ -178,22 +175,22 @@ Should return `{"ok":true}`.
 
 ### API environment variables
 
-Edit the `.env` you just copied. Keys live in the shared team vault — ask P6 if you don't have them.
+Edit the `.env` you just copied.
 
-| Variable | Needed for | Owner |
-|---|---|---|
-| `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` | `/chat` real LLM responses (Week 2+) | P1 |
-| `OPENAI_API_KEY_WHISPER` | `/transcribe` Whisper fallback | P2 |
-| `CHROMA_URL` | RAG vector DB (Week 2+) | P1 |
-| `WEB_ORIGIN` | CORS — set to your Vite URL | P6 |
+| Variable | Needed for |
+|---|---|
+| `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` | `/chat` LLM responses |
+| `OPENAI_API_KEY_WHISPER` | `/transcribe` Whisper voice fallback |
+| `CHROMA_URL` | RAG vector DB (default: `http://localhost:8000`) |
+| `WEB_ORIGIN` | CORS — set to your Vite URL (e.g. `http://localhost:5173`) |
 
-Stubs work without any keys, so you can develop the UI without them.
+The UI still runs without keys — AI endpoints return stub responses.
 
 ---
 
 ## Connecting the web app to the backend
 
-By default the web app calls `http://localhost:3001`. If your backend runs elsewhere, create a `.env.local` in this folder:
+By default the web app calls `http://localhost:3001`. If your backend runs elsewhere, create a `.env.local` in the `Website/` folder:
 
 ```
 VITE_API_URL=http://localhost:3001
@@ -203,16 +200,15 @@ VITE_API_URL=http://localhost:3001
 
 ## Testing the 360° AR viewer (`/ar-xr`)
 
-The P3a deliverable: a panoramic Piazza Duomo viewer with 3 historical eras (Medieval, 1950s post-war, Present day).
+A panoramic Piazza Duomo viewer with 3 historical eras (Birth, Crown, Modern).
 
 **Route:** `/ar-xr`
 
 **On desktop:**
 - **Click + drag** the 3D scene → look around
 - **Arrow keys** or **W / A / S / D** → rotate the view without a mouse
-- **Bottom pills** → switch eras (Medieval / 1950s / Present)
-- **"Switch to Medieval / Present"** button → quick toggle (deliverable spec)
-- **Click a floating sphere** (Duomo, Galleria, Palazzo) → navigates to artifact detail
+- **Bottom pills** → switch eras
+- **Click a floating sphere** (Duomo, Galleria, Palazzo) → opens hotspot detail
 
 **On phone (via ngrok HTTPS — see section above):**
 - One-finger drag → look around
@@ -229,21 +225,24 @@ The P3a deliverable: a panoramic Piazza Duomo viewer with 3 historical eras (Med
 
 ---
 
-## Project layout (short version)
+## Project layout
 
 ```
 Website/
-├── apps/api/          # backend (P1)
+├── apps/api/          # Node.js + Express backend
 ├── src/
-│   ├── app/           # existing Figma shell, routes (P4)
+│   ├── app/           # routes, shell, all page components
 │   ├── features/
-│   │   ├── chat/      # useChat hook (P1)
-│   │   ├── voice/     # useSpeechRecognition hook (P2)
-│   │   └── ar/xr/     # new WebXR scene (P3)
-│   ├── services/      # HTTP clients (P6)
-│   ├── content/       # knowledge base (P5)
-│   └── types/         # shared FE/BE types
-└── docs/deliverable/  # professor rework (P5)
+│   │   ├── chat/      # useChat hook
+│   │   ├── voice/     # useSpeechRecognition hook
+│   │   └── ar/xr/     # Three.js / WebXR panorama scene
+│   ├── services/      # typed HTTP clients
+│   ├── content/       # knowledge-base.json, treasure-hunt.json, landmarks.ts
+│   └── types/         # shared FE/BE TypeScript types
+└── public/
+    ├── images/        # historical images
+    ├── markers/       # AR tracking reference photos
+    └── audio/         # ambient audio clips
 ```
 
 ---
@@ -258,13 +257,11 @@ Website/
 
 **CORS error in browser console.** Your web URL doesn't match `WEB_ORIGIN` in `apps/api/.env`. Update it and restart the backend.
 
-**WebXR doesn't enter AR on phone.** Use Chrome on Android. Safari and Firefox don't support WebXR yet. The `<model-viewer>` fallback is the Week 3 plan for iOS.
+**WebXR doesn't enter AR on phone.** Use Chrome on Android. Safari and Firefox don't support WebXR yet.
 
 ---
 
 ## Git workflow
 
-- Branch per person per feature: `p1/chat-rag`, `p3/webxr-scene`, etc.
-- Open a PR to `main`. One teammate (from a different zone) reviews and approves.
+- Branch per feature: open a PR to `main`, get a teammate to review and approve.
 - Don't push directly to `main` — branch protection is on.
-- See `OWNERS.md` for zones.
