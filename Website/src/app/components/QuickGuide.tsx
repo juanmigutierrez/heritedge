@@ -78,7 +78,7 @@ const timelineData: Record<TimePeriod, {
     title: "Modern",
     years: "1860 – today",
     era: "the living city",
-    buttonQuote: "Galleria Opening",
+    buttonQuote: "The Galleria Opens",
     pullQuote: "With Italian unification, Milan entered a new era. The Galleria opened. The square became a city's living room.",
     content: "Italy unifies. Mengoni builds the Galleria. WWII bombs scar Palazzo Reale. Picasso hangs Guernica in the ruins. Today six million visitors a year pass through this square.",
     highlights: ["Galleria opens 1877", "1943 bombing of Sala delle Cariatidi", "Guernica exhibited here, 1953", "6 million visitors/year today"],
