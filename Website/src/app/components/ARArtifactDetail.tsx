@@ -34,7 +34,6 @@ import {
   describeIntent,
   type VoiceIntent,
 } from "./ar/shared";
-import { pickVoiceHint } from "./ar/voiceHints";
 import { landmarkVT } from "./ar/viewTransition";
 
 const PERIODS: EraId[] = ["birth", "crown", "modern"];
@@ -162,9 +161,9 @@ export function ARArtifactDetail() {
   const [openHotspotId, setOpenHotspotId]   = useState<string | null>(null);
   const [pendingIntent, setPendingIntent]   = useState<(VoiceIntent & { label: string }) | null>(null);
   const [alreadyHereLabel, setAlreadyHereLabel] = useState<string | null>(null);
+  const [notUnderstood, setNotUnderstood] = useState(false);
   const [hintsOpen, setHintsOpen]           = useState(false);
   const [landmarksOpen, setLandmarksOpen]   = useState(false);
-  const voiceHint = useMemo(() => pickVoiceHint(), []);
 
   const openHotspot = useMemo(
     () => hotspots.find(h => h.id === openHotspotId) ?? null,
@@ -216,6 +215,7 @@ export function ARArtifactDetail() {
       return;
     }
 
+    setNotUnderstood(true);
     stopSpeaking();
     sendMessage(transcript, landmarkId)
       .then(res => { const r = res.answer || res.reply; if (r) speak(r); })
@@ -286,6 +286,30 @@ export function ARArtifactDetail() {
           <p style={{ margin: "4px 0 0", fontFamily: MONO, fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: SUBTLE }}>
             {landmark.kicker}
           </p>
+
+          {/* Landmark switcher chips */}
+          <div style={{ display: "flex", gap: 6, marginTop: 12, flexWrap: "wrap", justifyContent: "center" }}>
+            {allLandmarks.map(l => {
+              const active = l.id === landmarkId;
+              return (
+                <button
+                  key={l.id}
+                  onClick={() => { if (!active) navigate(`/ar-artifact/${l.id}?period=${eraId}`, { viewTransition: true }); }}
+                  style={{
+                    padding: "4px 12px", borderRadius: 20, cursor: active ? "default" : "pointer",
+                    fontFamily: SERIF, fontStyle: "italic", fontSize: 14,
+                    background: active ? `${era.accent}30` : "rgba(255,255,255,0.08)",
+                    border: `1px solid ${active ? era.accent : "rgba(255,255,255,0.15)"}`,
+                    color: active ? era.accent : SUBTLE,
+                    fontWeight: active ? 700 : 400,
+                    transition: "all 0.2s",
+                  }}
+                >
+                  {l.emoji} {l.shortName}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -443,6 +467,12 @@ export function ARArtifactDetail() {
       )}
 
       {/* Toasts */}
+      {notUnderstood && (() => {
+        const otherLandmark = allLandmarks.find(l => l.id !== landmarkId);
+        const otherEra = PERIODS.find(p => p !== eraId);
+        const msg = `Try "show me ${otherLandmark?.shortName}" or "switch to ${otherEra}"`;
+        return <VoiceAlreadyHereToast message={msg} accent={era.accent} prefix="" onDismiss={() => setNotUnderstood(false)} />;
+      })()}
       {alreadyHereLabel && (
         <VoiceAlreadyHereToast message={alreadyHereLabel} accent={era.accent} onDismiss={() => setAlreadyHereLabel(null)} />
       )}
@@ -489,7 +519,6 @@ export function ARArtifactDetail() {
           <VoicePill
             era={era}
             onCommand={handleVoiceCommand}
-            hint={<>Try <span style={{ color: era.accent, fontWeight: 600 }}>"{voiceHint}"</span></>}
           />
         </div>
       </div>
