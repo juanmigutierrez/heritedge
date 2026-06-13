@@ -10,13 +10,14 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Sky, Html } from "@react-three/drei";
 import { useNavigate, useSearchParams } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Compass, Camera, CameraOff, ImageDown } from "lucide-react";
+import { X, Compass, Camera, CameraOff, ImageDown, Info } from "lucide-react";
 import * as THREE from "three";
 
 import { ERAS, getEra, listLandmarks, type EraId, type LandmarkId } from "@/content/landmarks";
 import {
   EraScrub, FG, MONO, SERIF, VoicePill,
   parseVoiceIntent, describeIntent, VoiceConfirmToast, VoiceAlreadyHereToast,
+  ARIntroOverlay,
   type VoiceIntent,
 } from "@/app/components/ar/shared";
 import { CenteringArrow } from "@/app/components/ar/CenteringArrow";
@@ -131,9 +132,10 @@ const landmarkYaw = (pos: [number, number, number]) => Math.atan2(-pos[0], -pos[
 
 // sessionStorage keys — preserve user state across navigation within a tab
 // session (panorama → detail → back) so the experience feels continuous.
-const GYRO_STORAGE_KEY = "heritedge:gyro";
-const VIEW_STORAGE_KEY = "heritedge:view"; // last camera yaw/pitch as JSON
-const ERA_STORAGE_KEY  = "heritedge:era";  // last selected era id
+const GYRO_STORAGE_KEY  = "heritedge:gyro";
+const VIEW_STORAGE_KEY  = "heritedge:view";  // last camera yaw/pitch as JSON
+const ERA_STORAGE_KEY   = "heritedge:era";   // last selected era id
+const INTRO_STORAGE_KEY = "heritedge:ar-intro"; // "seen" once the welcome is dismissed
 
 const isEraId = (v: string | null): v is EraId =>
   v === "birth" || v === "crown" || v === "modern";
@@ -657,6 +659,18 @@ export function PanoramaScene() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [capturing, setCapturing] = useState(false);
 
+  // Capability intro — shown once per tab session on first AR entry, then
+  // reopenable via the (i) button. Explains which interaction mode the device
+  // supports and how to reach the fuller one.
+  const [showIntro, setShowIntro] = useState(() => {
+    if (typeof window === "undefined" || !window.sessionStorage) return false;
+    return window.sessionStorage.getItem(INTRO_STORAGE_KEY) !== "seen";
+  });
+  const closeIntro = useCallback(() => {
+    setShowIntro(false);
+    window.sessionStorage?.setItem(INTRO_STORAGE_KEY, "seen");
+  }, []);
+
   const handleCapture = useCallback(async () => {
     const video  = videoRef.current;
     const canvas = canvasRef.current;
@@ -935,14 +949,24 @@ export function PanoramaScene() {
       <div className="absolute top-0 inset-x-0 px-5 pt-12 pb-5 bg-gradient-to-b from-black/70 to-transparent z-10">
         {/* Row 1 — controls */}
         <div className="flex items-center justify-between">
-          <button
-            onClick={() => navigate("/")}
-            aria-label="Back to home"
-            title="Back to home"
-            className="w-10 h-10 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white active:scale-95 transition-transform"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate("/")}
+              aria-label="Back to home"
+              title="Back to home"
+              className="w-10 h-10 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white active:scale-95 transition-transform"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setShowIntro(true)}
+              aria-label="How to explore"
+              title="How to explore"
+              className="w-10 h-10 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white active:scale-95 transition-transform"
+            >
+              <Info className="w-5 h-5" />
+            </button>
+          </div>
 
           <div className="flex items-center gap-2">
             {/* Snapshot — leftmost, only when camera feed is live. */}
@@ -1137,6 +1161,21 @@ export function PanoramaScene() {
           prefix={pendingIntent.landmark ? "Taking you to" : "Switching to"}
           onCommit={() => commitIntent(pendingIntent)}
           onDismiss={() => setPendingIntent(null)}
+        />
+      )}
+
+      {/* ── Capability intro (first entry / reopened via the ⓘ button) ───────── */}
+      {showIntro && (
+        <ARIntroOverlay
+          accent={era_.accent}
+          tintPanel={era_.tintPanel}
+          canGyro={canGyro}
+          gyroOn={gyro}
+          cameraSupported={cameraSupported}
+          cameraOn={cameraMode && camera.status === "live"}
+          onEnableMotion={requestGyro}
+          onToggleCamera={toggleCamera}
+          onClose={closeIntro}
         />
       )}
 
