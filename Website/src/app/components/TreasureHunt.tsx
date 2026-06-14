@@ -624,6 +624,9 @@ function PhotoChallenge(props: {
             <div>
               <p className="text-base font-bold text-foreground">Not quite sure</p>
               <p className="mt-1 text-base text-muted-foreground leading-relaxed">{recapLowConfidence?.message}</p>
+              {recapLowConfidence?.reason && (
+                <p className="mt-2 text-sm text-muted-foreground/80 italic">{recapLowConfidence.reason}</p>
+              )}
             </div>
           </div>
           <div className="flex gap-4">

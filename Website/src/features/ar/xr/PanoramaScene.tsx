@@ -21,7 +21,6 @@ import {
 } from "@/app/components/ar/shared";
 import { CenteringArrow } from "@/app/components/ar/CenteringArrow";
 import { captureARSnapshot, shareOrDownloadSnapshot, type SnapshotMeta, type SnapshotLandmark } from "@/services/captureARSnapshot";
-import { pickVoiceHint } from "@/app/components/ar/voiceHints";
 import { landmarkVT } from "@/app/components/ar/viewTransition";
 import { sendMessage, speak, stopSpeaking } from "@/services/chatService";
 import { useCameraStream } from "./useCameraStream";
@@ -798,9 +797,9 @@ export function PanoramaScene() {
   }, [navigate, era, persistView]);
 
   // Voice — intent parsing with confirmation toast before acting.
-  const voiceHint = useMemo(() => pickVoiceHint(), []);
   const [pendingIntent, setPendingIntent] = useState<(VoiceIntent & { label: string }) | null>(null);
   const [alreadyHereLabel, setAlreadyHereLabel] = useState<string | null>(null);
+  const [notUnderstood, setNotUnderstood] = useState(false);
 
   const commitIntent = useCallback((intent: VoiceIntent) => {
     setPendingIntent(null);
@@ -836,6 +835,7 @@ export function PanoramaScene() {
     }
 
     // Nothing recognised — fall back to RAG.
+    setNotUnderstood(true);
     stopSpeaking();
     sendMessage(transcript, "duomo")
       .then((res) => {
@@ -1105,14 +1105,6 @@ export function PanoramaScene() {
           <VoicePill
             era={era_}
             onCommand={handleVoiceCommand}
-            hint={
-              <>
-                Try{" "}
-                <span style={{ color: era_.accent, fontWeight: 600 }}>
-                  "{voiceHint}"
-                </span>
-              </>
-            }
           />
         </div>
       </div>
@@ -1121,6 +1113,11 @@ export function PanoramaScene() {
           Same affordance as ARArtifactDetail; tapping a landmark navigates
           straight into its detail view. */}
       {/* ── Already-here toast ──────────────────────────────────────────────── */}
+      {notUnderstood && (() => {
+        const otherEra = (["birth", "crown", "modern"] as EraId[]).find(p => p !== era);
+        const msg = `Try "show me Galleria" or "switch to ${otherEra}"`;
+        return <VoiceAlreadyHereToast message={msg} accent={era_.accent} prefix="" onDismiss={() => setNotUnderstood(false)} />;
+      })()}
       {alreadyHereLabel && (
         <VoiceAlreadyHereToast
           message={alreadyHereLabel}

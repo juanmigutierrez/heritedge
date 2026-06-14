@@ -10,6 +10,7 @@ import {
 } from "@/content/landmarks";
 import { useSpeechRecognition } from "@/features/voice/useSpeechRecognition";
 import { speak, stopSpeaking } from "@/services/chatService";
+import { VOICE_HINTS } from "@/app/components/ar/voiceHints";
 
 // ─── Tokens ───────────────────────────────────────────────────────────────────
 
@@ -36,15 +37,15 @@ export interface VoiceIntent {
 
 const LANDMARK_PATTERNS: Array<{ id: LandmarkId; pattern: RegExp }> = [
   { id: "galleria", pattern: /galleria|vittorio|emanuele/i },
-  { id: "palazzo",  pattern: /palazzo|reale|royal\s+palace/i },
-  { id: "duomo",    pattern: /duomo|cathedral|cattedrale/i },
+  { id: "palazzo",  pattern: /palazzo|palazo|\bpalau\b|\bpaso\b|reale|royal\s+palace/i },
+  { id: "duomo",    pattern: /duomo|\bdomo\b|cathedral|cattedrale|\btomorrow\b/i },
 ];
 
 const ERA_PATTERNS: Array<{ id: EraId; pattern: RegExp }> = [
   // Birth: founding era. "medieval"/"mid evil" are common speech-engine mishearings.
   { id: "birth",  pattern: /\bbirth\b|founding|origin|gothic|medieval|media?eval|medi[ae]val|mid[-\s]*evil|middle\s*age|ancient|antico|\bpast\b|1386/i },
   // Crown: renaissance through Napoleonic. "napoleon" and "renaissance" are strong signals.
-  { id: "crown",  pattern: /\bcrown\b|renaissance|baroque|napoleon|enlightenment|habsburg|duchy|1500|1600|1700|1800|rinascimento/i },
+  { id: "crown",  pattern: /\bcrown\b|\bcrone\b|\bgrown\b|\bcroun\b|\bchrome\b|corona|renaissance|baroque|napoleon|enlightenment|habsburg|duchy|1500|1600|1700|1800|rinascimento/i },
   // Modern: 1860 to today. "modern"/"now"/"today" map here; no collision with "gothic" etc.
   { id: "modern", pattern: /\bmodern\b|\bnow\b|today|present|current|liberation|oggi|attuale|1900|1943|1945/i },
 ];
@@ -158,10 +159,11 @@ interface VoiceAlreadyHereToastProps {
   message: string;
   accent: string;
   onDismiss: () => void;
+  prefix?: string;
 }
 
 /** Informational-only toast — auto-dismisses after 2 s, no commit action. */
-export function VoiceAlreadyHereToast({ message, accent, onDismiss }: VoiceAlreadyHereToastProps) {
+export function VoiceAlreadyHereToast({ message, accent, onDismiss, prefix = "Already here ·" }: VoiceAlreadyHereToastProps) {
   const onDismissRef = useRef(onDismiss);
   onDismissRef.current = onDismiss;
 
@@ -187,11 +189,11 @@ export function VoiceAlreadyHereToast({ message, accent, onDismiss }: VoiceAlrea
         animation: "vcToastIn 0.22s cubic-bezier(0.34,1.56,0.64,1)",
       }}
     >
-      <span style={{ fontSize: 16, lineHeight: 1 }}>📍</span>
       <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.1em", color: "rgba(244,242,236,0.7)" }}>
-        Already here ·{" "}
+        {prefix && <>{prefix}{" "}</>}
         <span style={{ color: accent, fontWeight: 600 }}>{message}</span>
       </span>
+      <style>{`@keyframes vcToastIn { from { opacity:0; transform:translateX(-50%) scale(0.88); } to { opacity:1; transform:translateX(-50%) scale(1); } }`}</style>
     </div>
   );
 }
@@ -380,15 +382,16 @@ export interface VoicePillProps {
   era: Era;
   /** Called once per finalized utterance with the recognized transcript. */
   onCommand: (transcript: string) => void;
-  /** Hint shown when idle. */
-  hint?: React.ReactNode;
 }
 
 /**
  * Self-contained voice pill: STT lifecycle + visual.
- * The consumer is responsible for parsing the transcript and reacting.
+ * Cycles through example voice hints every 3.5 s while idle.
  */
-export function VoicePill({ era, onCommand, hint }: VoicePillProps) {
+export function VoicePill({ era, onCommand }: VoicePillProps) {
+  const [hintIdx, setHintIdx] = useState(() =>
+    Math.floor(Math.random() * VOICE_HINTS.length)
+  );
   const {
     transcript,
     listening,
@@ -405,6 +408,15 @@ export function VoicePill({ era, onCommand, hint }: VoicePillProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transcript]);
 
+  // Rotate hint every 3.5 s while the mic is idle.
+  useEffect(() => {
+    if (listening) return;
+    const id = setInterval(() => {
+      setHintIdx(i => (i + 1) % VOICE_HINTS.length);
+    }, 3500);
+    return () => clearInterval(id);
+  }, [listening]);
+
   return (
     <div style={{
       flex: 1, minWidth: 0, height: 46,
@@ -420,8 +432,10 @@ export function VoicePill({ era, onCommand, hint }: VoicePillProps) {
             listening…
           </div>
         ) : (
-          <div key="hint" style={{ fontSize: 12, color: SUBTLE, fontFamily: MONO, letterSpacing: "0.04em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", animation: "vpFade 0.35s ease-out" }}>
-            {isSupported ? hint : "voice not supported"}
+          <div key={hintIdx} style={{ fontSize: 12, color: SUBTLE, fontFamily: MONO, letterSpacing: "0.04em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", animation: "vpFade 0.35s ease-out" }}>
+            {isSupported
+              ? <>Try <span style={{ color: era.accent, fontWeight: 600 }}>"{VOICE_HINTS[hintIdx]}"</span></>
+              : "voice not supported"}
           </div>
         )}
       </div>

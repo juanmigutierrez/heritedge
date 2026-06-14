@@ -1,13 +1,16 @@
-const HINTS: string[] = [
-  "take me to the Duomo at birth",
-  "show me the Galleria modern",
-  "Palazzo Reale, crown period",
-  "take me to Galleria",
+export const VOICE_HINTS: string[] = [
+  "show me the Duomo",
+  "show me the Galleria",
+  "show me the Palazzo",
+  "take me to Duomo in the Crown era",
+  "take me to Galleria at birth",
+  "take me to Palazzo in modern",
+  "switch to crown",
+  "switch to modern",
   "switch to birth",
-  "show me the map",
 ];
 
-/** Pick one approved hint. Random per call — call once on mount per screen. */
+/** Pick one hint at random. */
 export function pickVoiceHint(): string {
-  return HINTS[Math.floor(Math.random() * HINTS.length)];
+  return VOICE_HINTS[Math.floor(Math.random() * VOICE_HINTS.length)];
 }
