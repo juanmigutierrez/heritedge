@@ -38,7 +38,7 @@ export interface VoiceIntent {
 const LANDMARK_PATTERNS: Array<{ id: LandmarkId; pattern: RegExp }> = [
   { id: "galleria", pattern: /galleria|vittorio|emanuele/i },
   { id: "palazzo",  pattern: /palazzo|palazo|\bpalau\b|\bpaso\b|reale|royal\s+palace/i },
-  { id: "duomo",    pattern: /duomo|\bdomo\b|cathedral|cattedrale|tomorrow/i },
+  { id: "duomo",    pattern: /duomo|\bdomo\b|cathedral|cattedrale|\btomorrow\b/i },
 ];
 
 const ERA_PATTERNS: Array<{ id: EraId; pattern: RegExp }> = [
@@ -189,10 +189,11 @@ export function VoiceAlreadyHereToast({ message, accent, onDismiss, prefix = "Al
         animation: "vcToastIn 0.22s cubic-bezier(0.34,1.56,0.64,1)",
       }}
     >
-<span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.1em", color: "rgba(244,242,236,0.7)" }}>
+      <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.1em", color: "rgba(244,242,236,0.7)" }}>
         {prefix && <>{prefix}{" "}</>}
         <span style={{ color: accent, fontWeight: 600 }}>{message}</span>
       </span>
+      <style>{`@keyframes vcToastIn { from { opacity:0; transform:translateX(-50%) scale(0.88); } to { opacity:1; transform:translateX(-50%) scale(1); } }`}</style>
     </div>
   );
 }
