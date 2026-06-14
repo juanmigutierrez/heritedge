@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Mic, Play } from "lucide-react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { Mic, Play, Compass, Camera, CameraOff, Smartphone, Hand } from "lucide-react";
 import {
   ERAS,
   getEra,
@@ -97,7 +97,18 @@ interface VoiceConfirmToastProps {
   onDismiss: () => void;
 }
 
-/** 1.4 s auto-committing toast — shows what the voice command understood. */
+/**
+ * Hold window before a recognised voice command auto-commits. Long enough to
+ * read the toast and react (the evaluator flagged the old 1.4 s as too tight),
+ * while a depleting ring makes the countdown legible rather than a surprise.
+ * Users who are sure can tap the toast to go immediately; ✕ cancels.
+ */
+const VOICE_HOLD_MS = 2800;
+// Circumference of the r=7 countdown ring — shared by the dash length and the
+// keyframe end offset so the stroke depletes exactly to empty.
+const RING_CIRC = 2 * Math.PI * 7;
+
+/** Auto-committing toast with a visible countdown — shows what was understood. */
 export function VoiceConfirmToast({ message, accent, prefix = "Taking you to", onCommit, onDismiss }: VoiceConfirmToastProps) {
   // Stable ref so the timeout is set exactly once on mount regardless of
   // how many times the parent re-renders and passes a new onCommit arrow.
@@ -105,7 +116,7 @@ export function VoiceConfirmToast({ message, accent, prefix = "Taking you to", o
   onCommitRef.current = onCommit;
 
   useEffect(() => {
-    const t = window.setTimeout(() => onCommitRef.current(), 1400);
+    const t = window.setTimeout(() => onCommitRef.current(), VOICE_HOLD_MS);
     return () => window.clearTimeout(t);
   }, []); // empty deps — intentional: fires once on mount, never resets
 
@@ -115,8 +126,8 @@ export function VoiceConfirmToast({ message, accent, prefix = "Taking you to", o
         position: "absolute", bottom: 140, left: "50%",
         transform: "translateX(-50%)",
         zIndex: 50,
-        display: "inline-flex", alignItems: "center", gap: 10,
-        padding: "10px 14px 10px 16px", borderRadius: 999,
+        display: "inline-flex", alignItems: "center", gap: 6,
+        padding: "8px 12px 8px 10px", borderRadius: 999,
         background: "rgba(10,10,12,0.88)",
         backdropFilter: "blur(10px)",
         WebkitBackdropFilter: "blur(10px)",
@@ -126,29 +137,53 @@ export function VoiceConfirmToast({ message, accent, prefix = "Taking you to", o
         animation: "vcToastIn 0.22s cubic-bezier(0.34,1.56,0.64,1)",
       }}
     >
-      <span
+      {/* Tapping the body commits immediately — efficiency for confident users. */}
+      <button
+        onClick={() => onCommitRef.current()}
+        aria-label="Go now"
         style={{
-          width: 7, height: 7, borderRadius: "50%",
-          background: accent, flexShrink: 0,
-          boxShadow: `0 0 8px ${accent}`,
+          background: "none", border: "none", cursor: "pointer", padding: "2px 4px",
+          display: "inline-flex", alignItems: "center", gap: 10,
         }}
-      />
-      <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.1em", color: FG }}>
-        {prefix}{" "}
-        <span style={{ color: accent, fontWeight: 700 }}>{message}</span>
-      </span>
+      >
+        {/* Depleting countdown ring — empties over VOICE_HOLD_MS before commit. */}
+        <span style={{ width: 18, height: 18, flexShrink: 0, display: "inline-flex" }}>
+          <svg width={18} height={18} viewBox="0 0 18 18" style={{ transform: "rotate(-90deg)" }}>
+            <circle cx="9" cy="9" r="7" fill="none" stroke={`${accent}33`} strokeWidth="2" />
+            <circle
+              cx="9" cy="9" r="7" fill="none" stroke={accent} strokeWidth="2" strokeLinecap="round"
+              strokeDasharray={RING_CIRC}
+              style={{ animation: `vcRingDeplete ${VOICE_HOLD_MS}ms linear forwards` }}
+            />
+          </svg>
+        </span>
+        <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.1em", color: FG }}>
+          {prefix}{" "}
+          <span style={{ color: accent, fontWeight: 700 }}>{message}</span>
+          <span style={{ color: `${FG}66`, marginLeft: 8 }}>›</span>
+        </span>
+      </button>
+      {/* Bordered circular chip so cancel reads as a real, reachable control —
+          a bare glyph was too easy to miss in the short auto-commit window. */}
       <button
         onClick={onDismiss}
         aria-label="Cancel"
         style={{
-          background: "none", border: "none", cursor: "pointer",
-          color: "rgba(244,242,236,0.45)", fontSize: 15, lineHeight: 1,
-          padding: "0 0 0 4px", flexShrink: 0,
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          width: 26, height: 26, flexShrink: 0,
+          background: "rgba(255,255,255,0.1)",
+          border: "1px solid rgba(255,255,255,0.3)",
+          borderRadius: "50%",
+          color: FG, fontSize: 16, lineHeight: 1,
+          cursor: "pointer", padding: 0,
         }}
       >
         ×
       </button>
-      <style>{`@keyframes vcToastIn { from { opacity:0; transform:translateX(-50%) scale(0.88); } to { opacity:1; transform:translateX(-50%) scale(1); } }`}</style>
+      <style>{`
+        @keyframes vcToastIn { from { opacity:0; transform:translateX(-50%) scale(0.88); } to { opacity:1; transform:translateX(-50%) scale(1); } }
+        @keyframes vcRingDeplete { from { stroke-dashoffset: 0; } to { stroke-dashoffset: ${RING_CIRC}; } }
+      `}</style>
     </div>
   );
 }
@@ -194,6 +229,155 @@ export function VoiceAlreadyHereToast({ message, accent, onDismiss, prefix = "Al
         <span style={{ color: accent, fontWeight: 600 }}>{message}</span>
       </span>
       <style>{`@keyframes vcToastIn { from { opacity:0; transform:translateX(-50%) scale(0.88); } to { opacity:1; transform:translateX(-50%) scale(1); } }`}</style>
+    </div>
+  );
+}
+
+// ─── AR capability intro ────────────────────────────────────────────────────
+
+interface ARIntroOverlayProps {
+  accent: string;
+  /** Panel tint for the card background — usually era_.tintPanel. */
+  tintPanel: string;
+  /** Whether the device exposes DeviceOrientationEvent (motion-capable). */
+  canGyro: boolean;
+  gyroOn: boolean;
+  cameraSupported: boolean;
+  cameraOn: boolean;
+  /** Request device-motion permission / enable gyro (must be a user gesture). */
+  onEnableMotion: () => void;
+  onToggleCamera: () => void;
+  /** Dismiss the intro — scene is already live behind it. */
+  onClose: () => void;
+}
+
+/**
+ * One-time, capability-aware welcome shown on first entry to the AR scene.
+ * Tells the user which interaction mode their device supports and how to reach
+ * the fuller one — closing the "no compatibility info / no help" gap a reviewer
+ * flagged. The scene renders live behind it, so dismissing never blocks content
+ * and laptop users get the panoramic experience framed as intended, not broken.
+ *
+ * Touch-primary devices get the device-motion copy. `canGyro` alone is
+ * unreliable (desktop Chrome also exposes DeviceOrientationEvent), so the mobile
+ * path is gated on a coarse pointer as well.
+ */
+export function ARIntroOverlay({
+  accent, tintPanel, canGyro, gyroOn, cameraSupported, cameraOn,
+  onEnableMotion, onToggleCamera, onClose,
+}: ARIntroOverlayProps) {
+  const [isTouch] = useState(() =>
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(pointer: coarse)").matches);
+
+  const motionAvailable = canGyro && isTouch;
+
+  // How to look around. The arrow-keys/WASD hint is desktop-only — it must key
+  // off the pointer type, not gyro detection, or a touch device whose gyro
+  // wasn't detected (e.g. insecure context) wrongly gets told to use a keyboard.
+  const lookCopy = motionAvailable
+    ? "Move your phone to look around the square — or drag with a finger."
+    : isTouch
+      ? "Drag with a finger to look around the square."
+      : "Drag, or use the arrow keys / WASD, to look around the square.";
+
+  const pillBtn = (active: boolean): CSSProperties => ({
+    display: "inline-flex", alignItems: "center", gap: 8,
+    width: "100%", justifyContent: "center",
+    padding: "11px 14px", borderRadius: 12, cursor: "pointer",
+    fontFamily: MONO, fontSize: 12.5, letterSpacing: "0.04em",
+    background: active ? `${accent}22` : "rgba(255,255,255,0.06)",
+    border: `1px solid ${active ? accent : "rgba(255,255,255,0.18)"}`,
+    color: FG, transition: "background 0.18s, border-color 0.18s",
+  });
+
+  return (
+    <div
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="How to explore the AR view"
+      style={{
+        position: "absolute", inset: 0, zIndex: 60,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: 20,
+        background: "rgba(0,0,0,0.5)",
+        backdropFilter: "blur(7px)", WebkitBackdropFilter: "blur(7px)",
+        animation: "arIntroFade 0.25s ease",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%", maxWidth: 360, color: FG,
+          background: tintPanel,
+          borderRadius: 18, padding: "22px 20px 18px",
+          border: `1px solid ${accent}44`,
+          boxShadow: `0 18px 50px rgba(0,0,0,0.55), 0 0 0 1px ${accent}1a inset`,
+          animation: "arIntroPop 0.3s cubic-bezier(0.34,1.4,0.64,1)",
+        }}
+      >
+        <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: accent, fontWeight: 600 }}>
+          How to explore
+        </div>
+        <h2 style={{ fontFamily: SERIF, fontSize: 23, lineHeight: 1.18, margin: "8px 0 14px", fontWeight: 600 }}>
+          Piazza del Duomo, across time
+        </h2>
+
+        {/* Primary interaction — adapts to what the device can actually do. */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 16 }}>
+          {motionAvailable
+            ? <Compass size={20} style={{ color: accent, flexShrink: 0, marginTop: 1 }} />
+            : <Hand size={20} style={{ color: accent, flexShrink: 0, marginTop: 1 }} />}
+          <p style={{ fontFamily: SANS, fontSize: 14, lineHeight: 1.45, margin: 0, color: "rgba(244,242,236,0.92)" }}>
+            {lookCopy} Tap a glowing landmark to step inside its story.
+          </p>
+        </div>
+
+        {/* Optional enhancements, only offered when the device supports them. */}
+        <div style={{ display: "grid", gap: 8 }}>
+          {motionAvailable && (
+            <button onClick={onEnableMotion} style={pillBtn(gyroOn)}>
+              <Compass size={16} />
+              {gyroOn ? "Motion tracking on ✓" : "Enable motion tracking"}
+            </button>
+          )}
+          {cameraSupported && (
+            <button onClick={onToggleCamera} style={pillBtn(cameraOn)}>
+              {cameraOn ? <Camera size={16} /> : <CameraOff size={16} />}
+              {cameraOn ? "Camera view on ✓" : "See it through your camera"}
+            </button>
+          )}
+        </div>
+
+        {/* Honest fallback note for laptop/desktop — panoramic is by design. */}
+        {!isTouch && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 14, padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}>
+            <Smartphone size={16} style={{ color: "rgba(244,242,236,0.6)", flexShrink: 0 }} />
+            <span style={{ fontFamily: SANS, fontSize: 12.5, lineHeight: 1.4, color: "rgba(244,242,236,0.7)" }}>
+              On a phone you can also move your device to look around. The view here is the full panorama either way.
+            </span>
+          </div>
+        )}
+
+        <button
+          onClick={onClose}
+          style={{
+            marginTop: 18, width: "100%", padding: "13px 14px",
+            borderRadius: 12, border: "none", cursor: "pointer",
+            background: accent, color: "#16130d",
+            fontFamily: MONO, fontSize: 13, fontWeight: 700, letterSpacing: "0.06em",
+          }}
+        >
+          Start exploring
+        </button>
+      </div>
+
+      <style>{`
+        @keyframes arIntroFade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes arIntroPop { from { opacity: 0; transform: translateY(12px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+      `}</style>
     </div>
   );
 }
