@@ -8,6 +8,11 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   detailedContent?: string;
+  // Transparency fields (assistant messages only)
+  confidenceLabel?: "high" | "medium" | "low";
+  entityHint?: { name: string; period: string };
+  followUps?: [string, string];
+  sources?: ChatSource[];
 }
 
 interface ChatSource {
@@ -91,12 +96,26 @@ function MicButton({
 
 // ─── Single message bubble ────────────────────────────────────────────────────
 
-function MessageBubble({ message }: { message: Message }) {
+function MessageBubble({
+  message,
+  onFollowUp,
+}: {
+  message: Message;
+  onFollowUp?: (q: string) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const isAssistant = message.role === "assistant";
 
+  // Confidence cue text — shown only when the system is uncertain (solution 2 & 3)
+  const confidenceCue =
+    message.confidenceLabel === "low"
+      ? "⚠️ My sources have limited information on this — answer may be incomplete."
+      : message.confidenceLabel === "medium"
+      ? "Based on available heritage sources."
+      : null;
+
   return (
-    <div className={`flex ${isAssistant ? "justify-start" : "justify-end"}`}>
+    <div className={`flex flex-col ${isAssistant ? "items-start" : "items-end"}`}>
       <div
         className={`max-w-[82%] rounded-2xl px-4 py-3 ${
           isAssistant
@@ -105,6 +124,7 @@ function MessageBubble({ message }: { message: Message }) {
         }`}
       >
         <p className="text-sm leading-relaxed break-words">{message.content}</p>
+
         {isAssistant && message.detailedContent && (
           <>
             <button
@@ -131,7 +151,41 @@ function MessageBubble({ message }: { message: Message }) {
             </AnimatePresence>
           </>
         )}
+
+        {/* Source pill — which landmark & period this answer draws from (solution 1) */}
+        {isAssistant && message.entityHint && (
+          <div className="mt-2 pt-2 border-t border-stone-100 flex items-center gap-1.5">
+            <span className="text-[10px] text-stone-400">📍</span>
+            <span className="text-[11px] text-stone-400 leading-tight">
+              {[message.entityHint.name, message.entityHint.period]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
+          </div>
+        )}
+
+        {/* Confidence cue — transparency signal when answer may be incomplete (solution 2 & 3) */}
+        {isAssistant && confidenceCue && (
+          <p className="mt-1.5 text-[11px] text-amber-600 leading-tight italic">
+            {confidenceCue}
+          </p>
+        )}
       </div>
+
+      {/* Follow-up chips — stay within the knowledge base (solution 4) */}
+      {isAssistant && message.followUps && onFollowUp && (
+        <div className="mt-2 flex flex-wrap gap-1.5 max-w-[82%]">
+          {message.followUps.map((q) => (
+            <button
+              key={q}
+              onClick={() => onFollowUp(q)}
+              className="px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-full text-[11px] leading-tight text-left hover:bg-amber-100 active:scale-95 transition-all"
+            >
+              {q}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -148,7 +202,6 @@ export function AIChat() {
         "Hello! Ask me anything about Piazza Duomo — the cathedral, the Galleria, or Palazzo Reale.",
     },
   ]);
-  const [sources, setSources] = useState<ChatSource[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -205,9 +258,12 @@ export function AIChat() {
           id: (Date.now() + 1).toString(),
           role: "assistant",
           content: responseContent,
+          confidenceLabel: res.confidenceLabel,
+          entityHint: res.entityHint,
+          followUps: res.followUps,
+          sources: res.sources ?? [],
         };
 
-        setSources(res.sources ?? []);
         setMessages((prev) => [...prev, aiMessage]);
       })
       .catch(() => {
@@ -270,7 +326,10 @@ export function AIChat() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <MessageBubble message={msg} />
+            <MessageBubble
+              message={msg}
+              onFollowUp={(q) => setInputValue(q)}
+            />
           </motion.div>
         ))}
 
@@ -296,26 +355,6 @@ export function AIChat() {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Citations Box (from your code) */}
-        {sources.length > 0 && (
-          <div className="text-xs text-stone-500 px-1 mt-2">
-            <p className="mb-1 uppercase tracking-wide font-semibold text-emerald-800">📚 Sources</p>
-            <ul className="space-y-1">
-              {sources.map((source) => (
-                <li key={source.id}>
-                  {source.url ? (
-                    <a className="text-emerald-700 underline hover:text-emerald-900" href={source.url} target="_blank" rel="noreferrer">
-                      {source.title}
-                    </a>
-                  ) : (
-                    source.title
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
 
         <div ref={messagesEndRef} />
       </div>
