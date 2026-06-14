@@ -2,6 +2,10 @@ export interface ChatResponse {
   answer: string;
   reply?: string; // alias used by VoiceAssistant and VoiceCommand
   sources?: Array<{ id: string; title: string; url?: string }>;
+  // Transparency fields (heval-shiqi)
+  confidenceLabel?: "high" | "medium" | "low";
+  entityHint?: { name: string; period: string };
+  followUps?: [string, string];
 }
 
 export const sendMessage = async (

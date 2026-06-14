@@ -24,6 +24,10 @@ interface ChatMessage {
   followUp?: string;
   isExpanded?: boolean;
   sources?: Array<{ id: string; title: string; url?: string }>;
+  // Transparency fields (heval-shiqi)
+  confidenceLabel?: "high" | "medium" | "low";
+  entityHint?: { name: string; period: string };
+  suggestedQuestions?: [string, string];
 }
 
 // ─── Luca persona ────────────────────────────────────────────────────────────
@@ -117,12 +121,13 @@ function declinesMore(s: string) {
 // ─── AI bubble — token-driven ────────────────────────────────────────────────
 
 function AIBubble({
-  msg, onExpand, onHearMore, isSpeaking,
+  msg, onExpand, onHearMore, isSpeaking, onSuggestedQuestion,
 }: {
   msg: ChatMessage;
   onExpand: (id: string) => void;
   onHearMore: (id: string) => void;
   isSpeaking: boolean;
+  onSuggestedQuestion?: (q: string) => void;
 }) {
   return (
     <div className="flex justify-start gap-2.5">
@@ -178,6 +183,48 @@ function AIBubble({
             </>
           )}
         </div>
+
+        {/* Source pill — which landmark & period this answer draws from (solution 1) */}
+        {msg.entityHint && (
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className="text-[10px]" style={{ color: "var(--muted-foreground)" }}>📍</span>
+            <span className="text-[11px]" style={{ color: "var(--muted-foreground)" }}>
+              {[msg.entityHint.name, msg.entityHint.period].filter(Boolean).join(" · ")}
+            </span>
+          </div>
+        )}
+
+        {/* Confidence cue — signals when the answer may be incomplete (solutions 2 & 3) */}
+        {msg.confidenceLabel === "low" && (
+          <p className="mt-1 text-[11px] italic" style={{ color: "var(--accent-strong)" }}>
+            ⚠️ My sources have limited information on this — answer may be incomplete.
+          </p>
+        )}
+        {msg.confidenceLabel === "medium" && (
+          <p className="mt-1 text-[11px] italic" style={{ color: "var(--muted-foreground)" }}>
+            Based on available heritage sources.
+          </p>
+        )}
+
+        {/* Suggested questions — anchored to the knowledge base (solution 4) */}
+        {msg.suggestedQuestions && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {msg.suggestedQuestions.map((q) => (
+              <button
+                key={q}
+                onClick={() => onSuggestedQuestion?.(q)}
+                className="px-3 py-1.5 rounded-full text-[11px] border transition-all active:scale-95 text-left"
+                style={{
+                  background: "color-mix(in srgb, var(--accent) 10%, transparent)",
+                  borderColor: "var(--accent)",
+                  color: "var(--accent-strong)",
+                }}
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        )}
 
         {msg.sources && msg.sources.length > 0 && (
           <div className="max-w-[90%] px-3 py-2 bg-secondary border border-border rounded-lg text-xs text-foreground">
@@ -355,11 +402,12 @@ function EmptyChatState({ onPrompt }: { onPrompt: (text: string) => void }) {
   );
 }
 
-function ChatMessage({ msg, onExpand, onHearMore, isSpeaking }: {
+function ChatMessage({ msg, onExpand, onHearMore, isSpeaking, onSuggestedQuestion }: {
   msg: ChatMessage;
   onExpand: (id: string) => void;
   onHearMore: (id: string) => void;
   isSpeaking: boolean;
+  onSuggestedQuestion?: (q: string) => void;
 }) {
   if (msg.role === "user") {
     return (
@@ -373,7 +421,7 @@ function ChatMessage({ msg, onExpand, onHearMore, isSpeaking }: {
       </div>
     );
   }
-  return <AIBubble msg={msg} onExpand={onExpand} onHearMore={onHearMore} isSpeaking={isSpeaking} />;
+  return <AIBubble msg={msg} onExpand={onExpand} onHearMore={onHearMore} isSpeaking={isSpeaking} onSuggestedQuestion={onSuggestedQuestion} />;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -557,6 +605,9 @@ export function QuickGuide() {
         followUp,
         isExpanded: false,
         sources: res.sources,
+        confidenceLabel: res.confidenceLabel,
+        entityHint: res.entityHint,
+        suggestedQuestions: res.followUps,
       };
       setChatMessages((prev) => [...prev, aiMsg]);
       speakWithState(followUp ? `${short} … ${followUp}` : short);
@@ -706,7 +757,7 @@ export function QuickGuide() {
 
               {chatMessages.map((msg) => (
                 <motion.div key={msg.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                  <ChatMessage msg={msg} onExpand={handleExpand} onHearMore={handleHearMore} isSpeaking={isSpeaking} />
+                  <ChatMessage msg={msg} onExpand={handleExpand} onHearMore={handleHearMore} isSpeaking={isSpeaking} onSuggestedQuestion={handleSendMessageText} />
                 </motion.div>
               ))}
 

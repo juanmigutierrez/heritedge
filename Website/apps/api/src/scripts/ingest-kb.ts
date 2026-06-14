@@ -22,6 +22,8 @@ import { fileURLToPath } from "url";
 import OpenAI from "openai";
 import { ChromaClient } from "chromadb";
 
+const noopEmbeddingFn = { generate: async (texts: string[]) => texts.map(() => [] as number[]) };
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -152,6 +154,7 @@ async function ingestKnowledgeBase() {
 
   const collection = await chromaClient.getOrCreateCollection({
     name: collectionName,
+    embeddingFunction: noopEmbeddingFn,
     metadata: {
       description: kb.domain?.description ?? "Heritage knowledge base",
       version: kb.version,

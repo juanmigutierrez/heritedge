@@ -2,6 +2,10 @@ import { Router, Request, Response } from "express";
 import OpenAI from "openai";
 import { ChromaClient } from "chromadb";
 
+// We compute embeddings ourselves via OpenAI, so we pass a stub to satisfy
+// chromadb v3's requirement for an explicit EmbeddingFunction.
+const noopEmbeddingFn = { generate: async (texts: string[]) => texts.map(() => [] as number[]) };
+
 const router = Router();
 
 const collectionName = "piazza-del-duomo";
@@ -104,7 +108,7 @@ async function retrieveSources(message: string, period?: string, landmark?: stri
       return [] as RetrievedSource[];
     }
 
-    const collection = await chromaClient.getOrCreateCollection({ name: collectionName });
+    const collection = await chromaClient.getOrCreateCollection({ name: collectionName, embeddingFunction: noopEmbeddingFn });
     const results = await collection.query({
       queryEmbeddings: [queryEmbedding],
       nResults: retrievalLimit,
@@ -139,6 +143,67 @@ async function retrieveSources(message: string, period?: string, landmark?: stri
     console.error("[chat] Retrieval failed; continuing without knowledge base context:", error);
     return [] as RetrievedSource[];
   }
+}
+
+// ─── Transparency helpers ─────────────────────────────────────────────────────
+
+/** Human-readable period labels shown in the source pill. */
+const PERIOD_LABELS: Record<string, string> = {
+  birth:  "Birth era (1386–1500s)",
+  crown:  "Crown era (1500s–1860)",
+  modern: "Modern era (1860–today)",
+};
+
+/** Human-readable landmark names. */
+const LANDMARK_LABELS: Record<string, string> = {
+  duomo:    "Duomo",
+  galleria: "Galleria",
+  palazzo:  "Palazzo Reale",
+};
+
+/**
+ * Two follow-up questions anchored to heritage content, keyed by
+ * "{entityId}-{period}". These stay within the knowledge base so users
+ * can keep exploring without leaving the reliable source base (solution 4).
+ */
+const FOLLOW_UPS: Record<string, [string, string]> = {
+  "duomo-birth":     ["Who commissioned the Duomo's construction?", "How long did the Duomo take to build?"],
+  "duomo-crown":     ["Who designed the Madonnina on top of the Duomo?", "What role did Napoleon play at the Duomo?"],
+  "duomo-modern":    ["What happened to the Duomo area during WWII?", "How many visitors does the Duomo get each year?"],
+  "galleria-birth":  ["Who designed the Galleria Vittorio Emanuele II?", "When did construction of the Galleria begin?"],
+  "galleria-crown":  ["What is the architectural style of the Galleria?", "What is the bull mosaic tradition in the Galleria?"],
+  "galleria-modern": ["When was the Galleria inaugurated?", "What famous events happened in the Galleria?"],
+  "palazzo-birth":   ["What was Palazzo Reale used for in the medieval era?", "Who originally commissioned Palazzo Reale?"],
+  "palazzo-crown":   ["Who redesigned Palazzo Reale in the 18th century?", "What is the Sala delle Cariatidi?"],
+  "palazzo-modern":  ["What exhibitions are held at Palazzo Reale today?", "How was Palazzo Reale damaged in WWII?"],
+};
+
+/** Generic fallback follow-ups when no specific landmark/period is matched. */
+const FALLBACK_FOLLOW_UPS: [string, string] = [
+  "What is the history of the Duomo di Milano?",
+  "When was the Galleria Vittorio Emanuele II built?",
+];
+
+function pickFollowUps(sources: RetrievedSource[]): [string, string] {
+  const top = sources[0];
+  if (!top?.entityId || !top?.period) return FALLBACK_FOLLOW_UPS;
+  const key = `${top.entityId}-${top.period}`;
+  return FOLLOW_UPS[key] ?? FALLBACK_FOLLOW_UPS;
+}
+
+function buildEntityHint(sources: RetrievedSource[]): { name: string; period: string } | undefined {
+  const top = sources[0];
+  if (!top) return undefined;
+  const name   = LANDMARK_LABELS[top.entityId ?? ""] ?? top.entityName ?? undefined;
+  const period = PERIOD_LABELS[top.period ?? ""] ?? top.period ?? undefined;
+  if (!name && !period) return undefined;
+  return { name: name ?? "", period: period ?? "" };
+}
+
+function buildConfidenceLabel(confidence: number): "high" | "medium" | "low" {
+  if (confidence >= 0.75) return "high";
+  if (confidence >= 0.45) return "medium";
+  return "low";
 }
 
 function buildSystemPrompt(context: string) {
@@ -217,6 +282,9 @@ router.post("/", async (req: Request, res: Response) => {
       ? buildFallbackAnswer(message, sources)
       : modelAnswer;
     const confidence = sources.length === 0 ? 0.2 : Math.min(0.95, 0.55 + sources[0]!.score * 0.4);
+    const confidenceLabel = buildConfidenceLabel(confidence);
+    const entityHint = buildEntityHint(sources);
+    const followUps = pickFollowUps(sources);
 
     return res.status(200).json({
       answer,
@@ -227,6 +295,9 @@ router.post("/", async (req: Request, res: Response) => {
         url: source.url,
       })),
       confidence,
+      confidenceLabel,
+      entityHint,
+      followUps,
       needsClarification:
         confidence < minConfidence
           ? {
