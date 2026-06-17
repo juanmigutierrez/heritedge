@@ -173,7 +173,7 @@ const CROWN: Scene[] = [
       {
         year: "Today",
         image: "/images/Duomo-Di-Milano-scene-2.5.jpg",
-        caption: "Napoleon ordered the façade finished before his 1805 coronation as King of Italy. His name is carved on it.",
+        caption: "Today — the same façade, now framing a pedestrian piazza. Napoleon's name is still carved above the central portal, two centuries on.",
       },
     ],
   },
@@ -211,7 +211,7 @@ const MODERN: Scene[] = [
     eyebrow: "7 March 1865",
     heading: "Mengoni wins.",
     body: "King Vittorio Emanuele II lays the first stone of an iron-and-glass arcade between the Duomo and La Scala. Giuseppe Mengoni wins the national competition.",
-    image: "/src/assets/History/mengoni-plans.jpg",
+    image: "/images/mengoni-plans.jpg",
     askLucaPrompt: "Tell me more about Giuseppe Mengoni and the Galleria's design.",
   },
   {
@@ -223,7 +223,7 @@ const MODERN: Scene[] = [
   {
     kind: "videoEmbed",
     title: "25 April 1945 · Milan liberated",
-    src: "/src/assets/History/liberation.mp4",
+    src: "/images/liberation.mp4",
     poster: "/assets/placeholder.jpg",
     caption: "Three years earlier the square was empty under air-raid sirens. Today, this is the first crowd to fill it freely.",
     autoAdvance: true,
@@ -236,17 +236,17 @@ const MODERN: Scene[] = [
     frames: [
       {
         year: "1900",
-        image: "/src/assets/History/brogi-cariatidi-1900.jpg",
+        image: "/images/brogi-cariatidi-1900.jpg",
         caption: "Brogi's photograph shows the intact hall.",
       },
       {
         year: "1944",
-        image: "/src/assets/History/cariatidi-1944.jpg",
+        image: "/images/cariatidi-1944.jpg",
         caption: "After the 1943 bombing, the hall is blackened.",
       },
       {
         year: "Today",
-        image: "/src/assets/History/cariatidi-today.jpg",
+        image: "/images/cariatidi-today.jpg",
         caption: "Deliberately scarred and never fully restored.",
       },
     ],
@@ -263,7 +263,7 @@ const MODERN: Scene[] = [
     eyebrow: "A 1960s aperitivo",
     heading: "How Milanese lived.",
     body: "1960. The economic miracle peaks. You step into Bar Campari, order a Negroni sbagliato, and talk about the new Pirelli Tower.",
-    image: "/src/assets/History/golden-eagle-1960s.jpg",
+    image: "/images/golden-eagle-1960s.jpg",
     askLucaPrompt: "Tell me more about aperitivo culture in the Galleria.",
   },
 ];
