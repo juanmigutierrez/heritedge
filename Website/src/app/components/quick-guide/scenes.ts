@@ -22,18 +22,22 @@ export interface TimelineFrame {
 
 // Unified scene vocabulary. "askLucaPrompt" pre-fills the contextual chat
 // question; tapping "Ask Luca more →" returns the user to the same scene.
+interface SceneBase {
+  preview?: string;
+}
+
 export type Scene =
-  | { kind: "hero";           subtitle: string; cta?: string }
-  | { kind: "quote";          text: string; askLucaPrompt?: string }
-  | { kind: "narrative";      eyebrow?: string; heading: string; body: string; image?: string; imageAlt?: string; imageCaption?: string; askLucaPrompt?: string }
-  | { kind: "reveal";         eyebrow?: string; question: string; answerEyebrow?: string; answer: string; image?: string; imageAlt?: string; askLucaPrompt?: string }
-  | { kind: "quiz";           question: string; options: string[]; correctIndex: number; explanation?: string; points?: number; askLucaPrompt?: string }
-  | { kind: "illustration";   id: IllustrationId; eyebrow?: string; heading?: string; caption?: string; askLucaPrompt?: string }
-  | { kind: "matchGame";      instruction: string; pairs: Array<{ left: string; right: string }>; twist?: string; reveal: string; askLucaPrompt?: string }
-  | { kind: "videoEmbed";     title: string; src?: string; poster?: string; caption?: string; autoAdvance?: boolean; askLucaPrompt?: string }
-  | { kind: "timelineSlider"; eyebrow?: string; heading: string; frames: TimelineFrame[]; askLucaPrompt?: string }
-  | { kind: "cultural";       eyebrow?: string; heading: string; body: string; image?: string; askLucaPrompt?: string }
-  | { kind: "closing";        heading: string; body?: string; cta?: string; askLucaPrompt?: string };
+  | (SceneBase & { kind: "hero";           subtitle: string; cta?: string })
+  | (SceneBase & { kind: "quote";          text: string; askLucaPrompt?: string })
+  | (SceneBase & { kind: "narrative";      eyebrow?: string; heading: string; body: string; image?: string; imageAlt?: string; imageCaption?: string; askLucaPrompt?: string })
+  | (SceneBase & { kind: "reveal";         eyebrow?: string; question: string; answerEyebrow?: string; answer: string; image?: string; imageAlt?: string; askLucaPrompt?: string })
+  | (SceneBase & { kind: "quiz";           question: string; options: string[]; correctIndex: number; explanation?: string; points?: number; askLucaPrompt?: string })
+  | (SceneBase & { kind: "illustration";   id: IllustrationId; eyebrow?: string; heading?: string; caption?: string; askLucaPrompt?: string })
+  | (SceneBase & { kind: "matchGame";      instruction: string; pairs: Array<{ left: string; right: string }>; twist?: string; reveal: string; askLucaPrompt?: string })
+  | (SceneBase & { kind: "videoEmbed";     title: string; src?: string; poster?: string; caption?: string; autoAdvance?: boolean; askLucaPrompt?: string })
+  | (SceneBase & { kind: "timelineSlider"; eyebrow?: string; heading: string; frames: TimelineFrame[]; askLucaPrompt?: string })
+  | (SceneBase & { kind: "cultural";       eyebrow?: string; heading: string; body: string; image?: string; askLucaPrompt?: string })
+  | (SceneBase & { kind: "closing";        heading: string; body?: string; cta?: string; askLucaPrompt?: string });
 
 // ─── Chapter 1 — Birth (1386 – 1500s) ────────────────────────────────────────
 
@@ -41,6 +45,7 @@ const BIRTH: Scene[] = [
   {
     kind: "hero",
     subtitle: "Birth · 1386 – 1500s · Chapter 1 of 3",
+    preview: "Construction of the Duomo begins — Milan begins its transformation into a Renaissance city",
     cta: "Begin chapter →",
   },
   {
@@ -117,11 +122,12 @@ const CROWN: Scene[] = [
   {
     kind: "hero",
     subtitle: "Crown · 1500s – 1860 · Chapter 2 of 3",
+    preview: "The Duomo evolves through its tiburio- eventually crowned by La Madonnina in 1774.",
     cta: "Begin chapter →",
   },
   {
     kind: "quote",
-    text: "Leonardo sketched the dome's heart. The Gothic listened, and answered in marble.",
+    text: "Leonardo Da Vinci sketches an idea for Duomo’s heart. Centuries later, the Madonnina is placed atop the spire in 1774.",
     askLucaPrompt: "Tell me about Leonardo da Vinci's involvement with the Duomo.",
   },
   {
@@ -167,7 +173,7 @@ const CROWN: Scene[] = [
       {
         year: "Today",
         image: "/images/Duomo-Di-Milano-scene-2.5.jpg",
-        caption: "Napoleon ordered the façade finished before his 1805 coronation as King of Italy. His name is carved on it.",
+        caption: "Today — the same façade, now framing a pedestrian piazza. Napoleon's name is still carved above the central portal, two centuries on.",
       },
     ],
   },
@@ -192,11 +198,12 @@ const MODERN: Scene[] = [
   {
     kind: "hero",
     subtitle: "Modern · 1860 – today · Chapter 3 of 3",
+    preview: "With Italian unification, Milan modernizes — the Galleria rises, war reshapes the piazza, and the square becomes the city’s living heart.",
     cta: "Begin chapter →",
   },
   {
     kind: "quote",
-    text: "Italy found a stage. The Galleria opened. The square became a city's living room.",
+    text: "With Italian unification, Milan entered a new era. The Galleria opened. The square became a city's living room.",
     askLucaPrompt: "Tell me about how Milan changed after Italian unification.",
   },
   {
@@ -204,7 +211,7 @@ const MODERN: Scene[] = [
     eyebrow: "7 March 1865",
     heading: "Mengoni wins.",
     body: "King Vittorio Emanuele II lays the first stone of an iron-and-glass arcade between the Duomo and La Scala. Giuseppe Mengoni wins the national competition.",
-    image: "/src/assets/History/mengoni-plans.jpg",
+    image: "/images/mengoni-plans.jpg",
     askLucaPrompt: "Tell me more about Giuseppe Mengoni and the Galleria's design.",
   },
   {
@@ -216,7 +223,7 @@ const MODERN: Scene[] = [
   {
     kind: "videoEmbed",
     title: "25 April 1945 · Milan liberated",
-    src: "/src/assets/History/liberation.mp4",
+    src: "/images/liberation.mp4",
     poster: "/assets/placeholder.jpg",
     caption: "Three years earlier the square was empty under air-raid sirens. Today, this is the first crowd to fill it freely.",
     autoAdvance: true,
@@ -229,17 +236,17 @@ const MODERN: Scene[] = [
     frames: [
       {
         year: "1900",
-        image: "/src/assets/History/brogi-cariatidi-1900.jpg",
+        image: "/images/brogi-cariatidi-1900.jpg",
         caption: "Brogi's photograph shows the intact hall.",
       },
       {
         year: "1944",
-        image: "/src/assets/History/cariatidi-1944.jpg",
+        image: "/images/cariatidi-1944.jpg",
         caption: "After the 1943 bombing, the hall is blackened.",
       },
       {
         year: "Today",
-        image: "/src/assets/History/cariatidi-today.jpg",
+        image: "/images/cariatidi-today.jpg",
         caption: "Deliberately scarred and never fully restored.",
       },
     ],
@@ -250,7 +257,7 @@ const MODERN: Scene[] = [
     eyebrow: "A 1960s aperitivo",
     heading: "How Milanese lived.",
     body: "1960. The economic miracle peaks. You step into Bar Campari, order a Negroni sbagliato, and talk about the new Pirelli Tower.",
-    image: "/src/assets/History/golden-eagle-1960s.jpg",
+    image: "/images/golden-eagle-1960s.jpg",
     askLucaPrompt: "Tell me more about aperitivo culture in the Galleria.",
   },
   {

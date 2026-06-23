@@ -2,13 +2,18 @@ export interface ChatResponse {
   answer: string;
   reply?: string; // alias used by VoiceAssistant and VoiceCommand
   sources?: Array<{ id: string; title: string; url?: string }>;
+  // Transparency fields (heval-shiqi)
+  confidenceLabel?: "high" | "medium" | "low";
+  entityHint?: { name: string; period: string };
+  followUps?: [string, string];
 }
 
 export const sendMessage = async (
   message: string,
   artifactContext?: string | null
 ): Promise<ChatResponse> => {
-  const res = await fetch("http://localhost:3001/chat", {
+  const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3001";
+  const res = await fetch(`${BASE_URL}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

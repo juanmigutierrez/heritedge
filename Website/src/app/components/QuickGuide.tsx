@@ -24,6 +24,10 @@ interface ChatMessage {
   followUp?: string;
   isExpanded?: boolean;
   sources?: Array<{ id: string; title: string; url?: string }>;
+  // Transparency fields (heval-shiqi)
+  confidenceLabel?: "high" | "medium" | "low";
+  entityHint?: { name: string; period: string };
+  suggestedQuestions?: [string, string];
 }
 
 // ─── Luca persona ────────────────────────────────────────────────────────────
@@ -44,6 +48,7 @@ const timelineData: Record<TimePeriod, {
   id: TimePeriod;
   title: string;
   years: string;
+  buttonQuote: string;
   era: string;
   pullQuote: string;
   content: string;
@@ -56,6 +61,7 @@ const timelineData: Record<TimePeriod, {
     years: "1386 – 1500s",
     era: "the first stone",
     pullQuote: "A city dared to begin a cathedral that would outlive every hand that touched it.",
+    buttonQuote: "Duomo Construction Begins",
     content: "Archbishop Antonio da Saluzzo lays the first stone in 1386. Duke Gian Galeazzo Visconti turns the Duomo into a state enterprise — Milan's Gothic answer to Cologne and Reims.",
     highlights: ["First stone, 5 Aug 1386", "Candoglia marble granted in perpetuity", "14 years of foundation excavations", "Fabbrica del Duomo founded 1387"],
     source: { label: "Veneranda Fabbrica del Duomo", url: "https://www.duomomilano.it" },
@@ -65,7 +71,8 @@ const timelineData: Record<TimePeriod, {
     title: "Crown",
     years: "1500s – 1860",
     era: "the golden age",
-    pullQuote: "Leonardo sketched the dome's heart. The Gothic listened, and answered in marble.",
+    pullQuote: "Leonardo Da Vinci sketches an idea for Duomo’s heart. Centuries later, the Madonnina is placed atop the spire in 1774.",
+    buttonQuote: "La Madonnina Crowning",
     content: "Renaissance, Habsburg rule, Napoleon. Leonardo submits tiburio designs. The Madonnina rises to 108.5 m. Piermarini rebuilds Palazzo Reale and opens La Scala.",
     highlights: ["Leonardo's tiburio designs, 1487", "Madonnina placed, 30 Dec 1774", "Napoleon's coronation, 1805", "Palazzo Reale rebuilt by Piermarini"],
     source: { label: "Veneranda Fabbrica del Duomo", url: "https://www.duomomilano.it" },
@@ -75,7 +82,8 @@ const timelineData: Record<TimePeriod, {
     title: "Modern",
     years: "1860 – today",
     era: "the living city",
-    pullQuote: "Italy found a stage. The Galleria opened. The square became a city's living room.",
+    buttonQuote: "The Galleria Opens",
+    pullQuote: "With Italian unification, Milan entered a new era. The Galleria opened. The square became a city's living room.",
     content: "Italy unifies. Mengoni builds the Galleria. WWII bombs scar Palazzo Reale. Picasso hangs Guernica in the ruins. Today six million visitors a year pass through this square.",
     highlights: ["Galleria opens 1877", "1943 bombing of Sala delle Cariatidi", "Guernica exhibited here, 1953", "6 million visitors/year today"],
     source: { label: "Comune di Milano", url: "https://www.comune.milano.it" },
@@ -113,12 +121,13 @@ function declinesMore(s: string) {
 // ─── AI bubble — token-driven ────────────────────────────────────────────────
 
 function AIBubble({
-  msg, onExpand, onHearMore, isSpeaking,
+  msg, onExpand, onHearMore, isSpeaking, onSuggestedQuestion,
 }: {
   msg: ChatMessage;
   onExpand: (id: string) => void;
   onHearMore: (id: string) => void;
   isSpeaking: boolean;
+  onSuggestedQuestion?: (q: string) => void;
 }) {
   return (
     <div className="flex justify-start gap-2.5">
@@ -174,6 +183,48 @@ function AIBubble({
             </>
           )}
         </div>
+
+        {/* Source pill — which landmark & period this answer draws from (solution 1) */}
+        {msg.entityHint && (
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className="text-[10px]" style={{ color: "var(--muted-foreground)" }}>📍</span>
+            <span className="text-[11px]" style={{ color: "var(--muted-foreground)" }}>
+              {[msg.entityHint.name, msg.entityHint.period].filter(Boolean).join(" · ")}
+            </span>
+          </div>
+        )}
+
+        {/* Confidence cue — signals when the answer may be incomplete (solutions 2 & 3) */}
+        {msg.confidenceLabel === "low" && (
+          <p className="mt-1 text-[11px] italic" style={{ color: "var(--accent-strong)" }}>
+            ⚠️ My sources have limited information on this — answer may be incomplete.
+          </p>
+        )}
+        {msg.confidenceLabel === "medium" && (
+          <p className="mt-1 text-[11px] italic" style={{ color: "var(--muted-foreground)" }}>
+            Based on available heritage sources.
+          </p>
+        )}
+
+        {/* Suggested questions — anchored to the knowledge base (solution 4) */}
+        {msg.suggestedQuestions && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {msg.suggestedQuestions.map((q) => (
+              <button
+                key={q}
+                onClick={() => onSuggestedQuestion?.(q)}
+                className="px-3 py-1.5 rounded-full text-[11px] border transition-all active:scale-95 text-left"
+                style={{
+                  background: "color-mix(in srgb, var(--accent) 10%, transparent)",
+                  borderColor: "var(--accent)",
+                  color: "var(--accent-strong)",
+                }}
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        )}
 
         {msg.sources && msg.sources.length > 0 && (
           <div className="max-w-[90%] px-3 py-2 bg-secondary border border-border rounded-lg text-xs text-foreground">
@@ -351,11 +402,12 @@ function EmptyChatState({ onPrompt }: { onPrompt: (text: string) => void }) {
   );
 }
 
-function ChatMessage({ msg, onExpand, onHearMore, isSpeaking }: {
+function ChatMessage({ msg, onExpand, onHearMore, isSpeaking, onSuggestedQuestion }: {
   msg: ChatMessage;
   onExpand: (id: string) => void;
   onHearMore: (id: string) => void;
   isSpeaking: boolean;
+  onSuggestedQuestion?: (q: string) => void;
 }) {
   if (msg.role === "user") {
     return (
@@ -369,7 +421,7 @@ function ChatMessage({ msg, onExpand, onHearMore, isSpeaking }: {
       </div>
     );
   }
-  return <AIBubble msg={msg} onExpand={onExpand} onHearMore={onHearMore} isSpeaking={isSpeaking} />;
+  return <AIBubble msg={msg} onExpand={onExpand} onHearMore={onHearMore} isSpeaking={isSpeaking} onSuggestedQuestion={onSuggestedQuestion} />;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -553,6 +605,9 @@ export function QuickGuide() {
         followUp,
         isExpanded: false,
         sources: res.sources,
+        confidenceLabel: res.confidenceLabel,
+        entityHint: res.entityHint,
+        suggestedQuestions: res.followUps,
       };
       setChatMessages((prev) => [...prev, aiMsg]);
       speakWithState(followUp ? `${short} … ${followUp}` : short);
@@ -702,7 +757,7 @@ export function QuickGuide() {
 
               {chatMessages.map((msg) => (
                 <motion.div key={msg.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
-                  <ChatMessage msg={msg} onExpand={handleExpand} onHearMore={handleHearMore} isSpeaking={isSpeaking} />
+                  <ChatMessage msg={msg} onExpand={handleExpand} onHearMore={handleHearMore} isSpeaking={isSpeaking} onSuggestedQuestion={handleSendMessageText} />
                 </motion.div>
               ))}
 
@@ -878,16 +933,12 @@ export function QuickGuide() {
                       >
                         Chapter {i + 1}
                       </div>
-                      <div className="mt-1 text-sm font-medium leading-tight">{data.title}</div>
-                      <div
-                        className="text-[11px] mt-0.5"
-                        style={{
-                          color: isActive ? "var(--accent-foreground)" : "var(--muted-foreground)",
-                          opacity: isActive ? 0.75 : 1,
-                        }}
-                      >
-                        {data.years}
+                      <div className="mt-1 text-sm font-medium leading-tight">
+                      {`${data.title} (${data.years})`}
                       </div>
+                      <p className="mt-2 text-[11px] text-muted-foreground leading-snug">
+                        {data.buttonQuote}
+                      </p>
                     </button>
                   );
                 })}

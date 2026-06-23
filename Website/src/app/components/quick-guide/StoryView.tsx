@@ -253,7 +253,14 @@ function SceneContent({
 }) {
   switch (scene.kind) {
     case "hero":
-      return <SceneHero subtitle={scene.subtitle} cta={scene.cta} onAdvance={onAdvance} />;
+      return (
+        <SceneHero
+          subtitle={scene.subtitle}
+          preview={scene.preview}
+          cta={scene.cta}
+          onAdvance={onAdvance}
+        />
+      );
     case "quote":
       return <SceneQuote text={scene.text} askLucaPrompt={scene.askLucaPrompt} onAskLuca={onAskLuca} index={index} />;
     case "narrative":
@@ -265,6 +272,7 @@ function SceneContent({
           image={scene.image}
           imageAlt={scene.imageAlt}
           imageCaption={scene.imageCaption}
+          preview={scene.preview}
           askLucaPrompt={scene.askLucaPrompt}
           onAskLuca={onAskLuca}
           index={index}
@@ -279,6 +287,7 @@ function SceneContent({
           answer={scene.answer}
           image={scene.image}
           imageAlt={scene.imageAlt}
+          preview={scene.preview}
           askLucaPrompt={scene.askLucaPrompt}
           onAskLuca={onAskLuca}
           index={index}
@@ -300,6 +309,7 @@ function SceneContent({
           id={scene.id}
           eyebrow={scene.eyebrow}
           heading={scene.heading}
+          preview={scene.preview}
           caption={scene.caption}
         />
       );
@@ -320,6 +330,7 @@ function SceneContent({
           src={scene.src}
           poster={scene.poster}
           caption={scene.caption}
+          preview={scene.preview}
           autoAdvance={scene.autoAdvance}
           onAdvance={onAdvance}
           askLucaPrompt={scene.askLucaPrompt}
@@ -333,6 +344,7 @@ function SceneContent({
           eyebrow={scene.eyebrow}
           heading={scene.heading}
           frames={scene.frames}
+          preview={scene.preview}
           askLucaPrompt={scene.askLucaPrompt}
           onAskLuca={onAskLuca}
           index={index}
@@ -345,6 +357,7 @@ function SceneContent({
           heading={scene.heading}
           body={scene.body}
           image={scene.image}
+          preview={scene.preview}
           askLucaPrompt={scene.askLucaPrompt}
           onAskLuca={onAskLuca}
           index={index}
@@ -356,6 +369,7 @@ function SceneContent({
           heading={scene.heading}
           body={scene.body}
           cta={scene.cta}
+          preview={scene.preview}
           askLucaPrompt={scene.askLucaPrompt}
           onAskLuca={onAskLuca}
           index={index}
@@ -400,10 +414,12 @@ function AskLucaInline({
 
 function SceneHero({
   subtitle,
+  preview,
   cta = "Begin chapter →",
   onAdvance,
 }: {
   subtitle: string;
+  preview?: string;
   cta?: string;
   onAdvance: () => void;
 }) {
@@ -425,6 +441,9 @@ function SceneHero({
       >
         {subtitle}
       </p>
+
+      <ScenePreview preview={preview} />
+
       <button
         onClick={onAdvance}
         className="mt-2 px-7 py-3.5 rounded-2xl text-sm font-semibold active:scale-[0.97] transition-transform"
@@ -433,6 +452,18 @@ function SceneHero({
         {cta}
       </button>
     </div>
+  );
+}
+
+function ScenePreview({ preview }: { preview?: string }) {
+  if (!preview) return null;
+  return (
+    <p
+      className="max-w-xl mx-auto mt-3 text-sm leading-relaxed text-muted-foreground"
+      style={{ letterSpacing: "0.01em" }}
+    >
+      {preview}
+    </p>
   );
 }
 
@@ -474,6 +505,7 @@ function SceneNarrative({
   image,
   imageAlt,
   imageCaption,
+  preview,
   askLucaPrompt,
   onAskLuca,
   index,
@@ -484,6 +516,7 @@ function SceneNarrative({
   image?: string;
   imageAlt?: string;
   imageCaption?: string;
+  preview?: string;
   askLucaPrompt?: string;
   onAskLuca?: (prompt?: string, returnIndex?: number) => void;
   index: number;
@@ -496,6 +529,7 @@ function SceneNarrative({
         </p>
       )}
       <h2 className="h2 mt-2 text-foreground">{heading}</h2>
+      <ScenePreview preview={preview} />
 
       {image ? (
         <div
@@ -546,6 +580,7 @@ function SceneReveal({
   answer,
   image,
   imageAlt,
+  preview,
   askLucaPrompt,
   onAskLuca,
   index,
@@ -556,6 +591,7 @@ function SceneReveal({
   answer: string;
   image?: string;
   imageAlt?: string;
+  preview?: string;
   askLucaPrompt?: string;
   onAskLuca?: (prompt?: string, returnIndex?: number) => void;
   index: number;
@@ -567,6 +603,7 @@ function SceneReveal({
         {eyebrow ?? "Did you know?"}
       </p>
       <h2 className="h2 mt-2 text-foreground">{question}</h2>
+      <ScenePreview preview={preview} />
 
       <div className="mt-6">
         {!revealed ? (
@@ -734,11 +771,13 @@ function SceneIllustration({
   id,
   eyebrow,
   heading,
+  preview,
   caption,
 }: {
   id: IllustrationId;
   eyebrow?: string;
   heading?: string;
+  preview?: string;
   caption?: string;
 }) {
   return (
@@ -749,6 +788,7 @@ function SceneIllustration({
         </p>
       )}
       {heading && <h2 className="h2 mt-2 text-foreground">{heading}</h2>}
+      <ScenePreview preview={preview} />
 
       <div className="mt-5">
         <Illustration id={id} />
@@ -768,6 +808,7 @@ function SceneVideo({
   src,
   poster,
   caption,
+  preview,
   autoAdvance,
   onAdvance,
   askLucaPrompt,
@@ -778,6 +819,7 @@ function SceneVideo({
   src?: string;
   poster?: string;
   caption?: string;
+  preview?: string;
   autoAdvance?: boolean;
   onAdvance: () => void;
   askLucaPrompt?: string;
@@ -799,6 +841,7 @@ function SceneVideo({
         Archival footage
       </p>
       <h2 className="h2 mt-2 text-foreground">{title}</h2>
+      <ScenePreview preview={preview} />
       <div className="mt-4 rounded-2xl overflow-hidden border border-border bg-card">
         <video id="scene-video" src={src} poster={poster} className="w-full h-auto" controls />
       </div>
@@ -818,6 +861,7 @@ function SceneTimelineSlider({
   eyebrow,
   heading,
   frames,
+  preview,
   askLucaPrompt,
   onAskLuca,
   index,
@@ -825,6 +869,7 @@ function SceneTimelineSlider({
   eyebrow?: string;
   heading: string;
   frames: TimelineFrame[];
+  preview?: string;
   askLucaPrompt?: string;
   onAskLuca?: (prompt?: string, returnIndex?: number) => void;
   index: number;
@@ -837,6 +882,7 @@ function SceneTimelineSlider({
         </p>
       )}
       <h2 className="h2 mt-2 mb-5 text-foreground">{heading}</h2>
+      <ScenePreview preview={preview} />
       <TimelineSlider frames={frames} />
       <div className="mt-4">
         <AskLucaInline prompt={askLucaPrompt} onAskLuca={onAskLuca} index={index} />
@@ -850,6 +896,7 @@ function SceneCultural({
   heading,
   body,
   image,
+  preview,
   askLucaPrompt,
   onAskLuca,
   index,
@@ -858,6 +905,7 @@ function SceneCultural({
   heading: string;
   body: string;
   image?: string;
+  preview?: string;
   askLucaPrompt?: string;
   onAskLuca?: (prompt?: string, returnIndex?: number) => void;
   index: number;
@@ -870,6 +918,7 @@ function SceneCultural({
         </p>
       )}
       <h2 className="h2 mt-2 text-foreground">{heading}</h2>
+      <ScenePreview preview={preview} />
       {image && (
         <div className="mt-4 rounded-2xl overflow-hidden border border-border bg-card">
           <img src={image} alt={heading} className="w-full h-auto" />
@@ -895,6 +944,7 @@ function SceneClosing({
   heading,
   body,
   cta,
+  preview,
   askLucaPrompt,
   onAskLuca,
   index,
@@ -903,6 +953,7 @@ function SceneClosing({
   heading: string;
   body?: string;
   cta?: string;
+  preview?: string;
   askLucaPrompt?: string;
   onAskLuca?: (prompt?: string, returnIndex?: number) => void;
   index: number;
@@ -919,6 +970,7 @@ function SceneClosing({
       >
         {heading}
       </h2>
+      <ScenePreview preview={preview} />
       {body && (
         <p className="mt-4 text-base text-muted-foreground leading-relaxed max-w-md mx-auto">
           {body}
