@@ -97,17 +97,17 @@ const BIRTH: Scene[] = [
     ],
   },
   {
-    kind: "closing",
-    heading: "But this was only the beginning.",
-    body: "The Visconti gave the cathedral marble. The Sforza would give it Leonardo. The Habsburg crowns and Napoleonic France were still centuries away.",
-    cta: "Begin Chapter 2 — Crown →",
-  },
-  {
     kind: "cultural",
     eyebrow: "A day in 1450",
     heading: "How Milanese lived.",
     body: "Imagine being a stonemason on the Fabbrica payroll in 1450. You woke before dawn to the matins bell. Bought your bread at Piazza dei Mercanti — the medieval market that stood where the Galleria now stands. You worked twelve hours under the rising apse, paid in soldi imperiali. By the cathedral's vesper bell you were home, eating polenta with onions. Plague was a season away, like winter.",
     askLucaPrompt: "Tell me more about daily life in Milan in 1450.",
+  },
+  {
+    kind: "closing",
+    heading: "But this was only the beginning.",
+    body: "The Visconti gave the cathedral marble. The Sforza would give it Leonardo. The Habsburg crowns and Napoleonic France were still centuries away.",
+    cta: "Begin Chapter 2 — Crown →",
   },
 ];
 
@@ -172,17 +172,17 @@ const CROWN: Scene[] = [
     ],
   },
   {
-    kind: "closing",
-    heading: "Then the modern world arrived.",
-    body: "Italy unified. A glass arcade rose. And one summer night in 1943, the bombs of war wrote one more chapter.",
-    cta: "Begin Chapter 3 — Modern →",
-  },
-  {
     kind: "cultural",
     eyebrow: "The saffron wedding",
     heading: "How Milanese lived.",
     body: "1574. Inside the Duomo workshop, a Belgian glass-painter named Maestro Valerio is finishing a window. He's been using powdered saffron to colour the glass. At his daughter's wedding, he tells the cook to add a pinch to the rice — for luck, for colour. The Milanese have been eating it that way ever since. The most famous dish of this city was probably invented, by accident, inside this building.",
     askLucaPrompt: "Tell me more about the origin of risotto alla milanese.",
+  },
+  {
+    kind: "closing",
+    heading: "Then the modern world arrived.",
+    body: "Italy unified. A glass arcade rose. And one summer night in 1943, the bombs of war wrote one more chapter.",
+    cta: "Begin Chapter 3 — Modern →",
   },
 ];
 
@@ -246,18 +246,18 @@ const MODERN: Scene[] = [
     askLucaPrompt: "Tell me more about the Sala delle Cariatidi and the 1943 bombing.",
   },
   {
-    kind: "closing",
-    heading: "And here we are.",
-    body: "Six centuries condensed into one square. The Madonnina is still watching. Now look around.",
-    cta: "Continue to AR Experience →",
-  },
-  {
     kind: "cultural",
     eyebrow: "A 1960s aperitivo",
     heading: "How Milanese lived.",
     body: "1960. The economic miracle peaks. You step into Bar Campari, order a Negroni sbagliato, and talk about the new Pirelli Tower.",
     image: "/src/assets/History/golden-eagle-1960s.jpg",
     askLucaPrompt: "Tell me more about aperitivo culture in the Galleria.",
+  },
+  {
+    kind: "closing",
+    heading: "And here we are.",
+    body: "Six centuries condensed into one square. The Madonnina is still watching. Now look around.",
+    cta: "Continue to AR Experience →",
   },
 ];
 

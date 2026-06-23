@@ -359,6 +359,7 @@ function SceneContent({
           askLucaPrompt={scene.askLucaPrompt}
           onAskLuca={onAskLuca}
           index={index}
+          onCtaClick={onAdvance}
         />
       );
     default:
@@ -897,6 +898,7 @@ function SceneClosing({
   askLucaPrompt,
   onAskLuca,
   index,
+  onCtaClick,
 }: {
   heading: string;
   body?: string;
@@ -904,6 +906,7 @@ function SceneClosing({
   askLucaPrompt?: string;
   onAskLuca?: (prompt?: string, returnIndex?: number) => void;
   index: number;
+  onCtaClick?: () => void;
 }) {
   return (
     <div className="text-center">
@@ -922,12 +925,13 @@ function SceneClosing({
         </p>
       )}
       {cta && (
-        <div
-          className="mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium"
+        <button
+          onClick={onCtaClick}
+          className="mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium active:scale-[0.98] transition-all"
           style={{ background: "color-mix(in srgb, var(--accent) 18%, transparent)", color: "var(--accent-strong)" }}
         >
           {cta}
-        </div>
+        </button>
       )}
       <div className="mt-4 flex justify-center">
         <AskLucaInline prompt={askLucaPrompt} onAskLuca={onAskLuca} index={index} />

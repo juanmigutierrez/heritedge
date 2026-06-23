@@ -1116,6 +1116,7 @@ export function QuickGuide() {
                 setSelectedEra(next);
               } else {
                 setStoryOpen(false);
+                navigate("/ar-overview");
               }
             }}
             onAskLuca={(prompt, returnIndex) => {
